@@ -1,0 +1,7 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: externaldns-sample
+spec:
+  # Add fields here
+  foo: bar
