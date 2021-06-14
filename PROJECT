@@ -1,0 +1,16 @@
+domain: openshift.io
+layout:
+- go.kubebuilder.io/v3
+projectName: test
+repo: openshift.io/external-dns-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: openshift.io
+  group: operator
+  kind: ExternalDNS
+  path: openshift.io/external-dns-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

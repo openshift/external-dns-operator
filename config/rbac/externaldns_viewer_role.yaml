@@ -1,0 +1,20 @@
+# permissions for end users to view externaldns.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: externaldns-viewer-role
+rules:
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - externaldns
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - externaldns/status
+  verbs:
+  - get

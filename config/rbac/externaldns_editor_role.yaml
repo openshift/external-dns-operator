@@ -1,0 +1,24 @@
+# permissions for end users to edit externaldns.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: externaldns-editor-role
+rules:
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - externaldns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - externaldns/status
+  verbs:
+  - get
