@@ -13,3 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Ignore bin directory from builds and tests
+bin/
+testbin/
