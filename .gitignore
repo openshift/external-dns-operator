@@ -11,6 +11,5 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Ignore bin directory from builds and tests
+# Ignore bin directory from builds
 bin/
-testbin/
