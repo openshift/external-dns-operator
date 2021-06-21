@@ -60,8 +60,9 @@ test: manifests generate fmt vet ## Run unit tests
 
 ##@ Build
 
+GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	$(GO) build -o bin/manager main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
