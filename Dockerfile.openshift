@@ -1,7 +1,7 @@
 FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.16-openshift-4.9 AS builder
 WORKDIR /external-dns-operator
 COPY . .
-RUN make buildbin
+RUN make build-manager
 
 FROM registry.ci.openshift.org/ocp/4.9:base
 COPY --from=builder /external-dns-operator/bin/manager /usr/bin/external-dns-operator
