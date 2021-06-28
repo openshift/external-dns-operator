@@ -1,4 +1,4 @@
-module openshift.io/external-dns-operator
+module github.com/openshift/external-dns-operator
 
 go 1.16
 

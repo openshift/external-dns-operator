@@ -13,6 +13,11 @@ endif
 
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
+PACKAGE=github.com/openshift/external-dns-operator
+MAIN_PACKAGE=$(PACKAGE)/cmd/externaldns-operator
+
+BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -62,18 +67,18 @@ test: manifests generate fmt vet ## Run unit tests
 
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
 
-build-manager: ## Build manager binary, no additional checks or code generation
-	$(GO) build -o bin/manager main.go
+build-operator: ## Build operator binary, no additional checks or code generation
+	$(GO) build -o $(BIN) $(MAIN_PACKAGE)
 
-build: build-manager generate fmt vet ## Build manager binary.
+build: build-operator generate fmt vet ## Build operator binary.
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run $(MAIN_PACKAGE)
 
-docker-build: test ## Build docker image with the manager.
+docker-build: test ## Build docker image with the operator.
 	docker build -t ${IMG} .
 
-docker-push: ## Push docker image with the manager.
+docker-push: ## Push docker image with the operator.
 	docker push ${IMG}
 
 ##@ Deployment

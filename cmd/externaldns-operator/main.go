@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operatorv1alpha1 "openshift.io/external-dns-operator/api/v1alpha1"
-	"openshift.io/external-dns-operator/controllers"
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	"github.com/openshift/external-dns-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

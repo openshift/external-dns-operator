@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	operatorv1alpha1 "openshift.io/external-dns-operator/api/v1alpha1"
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 // ExternalDNSReconciler reconciles a ExternalDNS object
