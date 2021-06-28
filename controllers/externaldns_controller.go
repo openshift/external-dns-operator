@@ -30,7 +30,9 @@ import (
 // ExternalDNSReconciler reconciles a ExternalDNS object
 type ExternalDNSReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme            *runtime.Scheme
+	OperatorNamespace string
+	OperandNamespace  string
 }
 
 //+kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns,verbs=get;list;watch;create;update;patch;delete

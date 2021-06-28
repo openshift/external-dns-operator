@@ -28,6 +28,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -51,8 +52,12 @@ func init() {
 func main() {
 	var metricsAddr string
 	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	var operatorNamespace string
+	var operandNamespace string
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "127.0.0.1:8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", "127.0.0.1:8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&operatorNamespace, "operator-namespace", "externaldns-operator", "The namespace that the operator is running in.")
+	flag.StringVar(&operandNamespace, "operand-namespace", "externaldns", "The namespace that ExternalDNS instances should run in.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -60,21 +65,30 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	ctrl.Log.Info("Using operator namespace", "namespace", operatorNamespace)
+	ctrl.Log.Info("Using operand namespace", "namespace", operandNamespace)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
+		Namespace:              operatorNamespace,
+		NewCache: cache.MultiNamespacedCacheBuilder([]string{
+			operatorNamespace,
+			operandNamespace,
+		}),
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to start operator")
 		os.Exit(1)
 	}
 
 	if err = (&controllers.ExternalDNSReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:            mgr.GetClient(),
+		Scheme:            mgr.GetScheme(),
+		OperatorNamespace: operatorNamespace,
+		OperandNamespace:  operandNamespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ExternalDNS")
 		os.Exit(1)
@@ -90,9 +104,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("starting operator")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "problem running operator")
 		os.Exit(1)
 	}
 }
