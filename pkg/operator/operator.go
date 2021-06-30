@@ -52,6 +52,12 @@ type Operator struct {
 	log     logr.Logger
 }
 
+// Aggregate kubebuilder RBAC tags in one location for simplicity.
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;delete;create;update
+
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	mgrOpts := manager.Options{
