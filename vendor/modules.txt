@@ -28,6 +28,7 @@ github.com/form3tech-oss/jwt-go
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
 # github.com/go-logr/logr v0.4.0
+## explicit
 github.com/go-logr/logr
 # github.com/go-logr/zapr v0.4.0
 github.com/go-logr/zapr
