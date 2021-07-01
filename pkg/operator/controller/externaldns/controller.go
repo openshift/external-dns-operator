@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 
@@ -27,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -74,9 +75,13 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 // Reconcile reconciles watched objects and attempts to make the current state of
 // the object match the desired state.
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	result := reconcile.Result{}
 
-	// your logic here
+	if _, _, err := r.ensureExternalDNSNamespace(ctx, r.config.Namespace); err != nil {
+		// Return if the externalDNS namespace cannot be created since
+		// resource creation in a namespace that does not exist will fail.
+		return result, fmt.Errorf("failed to ensure externalDNS namespace: %v", err)
+	}
 
-	return ctrl.Result{}, nil
+	return result, nil
 }
