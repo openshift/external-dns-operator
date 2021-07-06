@@ -90,14 +90,18 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if _, _, err := r.ensureExternalDNSNamespace(ctx, r.config.Namespace); err != nil {
 		// Return if the externalDNS namespace cannot be created since
 		// resource creation in a namespace that does not exist will fail.
-		return result, fmt.Errorf("failed to ensure externalDNS namespace: %v", err)
+		return result, fmt.Errorf("failed to ensure externalDNS namespace: %w", err)
 	}
 
-	haveServiceAccount, _, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
+	haveServiceAccount, sa, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
 	if err != nil {
 		return result, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
 	} else if !haveServiceAccount {
 		return result, fmt.Errorf("failed to get externalDNS service account: %w", err)
+	}
+
+	if _, _, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS); err != nil {
+		return result, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
 
 	return result, nil
