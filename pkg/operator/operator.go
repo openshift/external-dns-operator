@@ -52,6 +52,12 @@ type Operator struct {
 	log     logr.Logger
 }
 
+// Aggregate kubebuilder RBAC tags in one location for simplicity.
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;delete;create;update
+
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	mgrOpts := manager.Options{
@@ -61,19 +67,29 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		NewCache: cache.MultiNamespacedCacheBuilder([]string{
 			opCfg.OperatorNamespace,
 			opCfg.OperandNamespace,
-		})}
+		}),
+		// Use a non-caching client everywhere. The default split client does not
+		// promise to invalidate the cache during writes (nor does it promise
+		// sequential create/get coherence), and we have code which (probably
+		// incorrectly) assumes a get immediately following a create/update will
+		// return the updated resource. All client consumers will need audited to
+		// ensure they are tolerant of stale data (or we need a cache or client that
+		// makes stronger coherence guarantees).
+		NewClient: func(_ cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+			return client.New(config, options)
+		},
+	}
 
 	mgr, err := ctrl.NewManager(cliCfg, mgrOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
 	}
 
-	if err = (&externaldnscontroller.ExternalDNSReconciler{
-		Client:            mgr.GetClient(),
-		Scheme:            mgr.GetScheme(),
-		OperatorNamespace: opCfg.OperatorNamespace,
-		OperandNamespace:  opCfg.OperandNamespace,
-	}).SetupWithManager(mgr); err != nil {
+	// Create and register the externaldns controller with the operator manager.
+	if _, err := externaldnscontroller.New(mgr, externaldnscontroller.Config{
+		Namespace: opCfg.OperandNamespace,
+		Image:     opCfg.ExternalDNSImage,
+	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}
 
