@@ -53,9 +53,9 @@ type Operator struct {
 }
 
 // Aggregate kubebuilder RBAC tags in one location for simplicity.
-// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=operator.openshift.io,resources=externaldns/finalizers,verbs=update
+// +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;delete;create;update
 
 // New creates a new operator from cliCfg and opCfg.

@@ -18,9 +18,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - operator.openshift.io
+  - externaldns.olm.openshift.io
   resources:
-  - externaldns
+  - externaldnses
   verbs:
   - create
   - delete
@@ -30,15 +30,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - operator.openshift.io
+  - externaldns.olm.openshift.io
   resources:
-  - externaldns/finalizers
+  - externaldnses/finalizers
   verbs:
   - update
 - apiGroups:
-  - operator.openshift.io
+  - externaldns.olm.openshift.io
   resources:
-  - externaldns/status
+  - externaldnses/status
   verbs:
   - get
   - patch
