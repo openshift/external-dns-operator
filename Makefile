@@ -62,6 +62,11 @@ test: manifests generate fmt vet ## Run unit tests
 		-coverprofile coverage.out \
 		./...
 
+verify:
+	hack/verify-gofmt.sh
+	hack/verify-deps.sh
+	hack/verify-generated.sh
+
 ##@ Build
 
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
