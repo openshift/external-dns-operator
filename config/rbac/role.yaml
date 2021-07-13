@@ -10,6 +10,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - serviceaccounts
   verbs:
   - create
   - delete
