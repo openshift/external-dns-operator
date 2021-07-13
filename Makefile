@@ -14,7 +14,7 @@ endif
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
 PACKAGE=github.com/openshift/external-dns-operator
-MAIN_PACKAGE=$(PACKAGE)/cmd/externaldns-operator
+MAIN_PACKAGE=$(PACKAGE)/cmd/external-dns-operator
 
 BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
 
@@ -45,7 +45,7 @@ help: ## Display this help.
 ##@ Development
 
 manifests: ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=external-dns-operator webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 generate: ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
