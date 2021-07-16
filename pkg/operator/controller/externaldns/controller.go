@@ -24,6 +24,7 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -77,10 +78,26 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	result := reconcile.Result{}
 
+	externalDNS := &operatorv1alpha1.ExternalDNS{}
+	if err := r.client.Get(ctx, req.NamespacedName, externalDNS); err != nil {
+		if errors.IsNotFound(err) {
+			r.log.Info("externalDNS not found; reconciliation will be skipped", "request", req)
+			return result, nil
+		}
+		return result, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
+	}
+
 	if _, _, err := r.ensureExternalDNSNamespace(ctx, r.config.Namespace); err != nil {
 		// Return if the externalDNS namespace cannot be created since
 		// resource creation in a namespace that does not exist will fail.
 		return result, fmt.Errorf("failed to ensure externalDNS namespace: %v", err)
+	}
+
+	haveServiceAccount, _, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
+	if err != nil {
+		return result, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
+	} else if !haveServiceAccount {
+		return result, fmt.Errorf("failed to get externalDNS service account: %w", err)
 	}
 
 	return result, nil

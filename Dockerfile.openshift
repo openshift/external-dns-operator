@@ -4,8 +4,8 @@ COPY . .
 RUN make build-operator
 
 FROM registry.ci.openshift.org/ocp/4.9:base
-COPY --from=builder /external-dns-operator/bin/externaldns-operator /usr/bin/
-ENTRYPOINT ["/usr/bin/externaldns-operator"]
+COPY --from=builder /external-dns-operator/bin/external-dns-operator /usr/bin/
+ENTRYPOINT ["/usr/bin/external-dns-operator"]
 LABEL io.openshift.release.operator="true"
 LABEL io.k8s.display-name="OpenShift ExternalDNS Operator" \
       io.k8s.description="This is a component of OpenShift Container Platform and manages the lifecycle of ExternalDNS." \

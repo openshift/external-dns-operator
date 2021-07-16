@@ -56,7 +56,7 @@ type Operator struct {
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;delete;create;update
+// +kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=get;list;watch;delete;create;update
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
