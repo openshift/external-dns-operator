@@ -410,6 +410,7 @@ spec:
                   all DNS records in the previous zone(s) to be left behind."
                 items:
                   type: string
+                maxItems: 10
                 type: array
             required:
             - provider
@@ -501,7 +502,6 @@ spec:
             type: object
         required:
         - spec
-        - status
         type: object
     served: true
     storage: true

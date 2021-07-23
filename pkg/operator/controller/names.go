@@ -20,7 +20,10 @@ import (
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
-func ExternalDNSServiceAccountName(externalDNS *operatorv1alpha1.ExternalDNS) string {
-	return "externaldns-" + externalDNS.Name
+const (
+	ExternalDNSBaseName = "external-dns"
+)
 
+func ExternalDNSResourceName(externalDNS *operatorv1alpha1.ExternalDNS) string {
+	return ExternalDNSBaseName + "-" + externalDNS.Name
 }

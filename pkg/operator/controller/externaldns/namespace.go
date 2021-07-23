@@ -28,27 +28,29 @@ import (
 
 // ensureExternalDNSNamespace ensures that the externaldns namespace exists.
 func (r *reconciler) ensureExternalDNSNamespace(ctx context.Context, namespace string) (bool, *corev1.Namespace, error) {
+	nsName := types.NamespacedName{Name: namespace}
+
 	desired := desiredExternalDNSNamespace(namespace)
 
-	haveNamespace, current, err := r.currentExternalDNSNamespace(ctx, namespace)
+	exist, current, err := r.currentExternalDNSNamespace(ctx, nsName)
 	if err != nil {
 		return false, nil, err
 	}
 
-	if !haveNamespace {
+	if !exist {
 		if err := r.createExternalDNSNamespace(ctx, desired); err != nil {
 			return false, nil, err
 		}
-		return r.currentExternalDNSNamespace(ctx, namespace)
+		return r.currentExternalDNSNamespace(ctx, nsName)
 	}
 
 	return true, current, nil
 }
 
 // currentExternalDNSNamespace  gets the current externalDNS namespace resource.
-func (r *reconciler) currentExternalDNSNamespace(ctx context.Context, namespace string) (bool, *corev1.Namespace, error) {
+func (r *reconciler) currentExternalDNSNamespace(ctx context.Context, nsName types.NamespacedName) (bool, *corev1.Namespace, error) {
 	ns := &corev1.Namespace{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
+	if err := r.client.Get(ctx, nsName, ns); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil, nil
 		}
@@ -68,13 +70,11 @@ func desiredExternalDNSNamespace(namespace string) *corev1.Namespace {
 	}
 }
 
-// createExternalDNSNamespace creates the given namespace using the reconciler's
-// client.
+// createExternalDNSNamespace creates the given namespace using the reconciler's client.
 func (r *reconciler) createExternalDNSNamespace(ctx context.Context, ns *corev1.Namespace) error {
 	if err := r.client.Create(ctx, ns); err != nil {
 		return fmt.Errorf("failed to create externalDNS namespace %s: %v", ns.Name, err)
 	}
-
-	r.log.Info("created externaldns namespace", "namespace", ns.Name)
+	r.log.Info("created externalDNS namespace", "namespace", ns.Name)
 	return nil
 }

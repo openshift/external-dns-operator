@@ -6,7 +6,7 @@ spec:
   template:
     spec:
       containers:
-      - name: operator
+      - name: external-dns-operator
         args:
         - "--config=controller_manager_config.yaml"
         volumeMounts:

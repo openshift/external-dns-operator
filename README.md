@@ -16,3 +16,4 @@ This Operator is in the early stages of implementation. For the time being, plea
    ```
 2. Make sure to uncomment the `image` in `config/manager/kustomization.yaml` and set it to the operator image you pushed
 3. Run `oc apply -k config/default`
+4. Now you can deploy an instance of ExternalDNS, run `oc apply -k config/samples`
