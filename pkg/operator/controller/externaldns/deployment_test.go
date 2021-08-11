@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -105,9 +106,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 
 func TestExternalDNSDeploymentChanged(t *testing.T) {
 	testCases := []struct {
-		description string
-		mutate      func(*appsv1.Deployment)
-		expect      bool
+		description        string
+		originalDeployment *appsv1.Deployment
+		mutate             func(*appsv1.Deployment)
+		expect             bool
+		expectedDeployment *appsv1.Deployment
 	}{
 		{
 			description: "if nothing changes",
@@ -119,14 +122,16 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Image = "foo.io/test:latest"
 			},
-			expect: true,
+			expect:             true,
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{testContainerWithImage("foo.io/test:latest")}),
 		},
 		{
 			description: "if externalDNS container args",
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Args = []string{"Nada"}
 			},
-			expect: true,
+			expect:             true,
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{testContainerWithArgs([]string{"Nada"})}),
 		},
 		{
 			description: "if externalDNS container args order changes",
@@ -139,45 +144,122 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			},
 			expect: false,
 		},
+		{
+			description: "if externalDNS misses container",
+			mutate: func(depl *appsv1.Deployment) {
+				depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, testContainerWithName("second"))
+			},
+			expect: true,
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+				testContainerWithName("second"),
+			}),
+		},
+		{
+			description: "if externalDNS has extra container",
+			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+				testContainerWithName("second"),
+			}),
+			mutate: func(depl *appsv1.Deployment) {
+				depl.Spec.Template.Spec.Containers = []corev1.Container{testContainer()}
+			},
+			expect: true,
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+			}),
+		},
 	}
 
 	for _, tc := range testCases {
-		externalDNS := &operatorv1alpha1.ExternalDNS{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
-			Spec: operatorv1alpha1.ExternalDNSSpec{
-				Provider: operatorv1alpha1.ExternalDNSProvider{
-					Type: operatorv1alpha1.ProviderTypeAWS,
+		t.Run(tc.description, func(t *testing.T) {
+			original := testDeployment()
+			if tc.originalDeployment != nil {
+				original = tc.originalDeployment
+			}
+
+			mutated := original.DeepCopy()
+			tc.mutate(mutated)
+			if changed, updated := externalDNSDeploymentChanged(original, mutated); changed != tc.expect {
+				t.Errorf("Expect externalDNSDeploymentChanged to be %t, got %t", tc.expect, changed)
+			} else if changed {
+				if changedAgain, updatedAgain := externalDNSDeploymentChanged(mutated, updated); changedAgain {
+					t.Errorf("ExternalDNSDeploymentChanged does not behave as a fixed point function")
+				} else {
+					if !reflect.DeepEqual(updatedAgain, tc.expectedDeployment) {
+						t.Errorf("Expect updated deployment to be %v, got %v", tc.expectedDeployment, updatedAgain)
+					}
+				}
+			}
+		})
+	}
+}
+
+func testDeployment() *appsv1.Deployment {
+	replicas := int32(1)
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "testns",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"testlbl": "yes",
 				},
-				Source: operatorv1alpha1.ExternalDNSSource{
-					ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-						Type: operatorv1alpha1.SourceTypeRoute,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"testlbl": "yes",
 					},
 				},
-				Zones: []string{"my-dns-zone"},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: "testsa",
+					NodeSelector: map[string]string{
+						"testlbl": "yes",
+					},
+					Containers: []corev1.Container{testContainer()},
+				},
 			},
-		}
-
-		serviceAccount := &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-		}
-		original, err := desiredExternalDNSDeployment(namespace, image, serviceAccount, externalDNS)
-		if err != nil {
-			t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
-		}
-
-		mutated := original.DeepCopy()
-		tc.mutate(mutated)
-		if changed, updated := externalDNSDeploymentChanged(original, mutated); changed != tc.expect {
-			t.Errorf("%s, expect externalDNSDeploymentChanged to be %t, got %t", tc.description, tc.expect, changed)
-		} else if changed {
-			if changedAgain, _ := externalDNSDeploymentChanged(mutated, updated); changedAgain {
-				t.Errorf("%s, externalDNSDeploymentChanged does not behave as a fixed point function", tc.description)
-			}
-		}
+		},
 	}
+}
+
+func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deployment {
+	depl := testDeployment()
+	depl.Spec.Template.Spec.Containers = containers
+	return depl
+}
+
+func testContainer() corev1.Container {
+	return corev1.Container{
+		Name:                     "first",
+		Image:                    image,
+		ImagePullPolicy:          corev1.PullIfNotPresent,
+		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		Args: []string{
+			"--flag1=value1",
+			"--flag2=value2",
+		},
+	}
+}
+
+func testContainerWithName(name string) corev1.Container {
+	cont := testContainer()
+	cont.Name = name
+	return cont
+}
+
+func testContainerWithImage(image string) corev1.Container {
+	cont := testContainer()
+	cont.Image = image
+	return cont
+}
+
+func testContainerWithArgs(args []string) corev1.Container {
+	cont := testContainer()
+	cont.Args = args
+	return cont
 }

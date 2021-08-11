@@ -163,7 +163,7 @@ func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev
 
 // WIP function for generating container specs for one container at a time.
 func buildExternalDNSContainer(seq int, image, zone, provider, source string, externalDNS *operatorv1alpha1.ExternalDNS) (*corev1.Container, error) {
-	name := fmt.Sprintf("externaldns-%d", seq+1)
+	name := controller.ExternalDNSContainerName(zone)
 
 	args := []string{
 		fmt.Sprintf("--metrics-address=127.0.0.1:%d", metricsStartPort+seq),
@@ -257,23 +257,71 @@ func (r *reconciler) updateExternalDNSDeployment(ctx context.Context, current, d
 // externalDNSDeploymentChanged evaluates whether or not a deployment update is necessary.
 // Returns a boolean if an update is necessary, and the deployment resource to update to.
 func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *appsv1.Deployment) {
-	changed := false
 	updated := current.DeepCopy()
 
-	if len(current.Spec.Template.Spec.Containers) > 0 && len(expected.Spec.Template.Spec.Containers) > 0 {
-		if current.Spec.Template.Spec.Containers[0].Image != expected.Spec.Template.Spec.Containers[0].Image {
-			updated.Spec.Template.Spec.Containers[0].Image = expected.Spec.Template.Spec.Containers[0].Image
-			changed = true
-		}
-		currArgs := append([]string{}, current.Spec.Template.Spec.Containers[0].Args...)
-		expArgs := append([]string{}, expected.Spec.Template.Spec.Containers[0].Args...)
-		sort.Strings(currArgs)
-		sort.Strings(expArgs)
-		if !cmp.Equal(currArgs, expArgs) {
-			updated.Spec.Template.Spec.Containers[0].Args = expected.Spec.Template.Spec.Containers[0].Args
-			changed = true
+	return externalDNSContainersChanged(current, expected, updated), updated
+}
+
+// externalDNSContainersChanged returns true if the current containers differ from the expected
+func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment) bool {
+	changed := false
+
+	// number of container is different: let's reset them all
+	if len(current.Spec.Template.Spec.Containers) != len(expected.Spec.Template.Spec.Containers) {
+		updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
+		return true
+	}
+
+	currentContMap := buildIndexedContainerMap(current.Spec.Template.Spec.Containers)
+	expectedContMap := buildIndexedContainerMap(expected.Spec.Template.Spec.Containers)
+
+	// let's check that all the current containers have the desired values set
+	for currName, currCont := range currentContMap {
+		// if the current container is expected: check its fields
+		if expCont, found := expectedContMap[currName]; found {
+			if currCont.Image != expCont.Image {
+				updated.Spec.Template.Spec.Containers[currCont.Index].Image = expCont.Image
+				changed = true
+			}
+			if !equalStringSliceContent(expCont.Args, currCont.Args) {
+				updated.Spec.Template.Spec.Containers[currCont.Index].Args = expCont.Args
+				changed = true
+			}
+		} else {
+			// if the current container is not expected: let's not dig deeper - reset all
+			updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
+			return true
 		}
 	}
 
-	return changed, updated
+	return changed
+}
+
+// indexedContainer is the standard core POD's container with additional index field
+type indexedContainer struct {
+	corev1.Container
+	Index int
+}
+
+// buildIndexedContainerMap builds a map from the given list of containers
+// key is the container name
+// value is the indexed container with index being the sequence number of the given list
+func buildIndexedContainerMap(containers []corev1.Container) map[string]indexedContainer {
+	m := map[string]indexedContainer{}
+	for i, cont := range containers {
+		m[cont.Name] = indexedContainer{
+			Container: cont,
+			Index:     i,
+		}
+	}
+	return m
+}
+
+// equalStringSliceContent returns true if 2 string slices have the same content (order doesn't matter)
+func equalStringSliceContent(sl1, sl2 []string) bool {
+	copy1 := append([]string{}, sl1...)
+	copy2 := append([]string{}, sl2...)
+	sort.Strings(copy1)
+	sort.Strings(copy2)
+	return cmp.Equal(copy1, copy2)
 }

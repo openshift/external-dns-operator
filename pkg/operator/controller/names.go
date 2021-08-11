@@ -17,6 +17,12 @@ limitations under the License.
 package externaldnscontroller
 
 import (
+	"fmt"
+	"hash"
+	"hash/fnv"
+
+	"k8s.io/apimachinery/pkg/util/rand"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
@@ -26,4 +32,18 @@ const (
 
 func ExternalDNSResourceName(externalDNS *operatorv1alpha1.ExternalDNS) string {
 	return ExternalDNSBaseName + "-" + externalDNS.Name
+}
+
+func ExternalDNSContainerName(zone string) string {
+	return ExternalDNSBaseName + "-" + hashString(zone)
+}
+
+func hashString(str string) string {
+	hasher := getHasher()
+	hasher.Write([]byte(str))
+	return rand.SafeEncodeString(fmt.Sprint(hasher.Sum(nil)))
+}
+
+func getHasher() hash.Hash {
+	return fnv.New32a()
 }
