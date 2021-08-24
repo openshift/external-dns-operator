@@ -1,5 +1,18 @@
 apiVersion: externaldns.olm.openshift.io/v1alpha1
 kind: ExternalDNS
 metadata:
-  name: externaldns-sample
+  name: sample
+  namespace: external-dns-operator
 spec:
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        name: aws-access-key
+        namespace: external-dns-operator
+  source:
+    type: Service
+    namespace: "publish-external-dns"
+    annotationFilter:
+      external-dns.mydomain.org/publish: "yes"
+  zones: ["myzoneid"]

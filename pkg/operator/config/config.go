@@ -19,8 +19,8 @@ package config
 const (
 	DefaultExternalDNSImage  = "docker.io/bitnami/external-dns:latest"
 	DefaultMetricsAddr       = "127.0.0.1:8080"
-	DefaultOperatorNamespace = "externaldns-operator"
-	DefaultOperandNamespace  = "externaldns"
+	DefaultOperatorNamespace = "external-dns-operator"
+	DefaultOperandNamespace  = "external-dns"
 )
 
 // Config is configuration of the operator.

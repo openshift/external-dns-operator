@@ -66,6 +66,7 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if err := c.Watch(&source.Kind{Type: &operatorv1alpha1.ExternalDNS{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}
@@ -76,29 +77,29 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 // Reconcile reconciles watched objects and attempts to make the current state of
 // the object match the desired state.
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	result := reconcile.Result{}
-
 	externalDNS := &operatorv1alpha1.ExternalDNS{}
 	if err := r.client.Get(ctx, req.NamespacedName, externalDNS); err != nil {
 		if errors.IsNotFound(err) {
 			r.log.Info("externalDNS not found; reconciliation will be skipped", "request", req)
-			return result, nil
+			return reconcile.Result{}, nil
 		}
-		return result, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
+		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
 	}
 
 	if _, _, err := r.ensureExternalDNSNamespace(ctx, r.config.Namespace); err != nil {
-		// Return if the externalDNS namespace cannot be created since
-		// resource creation in a namespace that does not exist will fail.
-		return result, fmt.Errorf("failed to ensure externalDNS namespace: %v", err)
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS namespace: %w", err)
 	}
 
-	haveServiceAccount, _, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
+	haveServiceAccount, sa, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
 	if err != nil {
-		return result, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
 	} else if !haveServiceAccount {
-		return result, fmt.Errorf("failed to get externalDNS service account: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS service account: %w", err)
 	}
 
-	return result, nil
+	if _, _, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
+	}
+
+	return reconcile.Result{}, nil
 }
