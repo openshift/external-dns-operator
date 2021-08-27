@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	controllerName = "externaldns_controller"
+	controllerName = "external_dns_controller"
 )
 
 // Config holds all the things necessary for the controller to run.

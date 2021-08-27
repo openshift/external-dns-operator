@@ -34,22 +34,26 @@ import (
 )
 
 const (
-	metricsStartPort    = 7979
-	appNameLabel        = "app.kubernetes.io/name"
-	appInstanceLabel    = "app.kubernetes.io/instance"
-	masterNodeRoleLabel = "node-role.kubernetes.io/master"
-	osLabel             = "kubernetes.io/os"
-	linuxOS             = "linux"
+	externalDNSProviderTypeAWS      = "aws"
+	externalDNSProviderTypeGCP      = "google"
+	externalDNSProviderTypeAzure    = "azure"
+	externalDNSProviderTypeBlueCat  = "bluecat"
+	externalDNSProviderTypeInfoblox = "infoblox"
+	appNameLabel                    = "app.kubernetes.io/name"
+	appInstanceLabel                = "app.kubernetes.io/instance"
+	masterNodeRoleLabel             = "node-role.kubernetes.io/master"
+	osLabel                         = "kubernetes.io/os"
+	linuxOS                         = "linux"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
 // ExternalDNS operator API to the provider string argument expected by ExternalDNS.
 var providerStringTable = map[operatorv1alpha1.ExternalDNSProviderType]string{
-	operatorv1alpha1.ProviderTypeAWS:      "aws",
-	operatorv1alpha1.ProviderTypeGCP:      "google",
-	operatorv1alpha1.ProviderTypeAzure:    "azure",
-	operatorv1alpha1.ProviderTypeBlueCat:  "bluecat",
-	operatorv1alpha1.ProviderTypeInfoblox: "infoblox",
+	operatorv1alpha1.ProviderTypeAWS:      externalDNSProviderTypeAWS,
+	operatorv1alpha1.ProviderTypeGCP:      externalDNSProviderTypeGCP,
+	operatorv1alpha1.ProviderTypeAzure:    externalDNSProviderTypeAzure,
+	operatorv1alpha1.ProviderTypeBlueCat:  externalDNSProviderTypeBlueCat,
+	operatorv1alpha1.ProviderTypeInfoblox: externalDNSProviderTypeInfoblox,
 }
 
 // sourceStringTable maps ExternalDNSSourceType values from the
@@ -65,7 +69,13 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
-	desired, err := desiredExternalDNSDeployment(namespace, image, serviceAccount, externalDNS)
+	secretName := externalDNSCredentialsSecretName(externalDNS)
+	secret := &corev1.Secret{}
+	if err := r.client.Get(ctx, secretName, secret); err != nil {
+		return false, nil, fmt.Errorf("failed to extract credentials secret: %w", err)
+	}
+
+	desired, err := desiredExternalDNSDeployment(namespace, image, serviceAccount, secret, externalDNS)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -108,7 +118,7 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev1.ServiceAccount, secret *corev1.Secret, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
@@ -161,80 +171,16 @@ func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev
 		return nil, fmt.Errorf("unsupported source type: %q", externalDNS.Spec.Source.Type)
 	}
 
-	for i, zone := range externalDNS.Spec.Zones {
-		container, err := buildExternalDNSContainer(i, image, zone, provider, source, externalDNS)
-		if err != nil {
-			return nil, err
-		}
-		depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
+	vbld := newExternalDNSVolumeBuilder(provider, secret)
+	volumes := vbld.build()
+	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
+
+	cbld := newExternalDNSContainerBuilder(image, provider, source, secret, volumes, externalDNS)
+	for _, zone := range externalDNS.Spec.Zones {
+		depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *(cbld.build(zone)))
 	}
 
 	return depl, nil
-}
-
-// WIP function for generating container specs for one container at a time.
-func buildExternalDNSContainer(seq int, image, zone, provider, source string, externalDNS *operatorv1alpha1.ExternalDNS) (*corev1.Container, error) {
-	name := controller.ExternalDNSContainerName(zone)
-
-	args := []string{
-		fmt.Sprintf("--metrics-address=127.0.0.1:%d", metricsStartPort+seq),
-		fmt.Sprintf("--txt-owner-id=externaldns-%s", externalDNS.Name),
-		fmt.Sprintf("--zone-id-filter=%s", zone),
-		fmt.Sprintf("--provider=%s", provider),
-		fmt.Sprintf("--source=%s", source),
-		"--policy=sync",
-		"--registry=txt",
-		"--log-level=debug",
-	}
-
-	//TODO: Add provider credentials logic
-
-	if externalDNS.Spec.Source.Namespace != nil && len(*externalDNS.Spec.Source.Namespace) > 0 {
-		args = append(args, fmt.Sprintf("--namespace=%s", *externalDNS.Spec.Source.Namespace))
-	}
-
-	if len(externalDNS.Spec.Source.AnnotationFilter) > 0 {
-		annotationFilter := ""
-		for key, value := range externalDNS.Spec.Source.AnnotationFilter {
-			annotationFilter += fmt.Sprintf("%s=%s,", key, value)
-		}
-		args = append(args, fmt.Sprintf("--annotation-filter=%s", annotationFilter[0:len(annotationFilter)-1]))
-	}
-
-	if externalDNS.Spec.Source.Service != nil && len(externalDNS.Spec.Source.Service.ServiceType) > 0 {
-		serviceTypeFilter, publishInternal := "", false
-		for _, serviceType := range externalDNS.Spec.Source.Service.ServiceType {
-			serviceTypeFilter += string(serviceType) + ","
-			if serviceType == corev1.ServiceTypeClusterIP {
-				publishInternal = true
-			}
-		}
-
-		// avoid having a trailing comma
-		args = append(args, fmt.Sprintf("--service-type-filter=%s", serviceTypeFilter[0:len(serviceTypeFilter)-1]))
-
-		if publishInternal {
-			args = append(args, "--publish-internal-services")
-		}
-	}
-
-	if externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1alpha1.HostnameAnnotationPolicyIgnore {
-		args = append(args, "--ignore-hostname-annotation")
-	}
-
-	if externalDNS.Spec.Source.FQDNTemplate != "" {
-		args = append(args, fmt.Sprintf("--fqdn-template=%s", externalDNS.Spec.Source.FQDNTemplate))
-	}
-
-	//TODO: Add logic for the CRD source.
-
-	return &corev1.Container{
-		Name:                     name,
-		Image:                    image,
-		ImagePullPolicy:          corev1.PullIfNotPresent,
-		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-		Args:                     args,
-	}, nil
 }
 
 // createExternalDNSDeployment creates the given deployment using the reconciler's client.
@@ -310,6 +256,23 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 	}
 
 	return changed
+}
+
+// externalDNSCredentialsSecretName returns the namespaced name of the credentials secret retrieved from externalDNS resource
+func externalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) types.NamespacedName {
+	switch externalDNS.Spec.Provider.Type {
+	case operatorv1alpha1.ProviderTypeAWS:
+		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.AWS.Credentials.Namespace, Name: externalDNS.Spec.Provider.AWS.Credentials.Name}
+	case operatorv1alpha1.ProviderTypeAzure:
+		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.Azure.ConfigFile.Namespace, Name: externalDNS.Spec.Provider.Azure.ConfigFile.Name}
+	case operatorv1alpha1.ProviderTypeGCP:
+		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.GCP.Credentials.Namespace, Name: externalDNS.Spec.Provider.GCP.Credentials.Name}
+	case operatorv1alpha1.ProviderTypeBlueCat:
+		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.BlueCat.ConfigFile.Namespace, Name: externalDNS.Spec.Provider.BlueCat.ConfigFile.Name}
+	case operatorv1alpha1.ProviderTypeInfoblox:
+		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.Infoblox.Credentials.Namespace, Name: externalDNS.Spec.Provider.Infoblox.Credentials.Name}
+	}
+	return types.NamespacedName{}
 }
 
 // indexedContainer is the standard core POD's container with additional index field
