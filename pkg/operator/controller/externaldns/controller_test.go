@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -37,26 +36,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
 )
 
 const (
-	testExtDNSNamespace = "external-dns"
-	testExtDNSName      = "test"
-	testSecretName      = "testsecret"
+	testSecretName = "testsecret"
 )
-
-var (
-	testScheme = runtime.NewScheme()
-)
-
-func init() {
-	if err := clientgoscheme.AddToScheme(testScheme); err != nil {
-		panic(err)
-	}
-	if err := operatorv1alpha1.AddToScheme(testScheme); err != nil {
-		panic(err)
-	}
-}
 
 func TestReconcile(t *testing.T) {
 	managedTypesList := []client.ObjectList{
@@ -95,7 +80,7 @@ func TestReconcile(t *testing.T) {
 					eventType: watch.Added,
 					objType:   "deployment",
 					NamespacedName: types.NamespacedName{
-						Namespace: testExtDNSNamespace,
+						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
@@ -103,7 +88,7 @@ func TestReconcile(t *testing.T) {
 					eventType: watch.Added,
 					objType:   "serviceaccount",
 					NamespacedName: types.NamespacedName{
-						Namespace: testExtDNSNamespace,
+						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
@@ -134,9 +119,10 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects(tc.existingObjects...).Build()
+			cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
 			r := &reconciler{
 				client: cl,
+				scheme: test.Scheme,
 				config: tc.inputConfig,
 				log:    zap.New(zap.UseDevMode(true)),
 			}
@@ -169,14 +155,21 @@ func TestReconcile(t *testing.T) {
 			if len(tc.expectedEvents) == 0 {
 				return
 			}
+			// fan in the events
 			allEventsCh := make(chan watch.Event, len(watches))
 			for _, w := range watches {
 				go func(c <-chan watch.Event) {
 					for e := range c {
+						t.Logf("Got event: %v", e)
 						allEventsCh <- e
 					}
 				}(w.ResultChan())
 			}
+			defer func() {
+				for _, w := range watches {
+					w.Stop()
+				}
+			}()
 			idxExpectedEvents := indexTestEvents(tc.expectedEvents)
 			for {
 				select {
@@ -244,8 +237,8 @@ func watch2test(we watch.Event) testEvent {
 
 func testConfig() Config {
 	return Config{
-		Namespace: testExtDNSNamespace,
-		Image:     "quay.io/test/external-dns:0.0.1",
+		Namespace: test.OperandNamespace,
+		Image:     test.OperandImage,
 	}
 }
 
@@ -253,7 +246,7 @@ func testRequest() ctrl.Request {
 	return ctrl.Request{
 		NamespacedName: types.NamespacedName{
 			Namespace: "",
-			Name:      testExtDNSName,
+			Name:      test.Name,
 		},
 	}
 }
@@ -264,15 +257,14 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	// Provider specific logic should be tested in the places where it's implemented (desired deployment, etc.).
 	return &operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: testExtDNSName,
+			Name: test.Name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
 			Provider: operatorv1alpha1.ExternalDNSProvider{
 				Type: operatorv1alpha1.ProviderTypeAWS,
 				AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-					Credentials: operatorv1alpha1.NamespacedSecretReference{
-						Name:      testSecretName,
-						Namespace: testExtDNSNamespace,
+					Credentials: operatorv1alpha1.SecretReference{
+						Name: testSecretName,
 					},
 				},
 			},
@@ -295,7 +287,7 @@ func testSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testSecretName,
-			Namespace: testExtDNSNamespace,
+			Namespace: test.OperandNamespace,
 		},
 	}
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,6 +51,7 @@ type Config struct {
 type reconciler struct {
 	config Config
 	client client.Client
+	scheme *runtime.Scheme
 	log    logr.Logger
 }
 
@@ -59,6 +61,7 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 	r := &reconciler{
 		config: cfg,
 		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
 		log:    ctrl.Log.WithName(controllerName),
 	}
 
@@ -77,10 +80,13 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 // Reconcile reconciles watched objects and attempts to make the current state of
 // the object match the desired state.
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	reqLogger := r.log.WithValues("externaldns", req.NamespacedName)
+	reqLogger.Info("reconciling externalDNS")
+
 	externalDNS := &operatorv1alpha1.ExternalDNS{}
 	if err := r.client.Get(ctx, req.NamespacedName, externalDNS); err != nil {
 		if errors.IsNotFound(err) {
-			r.log.Info("externalDNS not found; reconciliation will be skipped", "request", req)
+			reqLogger.Info("externalDNS not found; reconciliation will be skipped")
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %s: %w", req, err)

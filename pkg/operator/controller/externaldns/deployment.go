@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
@@ -69,15 +70,14 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
-	secretName := externalDNSCredentialsSecretName(externalDNS)
-	secret := &corev1.Secret{}
-	if err := r.client.Get(ctx, secretName, secret); err != nil {
-		return false, nil, fmt.Errorf("failed to extract credentials secret: %w", err)
-	}
-
-	desired, err := desiredExternalDNSDeployment(namespace, image, serviceAccount, secret, externalDNS)
+	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
+	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
+	}
+
+	if err := controllerutil.SetControllerReference(externalDNS, desired, r.scheme); err != nil {
+		return false, nil, fmt.Errorf("failed to set the controller reference for deployment: %w", err)
 	}
 
 	exist, current, err := r.currentExternalDNSDeployment(ctx, nsName)
@@ -118,7 +118,7 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev1.ServiceAccount, secret *corev1.Secret, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
@@ -171,11 +171,11 @@ func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev
 		return nil, fmt.Errorf("unsupported source type: %q", externalDNS.Spec.Source.Type)
 	}
 
-	vbld := newExternalDNSVolumeBuilder(provider, secret)
+	vbld := newExternalDNSVolumeBuilder(provider, secretName)
 	volumes := vbld.build()
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 
-	cbld := newExternalDNSContainerBuilder(image, provider, source, secret, volumes, externalDNS)
+	cbld := newExternalDNSContainerBuilder(image, provider, source, secretName, volumes, externalDNS)
 	for _, zone := range externalDNS.Spec.Zones {
 		depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *(cbld.build(zone)))
 	}
@@ -256,23 +256,6 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 	}
 
 	return changed
-}
-
-// externalDNSCredentialsSecretName returns the namespaced name of the credentials secret retrieved from externalDNS resource
-func externalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) types.NamespacedName {
-	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
-		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.AWS.Credentials.Namespace, Name: externalDNS.Spec.Provider.AWS.Credentials.Name}
-	case operatorv1alpha1.ProviderTypeAzure:
-		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.Azure.ConfigFile.Namespace, Name: externalDNS.Spec.Provider.Azure.ConfigFile.Name}
-	case operatorv1alpha1.ProviderTypeGCP:
-		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.GCP.Credentials.Namespace, Name: externalDNS.Spec.Provider.GCP.Credentials.Name}
-	case operatorv1alpha1.ProviderTypeBlueCat:
-		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.BlueCat.ConfigFile.Namespace, Name: externalDNS.Spec.Provider.BlueCat.ConfigFile.Name}
-	case operatorv1alpha1.ProviderTypeInfoblox:
-		return types.NamespacedName{Namespace: externalDNS.Spec.Provider.Infoblox.Credentials.Namespace, Name: externalDNS.Spec.Provider.Infoblox.Credentials.Name}
-	}
-	return types.NamespacedName{}
 }
 
 // indexedContainer is the standard core POD's container with additional index field

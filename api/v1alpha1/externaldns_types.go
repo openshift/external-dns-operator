@@ -241,7 +241,7 @@ type ExternalDNSAWSProviderOptions struct {
 	//
 	// +kubebuilder:validation:Required
 	// +required
-	Credentials NamespacedSecretReference `json:"credentials"`
+	Credentials SecretReference `json:"credentials"`
 	// TODO: Additionally support access for:
 	// - kiam/kube2iam enabled clusters ("iam.amazonaws.com/role" POD's annotation to assume IAM role)
 	// - EKS clusters ("eks.amazonaws.com/role-arn" ServiceAccount's annotation to assume IAM role)
@@ -264,7 +264,7 @@ type ExternalDNSGCPProviderOptions struct {
 	//
 	// +kubebuilder:validation:Required
 	// +required
-	Credentials NamespacedSecretReference `json:"credentials"`
+	Credentials SecretReference `json:"credentials"`
 }
 
 type ExternalDNSAzureProviderOptions struct {
@@ -287,7 +287,7 @@ type ExternalDNSAzureProviderOptions struct {
 	//
 	// +kubebuilder:validation:Required
 	// +required
-	ConfigFile NamespacedSecretReference `json:"configFile"`
+	ConfigFile SecretReference `json:"configFile"`
 }
 
 type ExternalDNSBlueCatProviderOptions struct {
@@ -312,7 +312,7 @@ type ExternalDNSBlueCatProviderOptions struct {
 	//
 	// +kubebuilder:validation:Required
 	// +required
-	ConfigFile NamespacedSecretReference `json:"configFile"`
+	ConfigFile SecretReference `json:"configFile"`
 }
 
 type ExternalDNSInfobloxProviderOptions struct {
@@ -328,7 +328,7 @@ type ExternalDNSInfobloxProviderOptions struct {
 	//
 	// +kubebuilder:validation:Required
 	// +required
-	Credentials NamespacedSecretReference `json:"credentials"`
+	Credentials SecretReference `json:"credentials"`
 
 	// GridHost is the IP of the Infoblox Grid host.
 	//
@@ -352,15 +352,9 @@ type ExternalDNSInfobloxProviderOptions struct {
 	WAPIVersion string `json:"wapiVersion"`
 }
 
-// NamespacedSecretReference contains enough information to let you locate the
-// desired secret in a specific namespace.
-type NamespacedSecretReference struct {
-	// Namespace is the namespace of the secret.
-	//
-	// +kubebuilder:validation:Required
-	// +required
-	Namespace string `json:"namespace"`
-
+// SecretReference contains the information to let you locate the desired secret.
+// Secret is expected to be in the operator namespace.
+type SecretReference struct {
 	// Name is the name of the secret.
 	//
 	// +kubebuilder:validation:Required
@@ -407,18 +401,18 @@ type ExternalDNSSource struct {
 
 	// FQDNTemplate sets a templated string that's used to generate DNS names
 	// from sources that don't define a hostname themselves.
-	// Accepts comma separated list for multiple global FQDN.
+	// Multiple global FQDN templates are possible.
 	//
 	// Should not be empty when HostnameAnnotationPolicy is set to Ignore.
 	//
-	// Provided template should follow the syntax defined for text/template Go package,
+	// Provided templates should follow the syntax defined for text/template Go package,
 	// see https://pkg.go.dev/text/template.
 	// Annotations inside the template correspond to the definition of the source resource object (e.g. Kubernetes service, OpenShift route).
 	// Example: "{{.Name}}.example.com" would be expanded to "myservice.example.com" for service source
 	//
 	// +kubebuilder:validation:Optional
 	// +optional
-	FQDNTemplate string `json:"fqdnTemplate"`
+	FQDNTemplate []string `json:"fqdnTemplate,omitempty"`
 }
 
 // ExternalDNSSourceUnion describes optional fields for an ExternalDNS source that should
