@@ -17,7 +17,8 @@ limitations under the License.
 package config
 
 const (
-	DefaultExternalDNSImage  = "docker.io/bitnami/external-dns:latest"
+	// TODO (alebedev): CPaaS onboarding is ongoing to replace this with Red Hat built image
+	DefaultExternalDNSImage  = "docker.io/bitnami/external-dns:0.7.1"
 	DefaultMetricsAddr       = "127.0.0.1:8080"
 	DefaultOperatorNamespace = "external-dns-operator"
 	DefaultOperandNamespace  = "external-dns"

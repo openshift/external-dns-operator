@@ -27,13 +27,21 @@ import (
 )
 
 const (
+	// ExternalDNSBaseName is the base name for any ExternalDNS resource.
 	ExternalDNSBaseName = "external-dns"
 )
 
+// ExternalDNSResourceName returns the name for the resources unique for the given ExternalDNS instance.
 func ExternalDNSResourceName(externalDNS *operatorv1alpha1.ExternalDNS) string {
 	return ExternalDNSBaseName + "-" + externalDNS.Name
 }
 
+// ExternalDNSGlobalResourceName returns the name for the resources shared among ExternalDNS instances.
+func ExternalDNSGlobalResourceName() string {
+	return ExternalDNSBaseName
+}
+
+// ExternalDNSContainerName returns the container name unique for the given DNS zone.
 func ExternalDNSContainerName(zone string) string {
 	return ExternalDNSBaseName + "-" + hashString(zone)
 }

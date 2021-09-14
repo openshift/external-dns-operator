@@ -12,6 +12,7 @@ spec:
         namespace: external-dns-operator
   source:
     type: Service
+    fqdnTemplate: "{{.Name}}.sampleexternaldns.com"
     namespace: "publish-external-dns"
     annotationFilter:
       external-dns.mydomain.org/publish: "yes"

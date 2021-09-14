@@ -39,8 +39,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 	sourceNamespace := "my-namespace"
 	externalDNS := &operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name: name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
 			Provider: operatorv1alpha1.ExternalDNSProvider{
