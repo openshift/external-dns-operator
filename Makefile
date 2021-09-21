@@ -58,6 +58,7 @@ vet: ## Run go vet against code.
 
 test: manifests generate fmt vet ## Run unit tests
 		go test \
+		-race \
 		-covermode=atomic \
 		-coverprofile coverage.out \
 		./...
@@ -74,7 +75,7 @@ GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
 build-operator: ## Build operator binary, no additional checks or code generation
 	$(GO) build -o $(BIN) $(MAIN_PACKAGE)
 
-build: build-operator generate fmt vet ## Build operator binary.
+build: generate build-operator fmt vet ## Build operator binary.
 
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run $(MAIN_PACKAGE)

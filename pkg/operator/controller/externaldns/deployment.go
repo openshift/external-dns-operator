@@ -85,12 +85,14 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	}
 
 	// update the deployment
-	if _, err := r.updateExternalDNSDeployment(ctx, current, desired); err != nil {
+	if updated, err := r.updateExternalDNSDeployment(ctx, current, desired); err != nil {
 		return true, current, err
+	} else if updated {
+		// get the deployment from API to catch up the fields added/updated by API and webhooks
+		return r.currentExternalDNSDeployment(ctx, nsName)
 	}
 
-	// get the deployment from API to catch up the fields added/updated by API and webhooks
-	return r.currentExternalDNSDeployment(ctx, nsName)
+	return true, current, nil
 }
 
 // currentExternalDNSDeployment gets the current externalDNS deployment resource.
@@ -119,6 +121,14 @@ func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev
 		masterNodeRoleLabel: "",
 	}
 
+	tolerations := []corev1.Toleration{
+		{
+			Key:      masterNodeRoleLabel,
+			Operator: corev1.TolerationOpExists,
+			Effect:   corev1.TaintEffectNoSchedule,
+		},
+	}
+
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      controller.ExternalDNSResourceName(externalDNS),
@@ -136,6 +146,7 @@ func desiredExternalDNSDeployment(namespace, image string, serviceAccount *corev
 				Spec: corev1.PodSpec{
 					ServiceAccountName: serviceAccount.Name,
 					NodeSelector:       nodeSelectorLbl,
+					Tolerations:        tolerations,
 				},
 			},
 		},
@@ -209,6 +220,10 @@ func buildExternalDNSContainer(seq int, image, zone, provider, source string, ex
 
 	if externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1alpha1.HostnameAnnotationPolicyIgnore {
 		args = append(args, "--ignore-hostname-annotation")
+	}
+
+	if externalDNS.Spec.Source.FQDNTemplate != "" {
+		args = append(args, fmt.Sprintf("--fqdn-template=%s", externalDNS.Spec.Source.FQDNTemplate))
 	}
 
 	//TODO: Add logic for the CRD source.

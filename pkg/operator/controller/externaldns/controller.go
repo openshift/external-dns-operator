@@ -22,8 +22,6 @@ import (
 
 	"github.com/go-logr/logr"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 const (
@@ -86,6 +86,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
 	}
 
+	if _, _, err := r.ensureExternalDNSClusterRole(ctx); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role: %w", err)
+	}
+
 	if _, _, err := r.ensureExternalDNSNamespace(ctx, r.config.Namespace); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS namespace: %w", err)
 	}
@@ -95,6 +99,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
 	} else if !haveServiceAccount {
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS service account: %w", err)
+	}
+
+	if _, _, err := r.ensureExternalDNSClusterRoleBinding(ctx, r.config.Namespace, externalDNS); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role binding: %w", err)
 	}
 
 	if _, _, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS); err != nil {
