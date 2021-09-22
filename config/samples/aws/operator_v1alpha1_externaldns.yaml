@@ -2,14 +2,13 @@ apiVersion: externaldns.olm.openshift.io/v1alpha1
 kind: ExternalDNS
 metadata:
   name: sample
-  namespace: external-dns-operator
 spec:
   provider:
     type: AWS
     aws:
       credentials:
         name: aws-access-key
-        namespace: external-dns-operator
+        namespace: external-dns
   source:
     type: Service
     fqdnTemplate: "{{.Name}}.sampleexternaldns.com"
