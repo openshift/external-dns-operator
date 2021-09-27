@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
+	operatorctrl "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	credsecretctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/credentials-secret"
 	externaldnsctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns"
 )
 
@@ -56,12 +58,11 @@ type Operator struct {
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=externaldns.olm.openshift.io,resources=externaldnses/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts,verbs=get;list;watch;delete;create;update
+// +kubebuilder:rbac:groups="",resources=namespaces;serviceaccounts;secrets,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups="",resources=services;endpoints;pods;nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
@@ -96,6 +97,14 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		Image:     opCfg.ExternalDNSImage,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
+	}
+
+	// Create and register the credentials secret controller with the operator manager.
+	if _, err := credsecretctrl.New(mgr, credsecretctrl.Config{
+		SourceNamespace: operatorctrl.ExternalDNSCredentialsSourceNamespace(opCfg),
+		TargetNamespace: opCfg.OperandNamespace,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to create credentials secret controller: %w", err)
 	}
 
 	restMapper, err := apiutil.NewDiscoveryRESTMapper(cliCfg)

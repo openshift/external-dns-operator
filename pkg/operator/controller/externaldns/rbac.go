@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
@@ -69,6 +70,10 @@ func (r *reconciler) ensureExternalDNSClusterRoleBinding(ctx context.Context, na
 	name := types.NamespacedName{Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	desired := desiredExternalDNSClusterRoleBinding(namespace, externalDNS)
+
+	if err := controllerutil.SetControllerReference(externalDNS, desired, r.scheme); err != nil {
+		return false, nil, fmt.Errorf("failed to set the controller reference for cluster role binding: %w", err)
+	}
 
 	exists, current, err := r.currentExternalDNSClusterRoleBinding(ctx, name)
 	if err != nil {

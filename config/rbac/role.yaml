@@ -21,6 +21,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - secrets
   - serviceaccounts
   verbs:
   - create
@@ -28,14 +29,6 @@ rules:
   - get
   - list
   - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
   - watch
 - apiGroups:
   - apps

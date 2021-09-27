@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
@@ -34,6 +35,10 @@ func (r *reconciler) ensureExternalDNSServiceAccount(ctx context.Context, namesp
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	desired := desiredExternalDNSServiceAccount(namespace, externalDNS)
+
+	if err := controllerutil.SetControllerReference(externalDNS, desired, r.scheme); err != nil {
+		return false, nil, fmt.Errorf("failed to set the controller reference for service account: %w", err)
+	}
 
 	exist, current, err := r.currentExternalDNSServiceAccount(ctx, nsName)
 	if err != nil {

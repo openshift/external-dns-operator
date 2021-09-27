@@ -17,6 +17,7 @@ limitations under the License.
 package externaldnscontroller
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -26,46 +27,43 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-)
-
-const (
-	namespace   = "externaldns"
-	name        = "test"
-	image       = "bitname/external-dns:latest"
-	publicZone  = "my-dns-public-zone"
-	privateZone = "my-dns-private-zone"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
 )
 
 var (
-	allSvcTypes = []corev1.ServiceType{
+	sourceNamespace = "testns"
+	replicas        = int32(1)
+	allSvcTypes     = []corev1.ServiceType{
 		corev1.ServiceTypeNodePort,
 		corev1.ServiceTypeLoadBalancer,
 		corev1.ServiceTypeClusterIP,
 		corev1.ServiceTypeExternalName,
 	}
+	serviceAccount = &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: test.OperandName,
+		},
+	}
 )
 
 func TestDesiredExternalDNSDeployment(t *testing.T) {
-	serviceAccount := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-	}
-
 	testCases := []struct {
 		name                    string
-		inputSecret             *corev1.Secret
+		inputSecretName         string
 		inputExternalDNS        *operatorv1alpha1.ExternalDNS
 		expectedTemplatePodSpec corev1.PodSpec
 	}{
 		{
 			name:             "Nominal AWS",
-			inputSecret:      testAWSSecret(),
+			inputSecretName:  "awssecret",
 			inputExternalDNS: testAWSExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -80,7 +78,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -129,10 +127,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials AWS",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testAWSExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -147,7 +144,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -172,10 +169,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Azure",
-			inputSecret:      testAzureSecret(),
+			inputSecretName:  "azuresecret",
 			inputExternalDNS: testAzureExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -206,7 +203,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -239,10 +236,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Azure",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testAzureExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -257,7 +253,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -282,10 +278,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal GCP",
-			inputSecret:      testGCPSecret(),
+			inputSecretName:  "gcpsecret",
 			inputExternalDNS: testGCPExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -316,7 +312,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -354,11 +350,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No project, no credentials GCP",
-			inputSecret:      &corev1.Secret{},
+			name:             "No project GCP",
 			inputExternalDNS: testGCPExternalDNSNoProject(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -373,7 +368,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -398,10 +393,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Bluecat",
-			inputSecret:      testBlueCatSecret(),
+			inputSecretName:  "bluecatsecret",
 			inputExternalDNS: testBlueCatExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -432,7 +427,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -465,10 +460,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Bluecat",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testBlueCatExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -483,7 +477,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -508,10 +502,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Infoblox",
-			inputSecret:      testInfobloxSecret(),
+			inputSecretName:  "infobloxsecret",
 			inputExternalDNS: testInfobloxExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -526,7 +520,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -578,10 +572,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Infoblox",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testInfobloxExternalDNS(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -596,7 +589,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -621,10 +614,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Hostname allowed, no clusterip type",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testAWSExternalDNSHostnameAllow(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -639,7 +631,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -657,11 +649,10 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Many zones",
-			inputSecret:      &corev1.Secret{},
-			inputExternalDNS: testAWSExternalDNSZones([]string{publicZone, privateZone}),
+			name:             "Many FQDN templates",
+			inputExternalDNS: testAWSExternalDNSManyFQDN(),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -676,7 +667,45 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=LoadBalancer",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com,{{.Name}}.{{.Namespace}}.example.com",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Many zones",
+			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -698,7 +727,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					},
 					{
 						Name:  "external-dns-n656hcdh5d9hf6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7980",
 							"--txt-owner-id=external-dns-test",
@@ -723,10 +752,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter",
-			inputSecret:      &corev1.Secret{},
 			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}),
 			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: name,
+				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
 					osLabel:             linuxOS,
 					masterNodeRoleLabel: "",
@@ -741,7 +769,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-nfbh54h648h6q",
-						Image: "bitname/external-dns:latest",
+						Image: "quay.io/test/external-dns:latest",
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -769,7 +797,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			depl, err := desiredExternalDNSDeployment(namespace, image, serviceAccount, tc.inputSecret, tc.inputExternalDNS)
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -795,7 +823,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			expect:      false,
 		},
 		{
-			description: "if externalDNS image changes",
+			description: "if externalDNS test.OperandImage changes",
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Image = "foo.io/test:latest"
 			},
@@ -872,8 +900,372 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 	}
 }
 
+func TestEnsureExternalDNSDeployment(t *testing.T) {
+	testCases := []struct {
+		name               string
+		existingObjects    []runtime.Object
+		expectedExist      bool
+		expectedDeployment appsv1.Deployment
+		errExpected        bool
+	}{
+		{
+			name:            "Does not exist",
+			existingObjects: []runtime.Object{},
+			expectedExist:   true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=service",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--service-type-filter=LoadBalancer",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Exist as expected",
+			existingObjects: []runtime.Object{
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								Kind:               "ExternalDNS",
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": "test",
+									"app.kubernetes.io/name":     "external-dns",
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-nfbh54h648h6q",
+										Image: "quay.io/test/external-dns:latest",
+										Args: []string{
+											"--metrics-address=127.0.0.1:7979",
+											"--txt-owner-id=external-dns-test",
+											"--zone-id-filter=my-dns-public-zone",
+											"--provider=aws",
+											"--source=service",
+											"--policy=sync",
+											"--registry=txt",
+											"--log-level=debug",
+											"--namespace=testns",
+											"--service-type-filter=LoadBalancer",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=service",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--service-type-filter=LoadBalancer",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Exist and drifted",
+			existingObjects: []runtime.Object{
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								Kind:               "ExternalDNS",
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": "test",
+									"app.kubernetes.io/name":     "external-dns",
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-unexpected",
+										Image: "quay.io/test/external-dns:latest",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=service",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--service-type-filter=LoadBalancer",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cl := fake.NewFakeClient(tc.existingObjects...)
+			r := &reconciler{
+				client: cl,
+				scheme: test.Scheme,
+				log:    zap.New(zap.UseDevMode(true)),
+			}
+			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, testAWSExternalDNSHostnameAllow())
+			if err != nil {
+				if !tc.errExpected {
+					t.Fatalf("unexpected error received: %v", err)
+				}
+				return
+			}
+			if tc.errExpected {
+				t.Fatalf("Error expected but wasn't received")
+			}
+			if gotExist != tc.expectedExist {
+				t.Errorf("expected deployment's exist to be %t, got %t", tc.expectedExist, gotExist)
+			}
+			deplOpt := cmpopts.IgnoreFields(appsv1.Deployment{}, "ResourceVersion", "Kind", "APIVersion")
+			contOpt := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy", "Env")
+			if diff := cmp.Diff(tc.expectedDeployment, *gotDepl, deplOpt, contOpt); diff != "" {
+				t.Errorf("unexpected deployment (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func testDeployment() *appsv1.Deployment {
-	replicas := int32(1)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -913,7 +1305,7 @@ func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deploym
 func testContainer() corev1.Container {
 	return corev1.Container{
 		Name:                     "first",
-		Image:                    image,
+		Image:                    test.OperandImage,
 		ImagePullPolicy:          corev1.PullIfNotPresent,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 		Args: []string{
@@ -946,13 +1338,11 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 	svcType []corev1.ServiceType,
 	annotationFilter map[string]string,
 	hostnamePolicy operatorv1alpha1.HostnameAnnotationPolicy,
-	fqdnTemplate string,
+	fqdnTemplate []string,
 	zones []string) *operatorv1alpha1.ExternalDNS {
-	sourceNamespace := "testns"
 	extDNS := &operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name: test.Name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
 			Provider: operatorv1alpha1.ExternalDNSProvider{
@@ -981,18 +1371,18 @@ func testExternalDNSHostnameIgnore(provider operatorv1alpha1.ExternalDNSProvider
 	source operatorv1alpha1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
 	zones []string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyIgnore, "{{.Name}}.test.com", zones)
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones)
 }
 
 func testExternalDNSHostnameAllow(provider operatorv1alpha1.ExternalDNSProviderType,
 	source operatorv1alpha1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
 	zones []string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyAllow, "", zones)
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyAllow, nil, zones)
 }
 
 func testAWSExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 }
 
 func testAWSExternalDNSZones(zones []string) *operatorv1alpha1.ExternalDNS {
@@ -1000,7 +1390,13 @@ func testAWSExternalDNSZones(zones []string) *operatorv1alpha1.ExternalDNS {
 }
 
 func testAWSExternalDNSHostnameAllow() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{publicZone})
+	return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone})
+}
+
+func testAWSExternalDNSManyFQDN() *operatorv1alpha1.ExternalDNS {
+	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone})
+	extdns.Spec.Source.FQDNTemplate = append(extdns.Spec.Source.FQDNTemplate, "{{.Name}}.{{.Namespace}}.example.com")
+	return extdns
 }
 
 func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string) *operatorv1alpha1.ExternalDNS {
@@ -1010,11 +1406,11 @@ func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string) *ope
 }
 
 func testAzureExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAzure, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAzure, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 }
 
 func testGCPExternalDNS() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 	project := "external-dns-gcp-project"
 	extdns.Spec.Provider.GCP = &operatorv1alpha1.ExternalDNSGCPProviderOptions{
 		Project: &project,
@@ -1023,81 +1419,19 @@ func testGCPExternalDNS() *operatorv1alpha1.ExternalDNS {
 }
 
 func testGCPExternalDNSNoProject() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 }
 
 func testBlueCatExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeBlueCat, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeBlueCat, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 }
 
 func testInfobloxExternalDNS() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeInfoblox, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{publicZone})
+	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeInfoblox, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
 	extdns.Spec.Provider.Infoblox = &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{
 		GridHost:    "gridhost.example.com",
 		WAPIPort:    443,
 		WAPIVersion: "2.3.1",
 	}
 	return extdns
-}
-
-func testAWSSecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "awssecret",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"aws_access_key_id":     []byte("testid"),
-			"aws_secret_access_key": []byte("testsecret"),
-		},
-	}
-}
-
-func testAzureSecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "azuresecret",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"azure.json": []byte("{}"),
-		},
-	}
-}
-
-func testGCPSecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gcpsecret",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"gcp-credentials.json": []byte("{}"),
-		},
-	}
-}
-
-func testBlueCatSecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "bluecatsecret",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"bluecat.json": []byte("{}"),
-		},
-	}
-}
-
-func testInfobloxSecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "infobloxsecret",
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME": []byte("testuser"),
-			"EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD": []byte("testpwd"),
-		},
-	}
 }
