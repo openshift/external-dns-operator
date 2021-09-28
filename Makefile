@@ -24,6 +24,8 @@ BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+CONTAINER_ENGINER ?= docker
+
 all: build
 
 ##@ General
@@ -80,11 +82,11 @@ build: generate build-operator fmt vet ## Build operator binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run $(MAIN_PACKAGE)
 
-docker-build: test ## Build docker image with the operator.
-	docker build -t ${IMG} .
+image-build: test ## Build container image with the operator.
+	$(CONTAINER_ENGINE) build -t ${IMG} .
 
-docker-push: ## Push docker image with the operator.
-	docker push ${IMG}
+image-push: ## Push container image with the operator.
+	$(CONTAINER_ENGINE) push ${IMG}
 
 ##@ Deployment
 
