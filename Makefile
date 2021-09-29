@@ -24,7 +24,7 @@ BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-CONTAINER_ENGINER ?= docker
+CONTAINER_ENGINE ?= docker
 
 all: build
 
