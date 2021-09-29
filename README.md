@@ -11,12 +11,12 @@ This Operator is in the early stages of implementation. For the time being, plea
 ### Quick development
 1. Build and push the operator image to a registry:
    ```sh
-   $ podman build -t <registry>/<username>/external-dns-operator:latest -f Dockerfile .
-   $ podman push <registry>/<username>/external-dns-operator:latest
+   $ export IMG=<registry>/<username>/external-dns-operator:latest
+   $ make image-build
+   $ make image-push
    ```
-2. Make sure to uncomment the `image` in `config/manager/kustomization.yaml` and set it to the operator image you pushed
-3. Run `kubectl apply -k config/default` to deploy the operator
-4. Now you can deploy an instance of ExternalDNS:
+2. Run `make deploy` to deploy the operator
+3. Now you can deploy an instance of ExternalDNS:
     * Run the following command to create the credentials secret on AWS:
         ```bash
         $ kubectl -n external-dns-operator create secret generic aws-access-key \

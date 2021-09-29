@@ -28,7 +28,7 @@ spec:
         runAsNonRoot: true
       containers:
       - name: external-dns-operator
-        image: quay.io/openshift/origin-external-dns-operator:latest
+        image: controller:latest
         args:
         - --operator-namespace=$(OPERATOR_NAMESPACE)
         env:
