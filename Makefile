@@ -17,6 +17,7 @@ PACKAGE=github.com/openshift/external-dns-operator
 MAIN_PACKAGE=$(PACKAGE)/cmd/external-dns-operator
 
 BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
+BIN_DIR=$(shell pwd)/bin
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
@@ -25,6 +26,11 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 CONTAINER_ENGINE ?= docker
+
+BUNDLE_MANIFEST_DIR := bundle/manifests
+BUNDLE_IMG ?= olm-bundle:latest
+INDEX_IMG ?= olm-bundle-index:latest
+OPM_VERSION ?= v1.17.4
 
 all: build
 
@@ -103,8 +109,40 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+.PHONY: olm-manifests
+# A little helper command to generate the manifests of OLM bundle from the files in config/.
+# The idea is that config/ is the main directory for the manifests and OLM manifests are secondary
+# and is supposed to be updated afterwards.
+# Note that ClusterServiceVersion is not touched as is supposed to be verified manually.
+# The install strategy of ClusterServiceVersion contains the deployment which is not copied over from config/ either.
+olm-manifests: manifests
+	cp -f config/crd/bases/externaldns.olm.openshift.io_externaldnses.yaml $(BUNDLE_MANIFEST_DIR)/externaldns.olm.openshift.io_crd.yaml
+	cp -f config/rbac/role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrole.yaml
+	cp -f config/rbac/role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
+	cp -f config/rbac/service_account.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_v1_serviceaccount.yaml
+	cp -f config/rbac/auth_proxy_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrole.yaml
+	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
+	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
+	# opm is unable to find CRD if the standard yaml --- is at the top
+	sed -i '/^---$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
+.PHONY: bundle-image-build
+bundle-image-build: olm-manifests
+	$(CONTAINER_ENGINE) build -t ${BUNDLE_IMG} -f Dockerfile.bundle .
+
+.PHONY: bundle-image-push
+bundle-image-push:
+	$(CONTAINER_ENGINE) push ${BUNDLE_IMG}
+
+.PHONY: index-image-build
+index-image-build: opm
+	$(OPM) index add -c $(CONTAINER_ENGINE) --bundles ${BUNDLE_IMG} --tag ${INDEX_IMG}
+
+.PHONY: index-image-push
+index-image-push:
+	$(CONTAINER_ENGINE) push ${INDEX_IMG}
+
+KUSTOMIZE = $(BIN_DIR)/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
 
@@ -119,5 +157,19 @@ go mod init tmp ;\
 echo "Downloading $(2)" ;\
 GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
+}
+endef
+
+
+OPM=$(BIN_DIR)/opm
+opm: ## Download opm locally if necessary.
+	$(call get-bin,$(OPM),$(BIN_DIR),https://github.com/operator-framework/operator-registry/releases/download/$(OPM_VERSION)/linux-amd64-opm)
+
+define get-bin
+@[ -f "$(1)" ] || { \
+	[ ! -d "$(2)" ] && mkdir -p "$(2)" || true ;\
+	echo "Downloading $(3)" ;\
+	curl -fL $(3) -o "$(1)" ;\
+	chmod +x "$(1)" ;\
 }
 endef
