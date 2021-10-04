@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/go-logr/logr v0.4.0
 	github.com/google/go-cmp v0.5.6
+	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.21.3
 	k8s.io/apimachinery v0.21.3
 	k8s.io/client-go v0.21.3
