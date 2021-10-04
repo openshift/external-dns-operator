@@ -17,7 +17,7 @@ This Operator is in the early stages of implementation. For the time being, plea
    ```
 2. Run `make deploy` to deploy the operator
 3. Now you can deploy an instance of ExternalDNS:
-    * Run the following command to create the credentials secret on AWS:
+    * Run the following command to create the credentials secret for AWS:
         ```bash
         $ kubectl -n external-dns-operator create secret generic aws-access-key \
                 --from-literal=aws_access_key_id=${ACCESS_KEY_ID} \
