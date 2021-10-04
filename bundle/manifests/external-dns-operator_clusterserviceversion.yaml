@@ -88,6 +88,9 @@ spec:
                       fieldPath: metadata.namespace
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: operator
+                ports:
+                  - containerPort: 9443
+                    name: webhook-server
                 resources:
                   requests:
                     cpu: 100m
@@ -119,3 +122,23 @@ spec:
   provider:
     name: Red Hat, Inc.
   version: 0.0.1
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1
+      deploymentName: external-dns-operator
+      failurePolicy: Fail
+      generateName: vexternaldns.kb.io
+      containerPort: 9443
+      rules:
+        - apiGroups:
+            - externaldns.olm.openshift.io
+          apiVersions:
+            - v1alpha1
+          operations:
+            - CREATE
+            - UPDATE
+          resources:
+            - externaldnses
+      sideEffects: None
+      type: ValidatingAdmissionWebhook
+      webhookPath: /validate-externaldns-olm-openshift-io-v1alpha1-externaldns

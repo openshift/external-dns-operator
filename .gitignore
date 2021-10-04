@@ -13,3 +13,6 @@
 
 # Ignore bin directory from builds
 bin/
+
+# Ignore kubebuilder test binaries
+testbin/

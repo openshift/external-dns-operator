@@ -15,6 +15,8 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
+SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
+K8S_ENVTEST_VERSION := 1.21.4
 
 PACKAGE=github.com/openshift/external-dns-operator
 MAIN_PACKAGE=$(PACKAGE)/cmd/external-dns-operator
@@ -70,12 +72,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-test: manifests generate fmt vet ## Run unit tests
-		go test \
-		-race \
-		-covermode=atomic \
-		-coverprofile coverage.out \
-		./...
+ENVTEST_ASSETS_DIR ?= $(shell pwd)/testbin
+test: manifests generate fmt vet ## Run tests.
+	mkdir -p "$(ENVTEST_ASSETS_DIR)"
+	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" go test ./... -race -covermode=atomic -coverprofile coverage.out
 
 verify: lint
 	hack/verify-gofmt.sh

@@ -22,6 +22,17 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
     * Create the `credentials` secret for AWS:
        *Note*: For other providers, see options listed in `api/v1alpha1/externaldns_types.go`.
 
+4. The previous step deploys the validation webhook which requires TLS authentication for the webhook server. The
+   manifests deployed through the `make deploy` command do not contain a valid certificate and key and these should be 
+   provisioned in the cluster through other tools. There is a convenience script `hack/generate-certs.sh` which can be
+   used to generate the certificate bundle and patch the validation webhook config. This script is not meant for
+   production use. Run it with the following inputs:
+   ```bash
+   hack/generate-certs.sh --service webhook-service --webhook validating-webhook-configuration \
+   --secret webhook-server-cert --namespace external-dns-operator
+   ```
+5. Now you can deploy an instance of ExternalDNS:
+    * Run the following command to create the credentials secret for AWS:
         ```bash
         $ kubectl -n external-dns-operator create secret generic aws-access-key \
                 --from-literal=aws_access_key_id=${ACCESS_KEY_ID} \
