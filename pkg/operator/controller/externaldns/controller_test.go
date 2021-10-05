@@ -165,6 +165,7 @@ func TestReconcile(t *testing.T) {
 		&corev1.ServiceAccountList{},
 		&rbacv1.ClusterRoleList{},
 		&rbacv1.ClusterRoleBindingList{},
+		//		&operatorv1alpha1.ExternalDNSList{},
 	}
 	eventWaitTimeout := time.Duration(1 * time.Second)
 
@@ -175,6 +176,7 @@ func TestReconcile(t *testing.T) {
 		inputRequest    ctrl.Request
 		expectedResult  reconcile.Result
 		expectedEvents  []testEvent
+		expectedStatus  operatorv1alpha1.ExternalDNSStatus
 		errExpected     bool
 	}{
 		{
@@ -222,6 +224,11 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
+			expectedStatus: operatorv1alpha1.ExternalDNSStatus{
+				Zones:              []string{"public-zone"},
+				ObservedGeneration: 0,
+				Conditions:         []metav1.Condition{},
+			},
 		},
 		{
 			name:            "Deleted ExternalDNS",
@@ -229,6 +236,7 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
+			expectedStatus:  operatorv1alpha1.ExternalDNSStatus{},
 		},
 	}
 
@@ -301,6 +309,7 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("timed out waiting for all expected events")
 				}
 			}
+
 		})
 	}
 }
@@ -421,7 +430,7 @@ func fakeDeployment(condType appsv1.DeploymentConditionType, isAvailable corev1.
 			AvailableReplicas:   10,
 			UnavailableReplicas: 0,
 			Conditions: []appsv1.DeploymentCondition{
-				appsv1.DeploymentCondition{
+				{
 					Type:    condType,
 					Status:  isAvailable,
 					Reason:  "Not really important for test",

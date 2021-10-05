@@ -129,6 +129,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if deploymentExists {
 		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
+		externalDNS.Status.ObservedGeneration = externalDNS.Generation
+		externalDNS.Status.Zones = externalDNS.Spec.DeepCopy().Zones
 	} else {
 		unknownCondition := metav1.Condition{
 			Type:               ExternalDNSDeploymentAvailableConditionType,
