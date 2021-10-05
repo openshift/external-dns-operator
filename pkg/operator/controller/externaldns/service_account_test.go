@@ -102,7 +102,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cl := fake.NewFakeClient(tc.existingObjects...)
+			cl := fake.NewClientBuilder().WithRuntimeObjects(tc.existingObjects...).Build()
 			r := &reconciler{
 				client: cl,
 				scheme: test.Scheme,

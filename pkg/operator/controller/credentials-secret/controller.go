@@ -42,7 +42,6 @@ import (
 
 const (
 	controllerName                  = "credentials_secret_controller"
-	finalizer                       = "externaldns.olm.openshift.io/finalizer-credentials-secret"
 	credentialsSecretIndexFieldName = "credentialsSecretName"
 )
 
