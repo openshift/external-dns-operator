@@ -293,28 +293,3 @@ func testSecret() *corev1.Secret {
 		},
 	}
 }
-
-func fakeDeployment(condType appsv1.DeploymentConditionType, isAvailable corev1.ConditionStatus) appsv1.Deployment {
-	return appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: test.Name,
-		},
-		Spec: appsv1.DeploymentSpec{},
-		Status: appsv1.DeploymentStatus{
-			ObservedGeneration:  10,
-			Replicas:            10,
-			UpdatedReplicas:     10,
-			ReadyReplicas:       10,
-			AvailableReplicas:   10,
-			UnavailableReplicas: 0,
-			Conditions: []appsv1.DeploymentCondition{
-				{
-					Type:    condType,
-					Status:  isAvailable,
-					Reason:  "Not really important for test",
-					Message: "Not really important for test",
-				},
-			},
-		},
-	}
-}
