@@ -393,7 +393,6 @@ spec:
                     - CRD
                     type: string
                 required:
-                - hostnameAnnotation
                 - type
                 type: object
               zones:
