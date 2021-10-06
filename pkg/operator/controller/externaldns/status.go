@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +12,8 @@ import (
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 const (
@@ -251,7 +252,6 @@ func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 }
 
 func updateExternalDNSStatus(client client.Client, ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, deploymentExists bool, currentDeployment *appsv1.Deployment) error {
-	err := error(nil)
 	if deploymentExists {
 
 		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
@@ -273,7 +273,7 @@ func updateExternalDNSStatus(client client.Client, ctx context.Context, external
 	externalDNS.Status.ObservedGeneration = externalDNS.Generation
 	externalDNS.Status.Zones = externalDNS.Spec.DeepCopy().Zones
 
-	err = client.Status().Update(ctx, externalDNS)
+	err := client.Status().Update(ctx, externalDNS)
 	return err
 }
 

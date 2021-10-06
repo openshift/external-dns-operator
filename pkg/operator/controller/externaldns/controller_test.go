@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 		&corev1.ServiceAccountList{},
 		&rbacv1.ClusterRoleList{},
 		&rbacv1.ClusterRoleBindingList{},
-		//		&operatorv1alpha1.ExternalDNSList{},
+		&operatorv1alpha1.ExternalDNSList{},
 	}
 	eventWaitTimeout := time.Duration(1 * time.Second)
 
@@ -91,6 +91,13 @@ func TestReconcile(t *testing.T) {
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
+					},
+				},
+				{
+					eventType: watch.Modified,
+					objType:   "externaldns",
+					NamespacedName: types.NamespacedName{
+						Name: test.Name,
 					},
 				},
 				{
@@ -232,6 +239,9 @@ func watch2test(we watch.Event) testEvent {
 		te.Name = obj.Name
 	case *corev1.Namespace:
 		te.objType = "namespace"
+		te.Name = obj.Name
+	case *operatorv1alpha1.ExternalDNS:
+		te.objType = "externaldns"
 		te.Name = obj.Name
 	}
 	return te
