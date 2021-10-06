@@ -93,6 +93,9 @@ This section walks you through the deployment of the external-dns-operator in a 
 - [Go](https://golang.org/doc/install#install) and [Docker](https://docs.docker.com/engine/install/) are installed.
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) is installed and a local Kubernetes [cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) is created.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed to access the above created cluster.
+- Ensure the above created cluster is accessible by any `kubectl` command. By default, it looks for the kubeconfig file which is usually present at `~/.kube/config` when a cluster is created. 
+- If you want `kubectl` to point to a different cluster, set the `$KUBECONFIG` env variable pointing to that cluster's config file.
+`export KUBECONFIG=</path/to/the/kubeconfigfile>`
 - Any registry that is accessible from your cluster to store and distribute the docker images. [quay.io](https://quay.io/) is shown as an example here.
 ### Build and Push the docker image
 1. Clone the [external-dns-operator](https://github.com/openshift/external-dns-operator) repo to your local machine's `$GOPATH/src`.
