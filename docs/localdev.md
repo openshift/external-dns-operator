@@ -6,8 +6,8 @@ This document describes howto get a local development enviroment setup, so that 
 We will consider the following scenarios, working with CRC (code ready containers), Kind (kubernetes in Docker) and finally with any external Kubernetes/OpenShift cluster
 
 Please refer to these links for further info regarding 
-- CRC [link](https://developers.redhat.com/products/cdk/overview)
-- Kind [link](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- [CRC](https://developers.redhat.com/products/cdk/overview)
+- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/)
 - External Kubernetes/OpenShift cluster
 
 
@@ -86,3 +86,33 @@ We will address two modes of working with the ExternalDNS operator
 ### Working with external Kuberenets/OpenShift clusters
 
 If you have any other cluster you'd like to test the operator on you just need to set KUBECONFIG and follow the instructions layed out in both sections indicated above
+
+## Kind (Kubernetes in Docker)
+This section walks you through the deployment of the external-dns-operator in a Kind environment.
+### Prerequisites
+- [Go](https://golang.org/doc/install#install) and [Docker](https://docs.docker.com/engine/install/) are installed.
+- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) is installed and a local Kubernetes [cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) is created.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed to access the above created cluster.
+- Any registry that is accessible from your cluster to store and distribute the docker images. [quay.io](https://quay.io/) is shown as an example here.
+### Build and Push the docker image
+1. Clone the [external-dns-operator](https://github.com/openshift/external-dns-operator) repo to your local machine's `$GOPATH/src`.
+2. Change directory `cd $GOPATH/src/external-dns-operator`
+3. Perform the `docker login` and provide the user credentials to access the registry incase of using the quay.io
+4. Build and push the external-dns-operator docker image by providing the relevant registry name and tag.
+   ```bash
+   # Docker image name can be provided using the $IMG variable,
+   $ export IMG=quay.io/<username>/external-dns-operator:latest
+   # BUILD the docker image
+   $ make image-build
+   # Push the built image to the registry
+   $ make image-push
+   ```
+### Deploy the external-dns-operator
+   ```bash
+   # deploy the operator
+   $ make deploy
+   # check the pod deployed in the external-dns-operator namespace
+   $ kubectl get pods -n external-dns-operator
+   ```
+External DNS instance can be deployed based on the provider.
+A sample aws configuration is provided in the `config/samples/aws` folder where a secret named `aws-access-key` has to be created in the `external-dns-operator` namespace before applying this configuration.
