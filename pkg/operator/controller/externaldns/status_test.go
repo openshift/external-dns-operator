@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
-	"github.com/stretchr/testify/require"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -535,7 +537,7 @@ func TestGetPodsList(t *testing.T) {
 	}
 }
 
-func testUpdateExternalDNSStatus(t *testing.T) {
+func TestUpdateExternalDNSStatus(t *testing.T) {
 	aDeployment := fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionFalse, 8, "25%", "25%", 8)
 	testCases := []struct {
 		name               string
