@@ -115,15 +115,9 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
-	if deploymentExists {
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
-		externalDNS.Status.ObservedGeneration = externalDNS.Generation
-		externalDNS.Status.Zones = externalDNS.Spec.DeepCopy().Zones
-	} else {
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
-	}
-	if err := r.client.Status().Update(ctx, externalDNS); err != nil {
+	if err := updateExternalDNSStatus(r.client, ctx, externalDNS, deploymentExists, currentDeployment); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to update externalDNS custom resource %s/%s: %w", externalDNS.Namespace, externalDNS.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
