@@ -130,12 +130,15 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
-		fmt.Sprintf("--zone-id-filter=%s", zone),
 		fmt.Sprintf("--provider=%s", b.provider),
 		fmt.Sprintf("--source=%s", b.source),
 		"--policy=sync",
 		"--registry=txt",
 		"--log-level=debug",
+	}
+
+	if zone != "" {
+		args = append(args, fmt.Sprintf("--zone-id-filter=%s", zone))
 	}
 
 	if b.externalDNS.Spec.Source.Namespace != nil && len(*b.externalDNS.Spec.Source.Namespace) > 0 {
