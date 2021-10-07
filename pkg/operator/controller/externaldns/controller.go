@@ -24,13 +24,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
@@ -87,6 +88,7 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 // Reconcile reconciles watched objects and attempts to make the current state of
 // the object match the desired state.
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
 	reqLogger := r.log.WithValues("externaldns", req.NamespacedName)
 	reqLogger.Info("reconciling externalDNS")
 
