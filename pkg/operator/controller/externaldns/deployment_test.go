@@ -1397,7 +1397,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			}
 			deplOpt := cmpopts.IgnoreFields(appsv1.Deployment{}, "ResourceVersion", "Kind", "APIVersion")
 			contOpt := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy", "Env")
-			if diff := cmp.Diff(tc.expectedDeployment, *gotDepl, deplOpt, contOpt); diff != "" {
+			sortArgsOpt := cmp.Transformer("Sort", func(d appsv1.Deployment) appsv1.Deployment {
+				if len(d.Spec.Template.Spec.Containers) == 0 {
+					return d
+				}
+				cpy := *d.DeepCopy()
+				for i := range cpy.Spec.Template.Spec.Containers {
+					sort.Strings(cpy.Spec.Template.Spec.Containers[i].Args)
+				}
+				return cpy
+			})
+			if diff := cmp.Diff(tc.expectedDeployment, *gotDepl, deplOpt, contOpt, sortArgsOpt); diff != "" {
 				t.Errorf("unexpected deployment (-want +got):\n%s", diff)
 			}
 		})
