@@ -41,6 +41,11 @@ func TestExternalDNSContainerName(t *testing.T) {
 			zone:   "Z0323552X0970SB2UHBBZ0323552X0970SB2UHBBZ0323552X0970SB2UHBBZ0323552X0970SB2UHBBZ0323552X0970SB2UHBBZ0323552X0970SB2UHBBZ0323552X0970SB2UHBB",
 			expect: "external-dns-n655hfbh654h557q",
 		},
+		{
+			name:   "No Zone",
+			zone:   "",
+			expect: "external-dns-n56fh6dh59ch5fcq",
+		},
 	}
 
 	for _, tc := range testCases {
