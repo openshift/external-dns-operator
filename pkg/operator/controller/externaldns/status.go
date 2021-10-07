@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	ExternalDNSAdmittedConditionType                       = "Admitted"
 	ExternalDNSPodsScheduledConditionType                  = "PodsScheduled"
 	ExternalDNSDeploymentAvailableConditionType            = "DeploymentAvailable"
 	ExternalDNSDeploymentReplicasMinAvailableConditionType = "DeploymentReplicasMinAvailable"
@@ -77,7 +76,7 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 			maxSurgeIntStr = deployment.Spec.Strategy.RollingUpdate.MaxSurge
 		}
 	}
-	maxSurge, err := intstr.GetValueFromIntOrPercent(maxSurgeIntStr, int(replicas), true)
+	maxSurge, err := intstr.GetScaledValueFromIntOrPercent(maxSurgeIntStr, int(replicas), true)
 	if err != nil {
 		return metav1.Condition{
 			Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
@@ -86,7 +85,7 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 			Message: fmt.Sprintf("invalid value for max surge: %v", err),
 		}
 	}
-	maxUnavailable, err := intstr.GetValueFromIntOrPercent(maxUnavailableIntStr, int(replicas), false)
+	maxUnavailable, err := intstr.GetScaledValueFromIntOrPercent(maxUnavailableIntStr, int(replicas), false)
 	if err != nil {
 		return metav1.Condition{
 			Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,

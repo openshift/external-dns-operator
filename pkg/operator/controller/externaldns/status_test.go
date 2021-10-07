@@ -133,8 +133,8 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			errExpected: false,
 		},
 		{
-			name:               "maxSurge = maxUnavailable = 0 shoud return ConditionTrue",
-			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "0", "0", 8),
+			name:               "maxSurge = maxUnavailable = 0 should return ConditionTrue",
+			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "0%", "0%", 8),
 			expectedResult: metav1.Condition{
 				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:             metav1.ConditionTrue,
