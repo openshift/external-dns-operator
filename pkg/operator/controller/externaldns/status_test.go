@@ -22,7 +22,6 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 		name               string
 		existingDeployment appsv1.Deployment
 		expectedResult     metav1.Condition
-		errExpected        bool
 	}{
 		{
 			name:               "Deployment in progress should return ConditionUnknown",
@@ -34,7 +33,6 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 				Message:            "The deployment has no Available status condition set",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		{
 			name:               "Deployment available status false should return ConditionAvailable False for ExternalDNS ",
@@ -45,7 +43,6 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 				Reason:  "DeploymentUnavailable",
 				Message: "The deployment has Available status condition set to False ",
 			},
-			errExpected: false,
 		},
 		{
 			name:               "Deployment available status true should return ConditionAvailable true for ExternalDNS ",
@@ -56,7 +53,6 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 				Reason:  "DeploymentAvailable",
 				Message: "The deployment has Available status condition set to True",
 			},
-			errExpected: false,
 		},
 	}
 
@@ -74,7 +70,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 		name               string
 		existingDeployment appsv1.Deployment
 		expectedResult     metav1.Condition
-		errExpected        bool
 	}{
 		{
 			name:               "AvailableReplica = spec.replica (25% maxUnavailable) should return ConditionTrue",
@@ -86,7 +81,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Message:            "Minimum replicas requirement is met",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		{
 			name:               "AvailableReplica = spec.replica - maxUnavailable shoud return ConditionTrue",
@@ -97,7 +91,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Reason:             "DeploymentMinimumReplicasMet",
 				Message:            "Minimum replicas requirement is met",
 				LastTransitionTime: metav1.NewTime(clock.Now())},
-			errExpected: false,
 		},
 		{
 			name:               "AvailableReplica < spec.replica - maxUnavailable shoud return ConditionFalse",
@@ -108,7 +101,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Reason:             "DeploymentMinimumReplicasNotMet",
 				Message:            "Not relevant for this test",
 				LastTransitionTime: metav1.NewTime(clock.Now())},
-			errExpected: false,
 		},
 		{
 			name:               "maxUnavailable unparsable shoud return ConditionUnknown",
@@ -119,7 +111,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Reason:             "InvalidMaxUnavailableValue",
 				Message:            "Not relevant for this test",
 				LastTransitionTime: metav1.NewTime(clock.Now())},
-			errExpected: false,
 		},
 		{
 			name:               "maxSurge unparsable shoud return ConditionUnknown",
@@ -130,7 +121,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Reason:             "InvalidMaxSurgeValue",
 				Message:            "Not relevant for this test",
 				LastTransitionTime: metav1.NewTime(clock.Now())},
-			errExpected: false,
 		},
 		{
 			name:               "maxSurge = maxUnavailable = 0 should return ConditionTrue",
@@ -141,7 +131,6 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Reason:             "DeploymentMinimumReplicasMet",
 				Message:            "Minimum replicas requirement is met",
 				LastTransitionTime: metav1.NewTime(clock.Now())},
-			errExpected: false,
 		},
 	}
 	for _, tc := range testCases {
@@ -158,7 +147,6 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 		name               string
 		existingDeployment appsv1.Deployment
 		expectedResult     metav1.Condition
-		errExpected        bool
 	}{
 		{
 			name:               "AvailableReplica = spec.replica should return ConditionTrue",
@@ -170,7 +158,6 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 				Message:            "All replicas are available",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		{
 			name:               "AvailableReplica < spec.replica shoud return ConditionFalse",
@@ -182,7 +169,6 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 				Message:            "Irrelevant for test",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 	}
 	for _, tc := range testCases {
@@ -200,7 +186,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 		existingDeployment appsv1.Deployment
 		existingPods       []corev1.Pod
 		expectedResult     metav1.Condition
-		errExpected        bool
 	}{
 		//all podScheduledConditions are true
 		{
@@ -237,7 +222,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "All pods are scheduled",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		//deployment selector invalid
 		{
@@ -270,7 +254,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "Deployment has an invalid label selector.",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		//pods filtered empty, unrelated
 		{
@@ -307,7 +290,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "no matching pods found for label selector",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		//pods has mix of related  & unrelated
 		{
@@ -358,7 +340,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "All pods are scheduled",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		//some pods are unschedulable
 		{
@@ -397,7 +378,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "Not relevant to the test",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 		//some pods not yet scheduled
 		{
@@ -434,7 +414,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message:            "Not relevant to the test",
 				LastTransitionTime: metav1.NewTime(clock.Now()),
 			},
-			errExpected: false,
 		},
 	}
 
@@ -452,7 +431,6 @@ func TestMergeConditions(t *testing.T) {
 		existingConditions []metav1.Condition
 		updateCondition    metav1.Condition
 		expectedResult     []metav1.Condition
-		errExpected        bool
 	}{
 		{
 			name:               "Starting by empty conditions, with 1 update, results in 1 condition",
@@ -471,7 +449,6 @@ func TestMergeConditions(t *testing.T) {
 					Message: "The deployment has no Available status condition set",
 				},
 			},
-			errExpected: false,
 		},
 		{
 			name: "Starting with 1 condition, with 1 updated condition, results in 1 condition",
@@ -497,7 +474,6 @@ func TestMergeConditions(t *testing.T) {
 					Message: "The deployment has Available status condition set to False",
 				},
 			},
-			errExpected: false,
 		},
 	}
 
