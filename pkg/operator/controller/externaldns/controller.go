@@ -21,9 +21,10 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -70,6 +71,13 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 	}
 
 	if err := c.Watch(&source.Kind{Type: &operatorv1alpha1.ExternalDNS{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return nil, err
+	}
+
+	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.ExternalDNS{},
+	} /*, predicate.NewPredicateFuncs(isInNS(config.SourceNamespace)*/); err != nil {
 		return nil, err
 	}
 
