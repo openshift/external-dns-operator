@@ -92,7 +92,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
 	}
 
-	if _, _, err := r.ensureExternalDNSClusterRole(ctx); err != nil {
+	if _, _, err := r.ensureExternalDNSClusterRole(ctx, externalDNS); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role: %w", err)
 	}
 

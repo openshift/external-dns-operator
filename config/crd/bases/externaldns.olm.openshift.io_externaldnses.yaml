@@ -360,6 +360,18 @@ spec:
                     description: Namespace instructs ExternalDNS to only acknowledge
                       source resource instances in a specific namespace.
                     type: string
+                  openshiftRouteOptions:
+                    description: OpenShiftRoute source configuration options for specifying
+                      ingress controller names.
+                    properties:
+                      routerName:
+                        description: If source is openshift-route then you can pass
+                          the ingress controller name. Based on this name external-dns
+                          will select the respective router.
+                        type: string
+                    required:
+                    - routerName
+                    type: object
                   service:
                     description: Service describes source configuration options specific
                       to the service source resource.

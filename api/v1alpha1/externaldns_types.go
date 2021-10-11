@@ -457,7 +457,10 @@ type ExternalDNSSourceUnion struct {
 	// +optional
 	CRD *ExternalDNSCRDSourceOptions `json:"crd,omitempty"`
 
-	// OpenShiftRoute source currently has no unique configuration options.
+	// OpenShiftRoute source configuration options for specifying ingress controller names.
+	// +kubebuilder:validation:Optional
+	// +optional
+	OpenShiftRoute *ExternalDNSOpenShiftRouteOptions `json:"openshiftRouteOptions,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=OpenShiftRoute;Service;CRD
@@ -505,6 +508,13 @@ type ExternalDNSServiceSourceOptions struct {
 	// +kubebuilder:validation:MinItems=1
 	// +required
 	ServiceType []corev1.ServiceType `json:"serviceType,omitempty"`
+}
+
+type ExternalDNSOpenShiftRouteOptions struct {
+	// If source is openshift-route then you can pass the ingress controller name. Based on this name external-dns will select the respective router.
+	// +kubebuilder:validation:Required
+	// +required
+	RouterName string `json:"routerName"`
 }
 
 // ExternalDNSCRDSourceOptions describes options for configuring

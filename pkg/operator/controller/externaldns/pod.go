@@ -178,13 +178,19 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--fqdn-template=%s", strings.Join(b.externalDNS.Spec.Source.FQDNTemplate, ",")))
 	}
 
+	if b.externalDNS.Spec.Source.OpenShiftRoute != nil && len(b.externalDNS.Spec.Source.OpenShiftRoute.RouterName) > 0 {
+		args = append(args, fmt.Sprintf("--openshift-router-name=%s", b.externalDNS.Spec.Source.OpenShiftRoute.RouterName))
+	}
+
 	filterArgs, err := b.domainFilters()
 	if err != nil {
 		return err
 	}
+
 	container.Args = append(container.Args, filterArgs...)
 	container.Args = append(container.Args, args...)
 	return nil
+
 }
 
 func (b *externalDNSContainerBuilder) domainFilters() ([]string, error) {
@@ -269,6 +275,7 @@ func (b *externalDNSContainerBuilder) fillProviderSpecificFields(container *core
 
 // fillAWSFields fills the given container with the data specific to AWS provider
 func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container) {
+	container.Args = addTXTPrefixFlag(container.Args)
 	// don't add empty credentials environment variables if no secret was given
 	if len(b.secretName) == 0 {
 		return
