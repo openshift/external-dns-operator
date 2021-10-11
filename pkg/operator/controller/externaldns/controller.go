@@ -123,7 +123,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
-	if err := r.updateExternalDNSStatus(ctx, r.client, externalDNS, currentDeployment); err != nil {
+	if err := r.updateExternalDNSStatus(ctx, externalDNS, currentDeployment); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to update externalDNS custom resource %s: %w", externalDNS.Name, err)
 	}
 
