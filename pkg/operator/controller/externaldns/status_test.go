@@ -2,6 +2,8 @@ package externaldnscontroller
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -66,6 +68,12 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 			if cond.Status != tc.expectedResult.Status {
 				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
 			}
+			if cond.Reason != tc.expectedResult.Reason {
+				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
+			}
+			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
+				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			}
 		})
 	}
 }
@@ -103,7 +111,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "DeploymentMinimumReplicasNotMet",
-				Message: "Not relevant for this test",
+				Message: "2/8 of replicas are available, max unavailable is 2",
 			},
 		},
 		{
@@ -113,7 +121,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:  metav1.ConditionUnknown,
 				Reason:  "InvalidMaxUnavailableValue",
-				Message: "Not relevant for this test",
+				Message: "invalid value for max unavailable",
 			},
 		},
 		{
@@ -123,7 +131,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:  metav1.ConditionUnknown,
 				Reason:  "InvalidMaxSurgeValue",
-				Message: "Not relevant for this test",
+				Message: "invalid value for max surge",
 			},
 		},
 		{
@@ -145,6 +153,12 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			}
 			if cond.Status != tc.expectedResult.Status {
 				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
+			if cond.Reason != tc.expectedResult.Reason {
+				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
+			}
+			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
+				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
 			}
 		})
 	}
@@ -173,7 +187,7 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasAllAvailableConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "DeploymentReplicasNotAvailable",
-				Message: "Irrelevant for test",
+				Message: "6/8 of replicas are available",
 			},
 		},
 	}
@@ -185,6 +199,12 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 			}
 			if cond.Status != tc.expectedResult.Status {
 				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
+			if cond.Reason != tc.expectedResult.Reason {
+				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
+			}
+			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
+				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
 			}
 		})
 	}
@@ -265,7 +285,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Not relevant to the test",
+				Message: "Make sure you have sufficient worker nodes.",
 			},
 		},
 		//some pods not yet scheduled
@@ -279,7 +299,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Not relevant to the test",
+				Message: "Some pods are not scheduled",
 			},
 		},
 	}
@@ -295,9 +315,16 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 			if cond.Status != tc.expectedResult.Status {
 				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
 			}
+			if cond.Reason != tc.expectedResult.Reason {
+				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
+			}
+			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
+				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			}
 		})
 	}
 }
+
 func TestMergeConditions(t *testing.T) {
 	testCases := []struct {
 		name               string
@@ -352,9 +379,29 @@ func TestMergeConditions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			conditions := MergeConditions(tc.existingConditions, tc.updateCondition)
+			conditions := mergeConditions(tc.existingConditions, tc.updateCondition)
 			if len(conditions) != len(tc.expectedResult) {
 				t.Errorf("expected number of conditions %v; got %v conditions", len(tc.expectedResult), len(conditions))
+			}
+			for _, expectedCondition := range tc.expectedResult {
+				isConditionTypeFound := false
+				for _, cond := range conditions {
+					if cond.Type == expectedCondition.Type {
+						isConditionTypeFound = true
+						if cond.Status != expectedCondition.Status {
+							t.Errorf("expected condition status %v; got condition status %v", expectedCondition.Status, cond.Status)
+						}
+						if cond.Reason != expectedCondition.Reason {
+							t.Errorf("expected condition reason %v; got condition reason %v", expectedCondition.Reason, cond.Reason)
+						}
+						if !strings.Contains(cond.Message, expectedCondition.Message) {
+							t.Errorf("expected condition message %v; got condition message %v", expectedCondition.Message, cond.Message)
+						}
+					}
+				}
+				if !isConditionTypeFound {
+					t.Errorf("expected condition type %v was not found in the result", expectedCondition.Type)
+				}
 			}
 		})
 	}
@@ -371,8 +418,10 @@ func TestGetPodsList(t *testing.T) {
 		{
 			name:            "Nominal case",
 			existingObjects: fakeRuntimeObjectFromPodList(fakePodList()),
-			expectedResult:  fakePodList(),
-			errExpected:     false,
+			expectedResult: []corev1.Pod{
+				fakePod("pod", "external-dns-operator", "external-dns-operator", corev1.ConditionTrue, "Scheduled"),
+			},
+			errExpected: false,
 		},
 	}
 	for _, tc := range testCases {
@@ -396,12 +445,26 @@ func TestGetPodsList(t *testing.T) {
 			if len(podList) != 1 {
 				t.Errorf("expected podList to contain 2 pods but got %v", len(podList))
 			}
+			for _, expectedPod := range tc.expectedResult {
+				isPodFound := false
+				for _, pod := range podList {
+					if pod.Name == expectedPod.Name {
+						isPodFound = true
+						if !reflect.DeepEqual(pod.Status, expectedPod.Status) {
+							t.Errorf("pod status %v is different from expected %v", pod.Status, expectedPod.Status)
+						}
+					}
+				}
+				if !isPodFound {
+					t.Errorf("expected pod %v was not found in the result", expectedPod)
+				}
+			}
 		}
 	}
 }
 
 func TestUpdateExternalDNSStatus(t *testing.T) {
-	aDeployment := fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionFalse, 8, "25%", "25%", 8, "external-dns-operator")
+	aDeployment := fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator")
 	anExternalDNS := fakeExternalDNS()
 	namespacedName := types.NamespacedName{
 		Namespace: "",
@@ -413,6 +476,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 		existingObjects    []runtime.Object
 		existingExtDNS     *operatorv1alpha1.ExternalDNS
 		errExpected        bool
+		expectedResult     operatorv1alpha1.ExternalDNS
 	}{
 		//nominal case
 		{
@@ -421,6 +485,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 			existingObjects:    append(fakeRuntimeObjectFromPodList(fakePodList()), &aDeployment, anExternalDNS),
 			existingExtDNS:     anExternalDNS,
 			errExpected:        false,
+			expectedResult:     fakeExternalDNSWithStatus(),
 		},
 	}
 	for _, tc := range testCases {
@@ -448,15 +513,37 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 			if len(outputExtDNS.Status.Conditions) != 4 {
 				t.Errorf("expected externalDNS.Status to contain 4 conditions but got %v", len(tc.existingExtDNS.Status.Conditions))
 			}
+			for _, expectedCondition := range tc.expectedResult.Status.Conditions {
+				isConditionTypeFound := false
+				for _, cond := range outputExtDNS.Status.Conditions {
+					if cond.Type == expectedCondition.Type {
+						isConditionTypeFound = true
+						if cond.Status != expectedCondition.Status {
+							t.Errorf("expected condition status %v; got condition status %v", expectedCondition.Status, cond.Status)
+						}
+						if cond.Reason != expectedCondition.Reason {
+							t.Errorf("expected condition reason %v; got condition reason %v", expectedCondition.Reason, cond.Reason)
+						}
+						if !strings.Contains(cond.Message, expectedCondition.Message) {
+							t.Errorf("expected condition message %v; got condition message %v", expectedCondition.Message, cond.Message)
+						}
+					}
+				}
+				if !isConditionTypeFound {
+					t.Errorf("expected condition type %v was not found in the result", expectedCondition.Type)
+				}
+			}
 		}
 	}
 }
+
 func fakePodList() []corev1.Pod {
 	return []corev1.Pod{
 		fakePod("anotherPod", "external-dns-operator", "not-external-dns", corev1.ConditionTrue, "Scheduled"),
 		fakePod("pod", "external-dns-operator", "external-dns-operator", corev1.ConditionTrue, "Scheduled"),
 	}
 }
+
 func fakeRuntimeObjectFromPodList(podList []corev1.Pod) []runtime.Object {
 	runtimeObjects := make([]runtime.Object, len(podList))
 	for j := range podList {
@@ -538,6 +625,40 @@ func fakeExternalDNS() *operatorv1alpha1.ExternalDNS {
 			Zones: []string{"public-zone"},
 		},
 	}
+}
+
+func fakeExternalDNSWithStatus() operatorv1alpha1.ExternalDNS {
+	extDNS := fakeExternalDNS()
+	condDeploymentAvailable := metav1.Condition{
+		Type:    ExternalDNSDeploymentAvailableConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "DeploymentAvailable",
+		Message: "The deployment has Available status condition set to True",
+	}
+	condAllReplicaAvailable := metav1.Condition{
+		Type:    ExternalDNSDeploymentReplicasAllAvailableConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "DeploymentReplicasAvailable",
+		Message: "All replicas are available",
+	}
+	condMinReplicaAvailable := metav1.Condition{
+		Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "DeploymentMinimumReplicasMet",
+		Message: "Minimum replicas requirement is met",
+	}
+	CondPodScheduled := metav1.Condition{
+		Type:    ExternalDNSPodsScheduledConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "AllPodsScheduled",
+		Message: "All pods are scheduled",
+	}
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condDeploymentAvailable)
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condAllReplicaAvailable)
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condMinReplicaAvailable)
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, CondPodScheduled)
+
+	return *extDNS
 }
 
 func fakePod(name string, namespace string, selectorLabel string, status corev1.ConditionStatus, reason string) corev1.Pod {

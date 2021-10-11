@@ -26,6 +26,7 @@ const (
 // clock is to enable unit testing
 var clock utilclock.Clock = utilclock.RealClock{}
 
+// computeDeploymentAvailableCondition returns an externalDNS condition based on the deployment status & its conditions
 func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.Condition {
 	for _, cond := range deployment.Status.Conditions {
 		if cond.Type == appsv1.DeploymentAvailable {
@@ -54,6 +55,9 @@ func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.C
 
 }
 
+// computeMinReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods
+// its maxUnavailable, maxSurge and the number of available replicas.
+// the condition is true if the number of available replicas is greater than number of desired replicas minus maxUnavailable
 func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
 	replicas := int32(1)
 	if deployment.Spec.Replicas != nil {
@@ -110,6 +114,9 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 	}
 }
 
+// computeAllReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods
+// and the number of available replicas.
+// the condition is true if the number of available replicas is greater than number of desired replicas
 func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
 	replicas := int32(1)
 	if deployment.Spec.Replicas != nil {
@@ -133,6 +140,9 @@ func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 	}
 }
 
+// computeDeploymentPodsScheduledCondition lists the pods matching the namespace and the label selector of the deployment
+// returns condition true when all matching pods are scheduled
+// returns condition false if no matching pods were found, or if any of the pods are unscheduled
 func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Client, deployment *appsv1.Deployment) metav1.Condition {
 	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
 	if err != nil || selector.Empty() {
@@ -205,7 +215,10 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 
 }
 
-func MergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
+// MergeConditions updates the conditions list with a new condition
+// the condition is added if no conditions of the same type exists
+// otherwise, the condition is merged with the existing condition of the same type
+func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
 	now := metav1.NewTime(clock.Now())
 	for i, update := range updates {
 		add := true
@@ -241,17 +254,19 @@ func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 	}
 }
 
+// updateExternalDNSStatus recomputes all conditions given the current deployment and its status
+// and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
 func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
 	extDNSWithStatus := externalDNS.DeepCopy()
 	if currentDeployment != nil {
 
-		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
 
-		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment))
 	} else {
-		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
 	}
 	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
 	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
@@ -269,6 +284,8 @@ func createPodsScheduledUnknownCondition(reason, message string) metav1.Conditio
 
 }
 
+// getFilteredPodsList calls the Client.List method with listOptions in order to retrieve pods matching the namespace
+// and label selector provided
 func getFilteredPodsList(ctx context.Context, cl client.Client, namespace string, selector labels.Selector) ([]corev1.Pod, error) {
 	pods := &corev1.PodList{}
 
