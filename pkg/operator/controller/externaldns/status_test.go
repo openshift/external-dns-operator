@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
@@ -27,11 +29,10 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 			name:               "Deployment in progress should return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 6),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentAvailableConditionType,
-				Status:             metav1.ConditionUnknown,
-				Reason:             "DeploymentAvailabilityUnknown",
-				Message:            "The deployment has no Available status condition set",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSDeploymentAvailableConditionType,
+				Status:  metav1.ConditionUnknown,
+				Reason:  "DeploymentAvailabilityUnknown",
+				Message: "The deployment has no Available status condition set",
 			},
 		},
 		{
@@ -59,8 +60,12 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeDeploymentAvailableCondition(&tc.existingDeployment)
-			require.EqualValues(t, tc.expectedResult.Type, cond.Type)
-			require.EqualValues(t, tc.expectedResult.Status, cond.Status)
+			if cond.Type != tc.expectedResult.Type {
+				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
+			}
+			if cond.Status != tc.expectedResult.Status {
+				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
 		})
 	}
 }
@@ -75,69 +80,72 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			name:               "AvailableReplica = spec.replica (25% maxUnavailable) should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionFalse, 8, "25%", "25%", 8),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "DeploymentMinimumReplicasMet",
-				Message:            "Minimum replicas requirement is met",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "DeploymentMinimumReplicasMet",
+				Message: "Minimum replicas requirement is met",
 			},
 		},
 		{
 			name:               "AvailableReplica = spec.replica - maxUnavailable shoud return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 6),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "DeploymentMinimumReplicasMet",
-				Message:            "Minimum replicas requirement is met",
-				LastTransitionTime: metav1.NewTime(clock.Now())},
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "DeploymentMinimumReplicasMet",
+				Message: "Minimum replicas requirement is met",
+			},
 		},
 		{
 			name:               "AvailableReplica < spec.replica - maxUnavailable shoud return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 2),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionFalse,
-				Reason:             "DeploymentMinimumReplicasNotMet",
-				Message:            "Not relevant for this test",
-				LastTransitionTime: metav1.NewTime(clock.Now())},
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  "DeploymentMinimumReplicasNotMet",
+				Message: "Not relevant for this test",
+			},
 		},
 		{
 			name:               "maxUnavailable unparsable shoud return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "a", "25%", 8),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionUnknown,
-				Reason:             "InvalidMaxUnavailableValue",
-				Message:            "Not relevant for this test",
-				LastTransitionTime: metav1.NewTime(clock.Now())},
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionUnknown,
+				Reason:  "InvalidMaxUnavailableValue",
+				Message: "Not relevant for this test",
+			},
 		},
 		{
 			name:               "maxSurge unparsable shoud return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "b", 8),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionUnknown,
-				Reason:             "InvalidMaxSurgeValue",
-				Message:            "Not relevant for this test",
-				LastTransitionTime: metav1.NewTime(clock.Now())},
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionUnknown,
+				Reason:  "InvalidMaxSurgeValue",
+				Message: "Not relevant for this test",
+			},
 		},
 		{
 			name:               "maxSurge = maxUnavailable = 0 should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "0%", "0%", 8),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasMinAvailableConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "DeploymentMinimumReplicasMet",
-				Message:            "Minimum replicas requirement is met",
-				LastTransitionTime: metav1.NewTime(clock.Now())},
+				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "DeploymentMinimumReplicasMet",
+				Message: "Minimum replicas requirement is met",
+			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeMinReplicasCondition(&tc.existingDeployment)
-			require.EqualValues(t, tc.expectedResult.Type, cond.Type)
-			require.EqualValues(t, tc.expectedResult.Status, cond.Status)
+			if cond.Type != tc.expectedResult.Type {
+				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
+			}
+			if cond.Status != tc.expectedResult.Status {
+				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
 		})
 	}
 }
@@ -152,30 +160,32 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 			name:               "AvailableReplica = spec.replica should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasAllAvailableConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "DeploymentReplicasAvailable",
-				Message:            "All replicas are available",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSDeploymentReplicasAllAvailableConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "DeploymentReplicasAvailable",
+				Message: "All replicas are available",
 			},
 		},
 		{
 			name:               "AvailableReplica < spec.replica shoud return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 6),
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSDeploymentReplicasAllAvailableConditionType,
-				Status:             metav1.ConditionFalse,
-				Reason:             "DeploymentReplicasNotAvailable",
-				Message:            "Irrelevant for test",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSDeploymentReplicasAllAvailableConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  "DeploymentReplicasNotAvailable",
+				Message: "Irrelevant for test",
 			},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeAllReplicasCondition(&tc.existingDeployment)
-			require.EqualValues(t, tc.expectedResult.Type, cond.Type)
-			require.EqualValues(t, tc.expectedResult.Status, cond.Status)
+			if cond.Type != tc.expectedResult.Type {
+				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
+			}
+			if cond.Status != tc.expectedResult.Status {
+				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
 		})
 	}
 }
@@ -216,11 +226,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "AllPodsScheduled",
-				Message:            "All pods are scheduled",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllPodsScheduled",
+				Message: "All pods are scheduled",
 			},
 		},
 		//deployment selector invalid
@@ -248,11 +257,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionUnknown,
-				Reason:             "InvalidLabelSelector",
-				Message:            "Deployment has an invalid label selector.",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionUnknown,
+				Reason:  "InvalidLabelSelector",
+				Message: "Deployment has an invalid label selector.",
 			},
 		},
 		//pods filtered empty, unrelated
@@ -284,11 +292,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionFalse,
-				Reason:             "NoLabelMatchingPods",
-				Message:            "no matching pods found for label selector",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  "NoLabelMatchingPods",
+				Message: "no matching pods found for label selector",
 			},
 		},
 		//pods has mix of related  & unrelated
@@ -334,11 +341,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionTrue,
-				Reason:             "AllPodsScheduled",
-				Message:            "All pods are scheduled",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllPodsScheduled",
+				Message: "All pods are scheduled",
 			},
 		},
 		//some pods are unschedulable
@@ -372,11 +378,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionFalse,
-				Reason:             "PodsNotScheduled",
-				Message:            "Not relevant to the test",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  "PodsNotScheduled",
+				Message: "Not relevant to the test",
 			},
 		},
 		//some pods not yet scheduled
@@ -408,11 +413,10 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				},
 			},
 			expectedResult: metav1.Condition{
-				Type:               ExternalDNSPodsScheduledConditionType,
-				Status:             metav1.ConditionFalse,
-				Reason:             "PodsNotScheduled",
-				Message:            "Not relevant to the test",
-				LastTransitionTime: metav1.NewTime(clock.Now()),
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  "PodsNotScheduled",
+				Message: "Not relevant to the test",
 			},
 		},
 	}
@@ -420,8 +424,12 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeDeploymentPodsScheduledCondition(&tc.existingDeployment, tc.existingPods)
-			require.EqualValues(t, tc.expectedResult.Type, cond.Type)
-			require.EqualValues(t, tc.expectedResult.Status, cond.Status)
+			if cond.Type != tc.expectedResult.Type {
+				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
+			}
+			if cond.Status != tc.expectedResult.Status {
+				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
+			}
 		})
 	}
 }
@@ -480,7 +488,9 @@ func TestMergeConditions(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			conditions := MergeConditions(tc.existingConditions, tc.updateCondition)
-			require.Len(t, conditions, len(tc.expectedResult))
+			if len(conditions) != len(tc.expectedResult) {
+				t.Errorf("expected number of conditions %v; got %v conditions", len(tc.expectedResult), len(conditions))
+			}
 		})
 	}
 }
@@ -501,20 +511,29 @@ func TestGetPodsList(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		//Question: is it better to use envtest.Environment instead
 		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
 
 		podList, err := getPodsList(cl, context.TODO())
-		if tc.errExpected {
-			require.Error(t, err)
+		if tc.errExpected && err == nil {
+			t.Error("expected an error but got none")
 		} else {
-			require.Len(t, podList, 2)
+			if err != nil {
+				t.Errorf("expected no error but got %v", err)
+			}
+			if len(podList) != 2 {
+				t.Errorf("expected podList to contain 2 pods but got %v", len(podList))
+			}
 		}
 	}
 }
 
 func TestUpdateExternalDNSStatus(t *testing.T) {
 	aDeployment := fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionFalse, 8, "25%", "25%", 8)
+	anExternalDNS := fakeExternalDNS()
+	namespacedName := types.NamespacedName{
+		Namespace: "",
+		Name:      test.Name,
+	}
 	testCases := []struct {
 		name               string
 		existingDeployment appsv1.Deployment
@@ -526,44 +545,36 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 		{
 			name:               "Nominal case",
 			existingDeployment: aDeployment,
-			existingObjects:    append(fakePodListAsRuntimeObject(), &aDeployment),
-			existingExtDNS: &operatorv1alpha1.ExternalDNS{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: test.Name,
-				},
-				Spec: operatorv1alpha1.ExternalDNSSpec{
-					Provider: operatorv1alpha1.ExternalDNSProvider{
-						Type: operatorv1alpha1.ProviderTypeAWS,
-						AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-							Credentials: operatorv1alpha1.SecretReference{
-								Name: testSecretName,
-							},
-						},
-					},
-					Source: operatorv1alpha1.ExternalDNSSource{
-						ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-							Type: operatorv1alpha1.SourceTypeService,
-							Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
-								ServiceType: []corev1.ServiceType{
-									corev1.ServiceTypeLoadBalancer,
-								},
-							},
-						},
-					},
-					Zones: []string{"public-zone"},
-				},
-			},
-			errExpected: false,
+			existingObjects:    append(fakePodListAsRuntimeObject(), &aDeployment, anExternalDNS),
+			existingExtDNS:     anExternalDNS,
+			errExpected:        false,
 		},
 	}
 	for _, tc := range testCases {
-		//Question: is it better to use envtest.Environment instead
 		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
-		err := updateExternalDNSStatus(cl, context.TODO(), tc.existingExtDNS, true, &tc.existingDeployment)
-		if tc.errExpected {
-			require.Error(t, err)
+		r := &reconciler{
+			client: cl,
+			scheme: test.Scheme,
+			config: testConfig(),
+			log:    zap.New(zap.UseDevMode(true)),
+		}
+
+		err := r.updateExternalDNSStatus(context.TODO(), cl, tc.existingExtDNS, &tc.existingDeployment)
+		if tc.errExpected && err == nil {
+			t.Error("expected an error but got none")
 		} else {
-			require.Len(t, tc.existingExtDNS.Status.Conditions, 4)
+			if err != nil {
+				t.Errorf("expected no error but got %v", err)
+			}
+			outputExtDNS := &operatorv1alpha1.ExternalDNS{}
+			if err := r.client.Get(context.TODO(), namespacedName, outputExtDNS); err != nil {
+				if errors.IsNotFound(err) {
+					t.Error("outputExtDNS not found")
+				}
+			}
+			if len(outputExtDNS.Status.Conditions) != 4 {
+				t.Errorf("expected externalDNS.Status to contain 4 conditions but got %v", len(tc.existingExtDNS.Status.Conditions))
+			}
 		}
 	}
 }
@@ -571,7 +582,7 @@ func fakePodList() []corev1.Pod {
 	return []corev1.Pod{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "pod",
+				Name: "notextdns",
 				Labels: map[string]string{
 					"name": "not-external-dns",
 				},
@@ -663,6 +674,35 @@ func fakeDeployment(condType appsv1.DeploymentConditionType, isAvailable corev1.
 					Message: "Not really important for test",
 				},
 			},
+		},
+	}
+}
+
+func fakeExternalDNS() *operatorv1alpha1.ExternalDNS {
+	return &operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: test.Name,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Provider: operatorv1alpha1.ExternalDNSProvider{
+				Type: operatorv1alpha1.ProviderTypeAWS,
+				AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
+					Credentials: operatorv1alpha1.SecretReference{
+						Name: testSecretName,
+					},
+				},
+			},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeService,
+					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+						ServiceType: []corev1.ServiceType{
+							corev1.ServiceTypeLoadBalancer,
+						},
+					},
+				},
+			},
+			Zones: []string{"public-zone"},
 		},
 	}
 }

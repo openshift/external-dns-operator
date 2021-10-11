@@ -245,7 +245,7 @@ func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 }
 
 func (r *reconciler) updateExternalDNSStatus(ctx context.Context, client client.Client, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
-	extDNSWithStatus := externalDNS //.DeepCopy()
+	extDNSWithStatus := externalDNS.DeepCopy()
 	if currentDeployment != nil {
 
 		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
