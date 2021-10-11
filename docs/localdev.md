@@ -92,9 +92,7 @@ This section walks you through the deployment of the external-dns-operator in a 
 ### Prerequisites
 - [Go](https://golang.org/doc/install#install) and [Docker](https://docs.docker.com/engine/install/) are installed.
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) is installed and a local Kubernetes [cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) is created.
-- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed to access the above created cluster.
-- Ensure the above created cluster is accessible by any `kubectl` command.
-- If the cluster is not accessible by the `kubectl`, excute the following steps to point kubectl to the configuration that the kind is using.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed and has access to the above created cluster, if not execute the following steps:
    ```bash
   sudo docker exec $(sudo docker ps -a | grep kindest | awk '{print $1}') "/bin/sh" "-c" "cat /etc/kubernetes/controller-manager.conf" > ~/.kube/kind-config
   export KUBECONFIG="~/.kube/kind-config"
