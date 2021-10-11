@@ -50,13 +50,7 @@ func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.C
 			break
 		}
 	}
-	return metav1.Condition{
-		Type:               ExternalDNSDeploymentAvailableConditionType,
-		Status:             metav1.ConditionUnknown,
-		Reason:             "DeploymentAvailabilityUnknown",
-		Message:            "The deployment has no Available status condition set",
-		LastTransitionTime: metav1.NewTime(clock.Now()),
-	}
+	return createDeploymentAvailabilityUnknownCondition()
 
 }
 func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
@@ -95,7 +89,7 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 		}
 	}
 	if maxSurge == 0 && maxUnavailable == 0 {
-		//TODO understand why this is the default
+		//Use a default value here
 		maxUnavailable = 1
 	}
 	if int(deployment.Status.AvailableReplicas) < int(replicas)-maxUnavailable {
@@ -250,30 +244,38 @@ func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 	}
 }
 
-func updateExternalDNSStatus(client client.Client, ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, deploymentExists bool, currentDeployment *appsv1.Deployment) error {
-	if deploymentExists {
+func (r *reconciler) updateExternalDNSStatus(ctx context.Context, client client.Client, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
+	extDNSWithStatus := externalDNS //.DeepCopy()
+	if currentDeployment != nil {
 
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeMinReplicasCondition(currentDeployment))
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeAllReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
 
-		pods, errgpl := getPodsList(client, ctx)
-		if errgpl != nil {
-			return errgpl
-			// question: we dont update what we have so far though?
+		pods, err := getPodsList(client, ctx)
+		if err != nil {
+			extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, createPodsScheduledUnknownCondition())
 		} else {
-			externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, computeDeploymentPodsScheduledCondition(currentDeployment, pods))
+			extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(currentDeployment, pods))
 		}
 
 	} else {
-		externalDNS.Status.Conditions = MergeConditions(externalDNS.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
-		//TODO Merge other conditions with 'false' values?
+		extDNSWithStatus.Status.Conditions = MergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
 	}
-	externalDNS.Status.ObservedGeneration = externalDNS.Generation
-	externalDNS.Status.Zones = externalDNS.Spec.DeepCopy().Zones
+	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
+	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
 
-	err := client.Status().Update(ctx, externalDNS)
-	return err
+	return client.Status().Update(ctx, extDNSWithStatus)
+}
+
+func createPodsScheduledUnknownCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    ExternalDNSPodsScheduledConditionType,
+		Status:  metav1.ConditionUnknown,
+		Reason:  "PodScheduledUnknown",
+		Message: "unable to list pods",
+	}
+
 }
 
 func getPodsList(client client.Client, ctx context.Context) ([]corev1.Pod, error) {
@@ -281,5 +283,5 @@ func getPodsList(client client.Client, ctx context.Context) ([]corev1.Pod, error
 	if err := client.List(ctx, pods); err != nil {
 		return nil, err
 	}
-	return pods.DeepCopy().Items, error(nil)
+	return pods.Items, error(nil)
 }

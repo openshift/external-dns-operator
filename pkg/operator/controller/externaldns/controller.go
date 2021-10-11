@@ -77,7 +77,7 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.ExternalDNS{},
-	} /*, predicate.NewPredicateFuncs(isInNS(config.SourceNamespace)*/); err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -119,12 +119,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role binding: %w", err)
 	}
 
-	deploymentExists, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS)
+	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
-	if err := updateExternalDNSStatus(r.client, ctx, externalDNS, deploymentExists, currentDeployment); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to update externalDNS custom resource %s/%s: %w", externalDNS.Namespace, externalDNS.Name, err)
+	if err := r.updateExternalDNSStatus(ctx, r.client, externalDNS, currentDeployment); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to update externalDNS custom resource %s: %w", externalDNS.Name, err)
 	}
 
 	return reconcile.Result{}, nil
