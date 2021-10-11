@@ -94,13 +94,17 @@ This section walks you through the deployment of the external-dns-operator in a 
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) is installed and a local Kubernetes [cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) is created.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed and has access to the above created cluster, if not execute the following steps:
    ```bash
-  sudo docker exec $(sudo docker ps -a | grep kindest | awk '{print $1}') "/bin/sh" "-c" "cat /etc/kubernetes/controller-manager.conf" > ~/.kube/kind-config
-  export KUBECONFIG="~/.kube/kind-config"
+   # Get the name of the cluster created by kind
+  $ kind get clusters
+  kind
+  # Set the kubectl context to use the above cluster
+  # Note: "kind-" prefix is appended to the above output - cluster name
+  $ kubectl config use-context kind-kind
    ```
 - Any registry that is accessible from your cluster to store and distribute the docker images. [quay.io](https://quay.io/) is shown as an example here.
 ### Build and Push the docker image
-1. Clone the [external-dns-operator](https://github.com/openshift/external-dns-operator) repo to your local machine's `$GOPATH/src`.
-2. Change directory `cd $GOPATH/src/external-dns-operator`
+1. Clone the [external-dns-operator](https://github.com/openshift/external-dns-operator) repo to your local machine.
+2. Change directory `cd external-dns-operator`
 3. Perform the `docker login` and provide the user credentials to access the registry incase of using the quay.io
 4. Build and push the external-dns-operator docker image by providing the relevant registry name and tag.
    ```bash
@@ -119,4 +123,4 @@ This section walks you through the deployment of the external-dns-operator in a 
    $ kubectl get pods -n external-dns-operator
    ```
 External DNS instance can be deployed based on the provider.
-A sample aws configuration is provided in the `config/samples/aws` folder where a secret named `aws-access-key` has to be created in the `external-dns-operator` namespace before applying this configuration.
+A sample aws configuration is provided in the `config/samples/aws` folder. Make sure a secret named `aws-access-key` is created in the `external-dns-operator` namespace before applying this configuration.
