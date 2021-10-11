@@ -33,6 +33,7 @@ const (
 	defaultOwnerPrefix      = "external-dns"
 	defaultMetricsStartPort = 7979
 	defaultConfigMountPath  = "/etc/kubernetes"
+	defaultTXTRecordPrefix  = "external-dns-"
 	//
 	// AWS
 	//
@@ -177,8 +178,6 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--fqdn-template=%s", strings.Join(b.externalDNS.Spec.Source.FQDNTemplate, ",")))
 	}
 
-	//TODO: Add logic for the CRD source.
-
 	filterArgs, err := b.domainFilters()
 	if err != nil {
 		return err
@@ -305,6 +304,9 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 
 // fillAzureFields fills the given container with the data specific to Azure provider
 func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Container) {
+	// https://github.com/kubernetes-sigs/external-dns/issues/2082
+	container.Args = addTXTPrefixFlag(container.Args)
+
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume
@@ -321,7 +323,10 @@ func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Containe
 
 // fillGCPFields fills the given container with the data specific to Google provider
 func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container) {
-	// don't add empty args GCP provider is not given
+	// https://github.com/kubernetes-sigs/external-dns/issues/262
+	container.Args = addTXTPrefixFlag(container.Args)
+
+	// don't add empty args if GCP provider is not given
 	if b.externalDNS.Spec.Provider.GCP == nil {
 		return
 	}
@@ -345,6 +350,10 @@ func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container)
 
 // fillBlueCatFields fills the given container with the data specific to BlueCat provider
 func (b *externalDNSContainerBuilder) fillBlueCatFields(container *corev1.Container) {
+	// only standard CNAME records are supported
+	// https://docs.bluecatnetworks.com/r/Address-Manager-API-Guide/ENUM-number-generic-methods/9.2.0
+	container.Args = addTXTPrefixFlag(container.Args)
+
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume
@@ -509,4 +518,10 @@ func (b *externalDNSVolumeBuilder) bluecatVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+// addTXTPrefixFlag adds the txt prefix flag with default value
+// needed if CNAME records are used: https://github.com/kubernetes-sigs/external-dns#note
+func addTXTPrefixFlag(args []string) []string {
+	return append(args, fmt.Sprintf("--txt-prefix=%s", defaultTXTRecordPrefix))
 }

@@ -224,6 +224,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -274,6 +275,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -333,6 +335,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--google-project=external-dns-gcp-project",
 						},
 						Env: []corev1.EnvVar{
@@ -389,6 +392,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -448,6 +452,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--bluecat-config-file=/etc/kubernetes/bluecat.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -497,6 +502,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--service-type-filter=ExternalName",
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
 							"--fqdn-template={{.Name}}.test.com",
 						},
 					},
