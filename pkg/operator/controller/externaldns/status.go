@@ -42,7 +42,7 @@ func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *o
 	}
 	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
 	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
-	if !ExternalDNSStatusesEqual(extDNSWithStatus.Status, externalDNS.Status) {
+	if !externalDNSStatusesEqual(extDNSWithStatus.Status, externalDNS.Status) {
 		return r.client.Status().Update(ctx, extDNSWithStatus)
 	}
 	return nil
@@ -265,7 +265,7 @@ func conditionChanged(a, b metav1.Condition) bool {
 	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
 }
 
-func ExternalDNSStatusesEqual(a, b operatorv1alpha1.ExternalDNSStatus) bool {
+func externalDNSStatusesEqual(a, b operatorv1alpha1.ExternalDNSStatus) bool {
 	if a.ObservedGeneration != b.ObservedGeneration {
 		return false
 	}
