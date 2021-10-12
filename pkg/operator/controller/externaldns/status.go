@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +27,26 @@ const (
 
 // clock is to enable unit testing
 var clock utilclock.Clock = utilclock.RealClock{}
+
+// updateExternalDNSStatus recomputes all conditions given the current deployment and its status
+// and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
+func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
+	extDNSWithStatus := externalDNS.DeepCopy()
+	if currentDeployment != nil {
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment))
+	} else {
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
+	}
+	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
+	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
+	if !ExternalDNSStatusesEqual(extDNSWithStatus.Status, externalDNS.Status) {
+		return r.client.Status().Update(ctx, extDNSWithStatus)
+	}
+	return nil
+}
 
 // computeDeploymentAvailableCondition returns an externalDNS condition based on the deployment status & its conditions
 func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.Condition {
@@ -116,7 +138,7 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 
 // computeAllReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods
 // and the number of available replicas.
-// the condition is true if the number of available replicas is greater than number of desired replicas
+// the condition is true if the number of available replicas is the same or greater than number of desired replicas
 func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
 	replicas := int32(1)
 	if deployment.Spec.Replicas != nil {
@@ -142,7 +164,7 @@ func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 
 // computeDeploymentPodsScheduledCondition lists the pods matching the namespace and the label selector of the deployment
 // returns condition true when all matching pods are scheduled
-// returns condition false if no matching pods were found, or if any of the pods are unscheduled
+// returns condition false if no matching pods were found, or if any of the pods is unscheduled
 func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Client, deployment *appsv1.Deployment) metav1.Condition {
 	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
 	if err != nil || selector.Empty() {
@@ -151,72 +173,71 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 	pods, err := getFilteredPodsList(ctx, cl, deployment.Namespace, selector)
 	if err != nil {
 		return createPodsScheduledUnknownCondition("PodScheduledUnknown", "unable to list pods")
-	} else {
-		if len(pods) == 0 {
-			return metav1.Condition{
-				Type:    ExternalDNSPodsScheduledConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  "NoLabelMatchingPods",
-				Message: fmt.Sprintf("no matching pods found for label selector %v.", deployment.Spec.Selector),
+	}
+	if len(pods) == 0 {
+		return metav1.Condition{
+			Type:    ExternalDNSPodsScheduledConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  "NoLabelMatchingPods",
+			Message: fmt.Sprintf("no matching pods found for label selector %v.", deployment.Spec.Selector),
+		}
+	}
+	unscheduled := make(map[*corev1.Pod]corev1.PodCondition)
+	for i, pod := range pods {
+		for j, cond := range pod.Status.Conditions {
+			if cond.Type != corev1.PodScheduled {
+				continue
+			}
+			if cond.Status == corev1.ConditionTrue {
+				continue
+			}
+			unscheduled[&pods[i]] = pod.Status.Conditions[j]
+		}
+	}
+	if len(unscheduled) != 0 {
+		var haveUnschedulable bool
+		message := "Some pods are not scheduled:"
+		// Sort keys so that the result is deterministic.
+		keys := make([]*corev1.Pod, 0, len(unscheduled))
+		for pod := range unscheduled {
+			keys = append(keys, pod)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			if keys[i].CreationTimestamp.Equal(&keys[j].CreationTimestamp) {
+				return keys[i].UID < keys[j].UID
+			}
+			return keys[i].CreationTimestamp.Before(&keys[j].CreationTimestamp)
+		})
+		for _, pod := range keys {
+			cond := unscheduled[pod]
+			if cond.Reason == corev1.PodReasonUnschedulable {
+				haveUnschedulable = true
+				message += fmt.Sprintf("%s Pod %q cannot be scheduled: %s", message, pod.Name, cond.Message)
+			} else {
+				message += fmt.Sprintf("%s Pod %q is not yet scheduled: %s: %s", message, pod.Name, cond.Reason, cond.Message)
 			}
 		}
-		unscheduled := make(map[*corev1.Pod]corev1.PodCondition)
-		for i, pod := range pods {
-			for j, cond := range pod.Status.Conditions {
-				if cond.Type != corev1.PodScheduled {
-					continue
-				}
-				if cond.Status == corev1.ConditionTrue {
-					continue
-				}
-				unscheduled[&pods[i]] = pod.Status.Conditions[j]
-			}
-		}
-		if len(unscheduled) != 0 {
-			var haveUnschedulable bool
-			message := "Some pods are not scheduled:"
-			// Sort keys so that the result is deterministic.
-			keys := make([]*corev1.Pod, 0, len(unscheduled))
-			for pod := range unscheduled {
-				keys = append(keys, pod)
-			}
-			sort.Slice(keys, func(i, j int) bool {
-				if keys[i].CreationTimestamp.Equal(&keys[j].CreationTimestamp) {
-					return keys[i].UID < keys[j].UID
-				}
-				return keys[i].CreationTimestamp.Before(&keys[j].CreationTimestamp)
-			})
-			for _, pod := range keys {
-				cond := unscheduled[pod]
-				if cond.Reason == corev1.PodReasonUnschedulable {
-					haveUnschedulable = true
-					message += fmt.Sprintf("%s Pod %q cannot be scheduled: %s", message, pod.Name, cond.Message)
-				} else {
-					message += fmt.Sprintf("%s Pod %q is not yet scheduled: %s: %s", message, pod.Name, cond.Reason, cond.Message)
-				}
-			}
-			if haveUnschedulable {
-				message = message + " Make sure you have sufficient worker nodes."
-			}
-			return metav1.Condition{
-				Type:    ExternalDNSPodsScheduledConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  "PodsNotScheduled",
-				Message: message,
-			}
+		if haveUnschedulable {
+			message = message + " Make sure you have sufficient worker nodes."
 		}
 		return metav1.Condition{
 			Type:    ExternalDNSPodsScheduledConditionType,
-			Status:  metav1.ConditionTrue,
-			Reason:  "AllPodsScheduled",
-			Message: "All pods are scheduled",
+			Status:  metav1.ConditionFalse,
+			Reason:  "PodsNotScheduled",
+			Message: message,
 		}
+	}
+	return metav1.Condition{
+		Type:    ExternalDNSPodsScheduledConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "AllPodsScheduled",
+		Message: "All pods are scheduled",
 	}
 
 }
 
-// MergeConditions updates the conditions list with a new condition
-// the condition is added if no conditions of the same type exists
+// mergeConditions updates the conditions list with new conditions
+//the condition is added if no conditions of the same type exists
 // otherwise, the condition is merged with the existing condition of the same type
 func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
 	now := metav1.NewTime(clock.Now())
@@ -244,6 +265,31 @@ func conditionChanged(a, b metav1.Condition) bool {
 	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
 }
 
+func ExternalDNSStatusesEqual(a, b operatorv1alpha1.ExternalDNSStatus) bool {
+	if a.ObservedGeneration != b.ObservedGeneration {
+		return false
+	}
+	if !zonesEqual(a.Zones, b.Zones) {
+		return false
+	}
+	return conditionsEqual(a.Conditions, b.Conditions)
+}
+
+func zonesEqual(a, b []string) bool {
+	zoneCmpOpts := []cmp.Option{
+		cmpopts.EquateEmpty(),
+		cmpopts.SortSlices(func(a, b string) bool { return a < b }),
+	}
+	return cmp.Equal(a, b, zoneCmpOpts...)
+}
+func conditionsEqual(a, b []metav1.Condition) bool {
+	conditionCmpOpts := []cmp.Option{
+		cmpopts.EquateEmpty(),
+		cmpopts.SortSlices(func(a, b metav1.Condition) bool { return a.Type < b.Type }),
+	}
+	return cmp.Equal(a, b, conditionCmpOpts...)
+}
+
 func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 	return metav1.Condition{
 		Type:               ExternalDNSDeploymentAvailableConditionType,
@@ -254,26 +300,6 @@ func createDeploymentAvailabilityUnknownCondition() metav1.Condition {
 	}
 }
 
-// updateExternalDNSStatus recomputes all conditions given the current deployment and its status
-// and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
-func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
-	extDNSWithStatus := externalDNS.DeepCopy()
-	if currentDeployment != nil {
-
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
-
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment))
-	} else {
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
-	}
-	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
-	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
-
-	return r.client.Status().Update(ctx, extDNSWithStatus)
-}
-
 func createPodsScheduledUnknownCondition(reason, message string) metav1.Condition {
 	return metav1.Condition{
 		Type:    ExternalDNSPodsScheduledConditionType,
@@ -281,16 +307,14 @@ func createPodsScheduledUnknownCondition(reason, message string) metav1.Conditio
 		Reason:  reason,
 		Message: message,
 	}
-
 }
 
-// getFilteredPodsList calls the Client.List method with listOptions in order to retrieve pods matching the namespace
-// and label selector provided
+// getFilteredPodsList returns the list of PODs matching the provided namespace and label selector
 func getFilteredPodsList(ctx context.Context, cl client.Client, namespace string, selector labels.Selector) ([]corev1.Pod, error) {
 	pods := &corev1.PodList{}
 
 	if err := cl.List(ctx, pods, client.InNamespace(namespace), client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		return nil, err
 	}
-	return pods.Items, error(nil)
+	return pods.Items, nil
 }
