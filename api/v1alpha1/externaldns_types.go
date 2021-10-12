@@ -396,7 +396,7 @@ type ExternalDNSSource struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=Ignore
-	// +required
+	// +optional
 	HostnameAnnotationPolicy HostnameAnnotationPolicy `json:"hostnameAnnotation"`
 
 	// FQDNTemplate sets a templated string that's used to generate DNS names

@@ -19,6 +19,7 @@ package externaldnscontroller
 import (
 	"context"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -28,9 +29,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
 )
@@ -221,6 +224,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -271,6 +275,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -330,6 +335,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--google-project=external-dns-gcp-project",
 						},
 						Env: []corev1.EnvVar{
@@ -386,6 +392,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -445,6 +452,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 							"--bluecat-config-file=/etc/kubernetes/bluecat.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -494,6 +502,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--service-type-filter=ExternalName",
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
 							"--fqdn-template={{.Name}}.test.com",
 						},
 					},
@@ -793,6 +802,132 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "No zones && no domain filter",
+			inputExternalDNS: testAWSExternalDNSZones([]string{}),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No zones + Domain filter",
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--domain-filter=abc.com",
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Zone + Domain filter",
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--domain-filter=abc.com",
+							"--zone-id-filter=my-dns-public-zone",
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -801,8 +936,18 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
-			diffOpts := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy")
-			if diff := cmp.Diff(tc.expectedTemplatePodSpec, depl.Spec.Template.Spec, diffOpts); diff != "" {
+			ignoreFieldsOpts := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy")
+			sortArgsOpt := cmp.Transformer("Sort", func(spec corev1.PodSpec) corev1.PodSpec {
+				if len(spec.Containers) == 0 {
+					return spec
+				}
+				cpy := *spec.DeepCopy()
+				for i := range cpy.Containers {
+					sort.Strings(cpy.Containers[i].Args)
+				}
+				return cpy
+			})
+			if diff := cmp.Diff(tc.expectedTemplatePodSpec, depl.Spec.Template.Spec, ignoreFieldsOpts, sortArgsOpt); diff != "" {
 				t.Errorf("wrong desired POD spec (-want +got):\n%s", diff)
 			}
 		})
@@ -1258,7 +1403,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			}
 			deplOpt := cmpopts.IgnoreFields(appsv1.Deployment{}, "ResourceVersion", "Kind", "APIVersion")
 			contOpt := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy", "Env")
-			if diff := cmp.Diff(tc.expectedDeployment, *gotDepl, deplOpt, contOpt); diff != "" {
+			sortArgsOpt := cmp.Transformer("Sort", func(d appsv1.Deployment) appsv1.Deployment {
+				if len(d.Spec.Template.Spec.Containers) == 0 {
+					return d
+				}
+				cpy := *d.DeepCopy()
+				for i := range cpy.Spec.Template.Spec.Containers {
+					sort.Strings(cpy.Spec.Template.Spec.Containers[i].Args)
+				}
+				return cpy
+			})
+			if diff := cmp.Diff(tc.expectedDeployment, *gotDepl, deplOpt, contOpt, sortArgsOpt); diff != "" {
 				t.Errorf("unexpected deployment (-want +got):\n%s", diff)
 			}
 		})
@@ -1432,6 +1587,20 @@ func testInfobloxExternalDNS() *operatorv1alpha1.ExternalDNS {
 		GridHost:    "gridhost.example.com",
 		WAPIPort:    443,
 		WAPIVersion: "2.3.1",
+	}
+	return extdns
+}
+
+func testAWSExternalDNSDomainFilter(zones []string) *operatorv1alpha1.ExternalDNS {
+	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, zones)
+	extdns.Spec.Domains = []v1alpha1.ExternalDNSDomain{
+		{
+			ExternalDNSDomainUnion: v1alpha1.ExternalDNSDomainUnion{
+				MatchType: v1alpha1.DomainMatchTypeExact,
+				Name:      pointer.StringPtr("abc.com"),
+			},
+			FilterType: v1alpha1.FilterTypeInclude,
+		},
 	}
 	return extdns
 }

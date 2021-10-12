@@ -19,6 +19,7 @@ package externaldnscontroller
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,6 +32,8 @@ const (
 	defaultMetricsAddress   = "127.0.0.1"
 	defaultOwnerPrefix      = "external-dns"
 	defaultMetricsStartPort = 7979
+	defaultConfigMountPath  = "/etc/kubernetes"
+	defaultTXTRecordPrefix  = "external-dns-"
 	//
 	// AWS
 	//
@@ -42,14 +45,14 @@ const (
 	// Azure
 	//
 	azureConfigVolumeName = "azure-config-file"
-	azureConfigMountPath  = "/etc/kubernetes"
+	azureConfigMountPath  = defaultConfigMountPath
 	azureConfigFileName   = "azure.json"
 	azureConfigFileKey    = "azure.json"
 	//
 	// GCP
 	//
 	gcpCredentialsVolumeName = "gcp-credentials-file"
-	gcpCredentialsMountPath  = "/etc/kubernetes"
+	gcpCredentialsMountPath  = defaultConfigMountPath
 	gcpCredentialsFileKey    = "gcp-credentials.json"
 	gcpCredentialsFileName   = "gcp-credentials.json"
 	gcpAppCredentialsEnvVar  = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -57,7 +60,7 @@ const (
 	// BlueCat
 	//
 	blueCatConfigVolumeName = "bluecat-config-file"
-	blueCatConfigMountPath  = "/etc/kubernetes"
+	blueCatConfigMountPath  = defaultConfigMountPath
 	blueCatConfigFileName   = "bluecat.json"
 	blueCatConfigFileKey    = "bluecat.json"
 	//
@@ -94,7 +97,7 @@ func newExternalDNSContainerBuilder(image, provider, source, secretName string, 
 }
 
 // build returns the definition of a single container for the given DNS zone with unique metrics port
-func (b *externalDNSContainerBuilder) build(zone string) *corev1.Container {
+func (b *externalDNSContainerBuilder) build(zone string) (*corev1.Container, error) {
 	seq := b.counter
 	b.counter++
 	return b.buildSeq(seq, zone)
@@ -102,11 +105,14 @@ func (b *externalDNSContainerBuilder) build(zone string) *corev1.Container {
 
 // buildSeq returns the definition of a single container for the given DNS zone
 // sequence param is used to create the unique metrics port
-func (b *externalDNSContainerBuilder) buildSeq(seq int, zone string) *corev1.Container {
+func (b *externalDNSContainerBuilder) buildSeq(seq int, zone string) (*corev1.Container, error) {
 	container := b.defaultContainer(controller.ExternalDNSContainerName(zone))
-	b.fillProviderAgnosticFields(seq, zone, container)
+	err := b.fillProviderAgnosticFields(seq, zone, container)
+	if err != nil {
+		return nil, err
+	}
 	b.fillProviderSpecificFields(container)
-	return container
+	return container, nil
 }
 
 // defaultContainer returns the initial definition of any container of ExternalDNS POD
@@ -121,16 +127,19 @@ func (b *externalDNSContainerBuilder) defaultContainer(name string) *corev1.Cont
 }
 
 // fillProviderAgnosticFields fills the given container with the data agnostic to any provider
-func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone string, container *corev1.Container) {
+func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone string, container *corev1.Container) error {
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
-		fmt.Sprintf("--zone-id-filter=%s", zone),
 		fmt.Sprintf("--provider=%s", b.provider),
 		fmt.Sprintf("--source=%s", b.source),
 		"--policy=sync",
 		"--registry=txt",
 		"--log-level=debug",
+	}
+
+	if zone != "" {
+		args = append(args, fmt.Sprintf("--zone-id-filter=%s", zone))
 	}
 
 	if b.externalDNS.Spec.Source.Namespace != nil && len(*b.externalDNS.Spec.Source.Namespace) > 0 {
@@ -169,9 +178,77 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--fqdn-template=%s", strings.Join(b.externalDNS.Spec.Source.FQDNTemplate, ",")))
 	}
 
-	//TODO: Add logic for the CRD source.
-
+	filterArgs, err := b.domainFilters()
+	if err != nil {
+		return err
+	}
+	container.Args = append(container.Args, filterArgs...)
 	container.Args = append(container.Args, args...)
+	return nil
+}
+
+func (b *externalDNSContainerBuilder) domainFilters() ([]string, error) {
+	var args, includePatterns, excludePatterns []string
+	for _, d := range b.externalDNS.Spec.Domains {
+		switch d.FilterType {
+		case operatorv1alpha1.FilterTypeInclude:
+			switch d.MatchType {
+			case operatorv1alpha1.DomainMatchTypeExact:
+				if d.Name == nil {
+					return nil, fmt.Errorf("name for domain cannot be empty")
+				}
+				args = append(args, fmt.Sprintf("--domain-filter=%s", *d.Name))
+			case operatorv1alpha1.DomainMatchTypeRegex:
+				if d.Pattern == nil {
+					return nil, fmt.Errorf("pattern for domain cannot be empty")
+				}
+				_, err := regexp.Compile(*d.Pattern)
+				if err != nil {
+					return nil, fmt.Errorf("input pattern %s is invalid: %w", *d.Pattern, err)
+				}
+				includePatterns = append(includePatterns, *d.Pattern)
+			default:
+				return nil, fmt.Errorf("unknown match type in domains: %s", d.MatchType)
+			}
+		case operatorv1alpha1.FilterTypeExclude:
+			switch d.MatchType {
+			case operatorv1alpha1.DomainMatchTypeExact:
+				if d.Name == nil {
+					return nil, fmt.Errorf("name for domain cannot be empty")
+				}
+				args = append(args, fmt.Sprintf("--exclude-domains=%s", *d.Name))
+			case operatorv1alpha1.DomainMatchTypeRegex:
+				if d.Pattern == nil {
+					return nil, fmt.Errorf("pattern for domain cannot be empty")
+				}
+				_, err := regexp.Compile(*d.Pattern)
+				if err != nil {
+					return nil, fmt.Errorf("exclude pattern %s is invalid: %w", *d.Pattern, err)
+				}
+				excludePatterns = append(excludePatterns, *d.Pattern)
+			default:
+				return nil, fmt.Errorf("unknown match type in domains: %s", d.MatchType)
+			}
+		}
+	}
+	if len(includePatterns) > 0 {
+		args = append(args, fmt.Sprintf("--regex-domain-filter=%s", combineRegexps(includePatterns)))
+	}
+	if len(excludePatterns) > 0 {
+		args = append(args, fmt.Sprintf("--regex-domain-exclusion=%s", combineRegexps(excludePatterns)))
+	}
+	return args, nil
+}
+
+func combineRegexps(patterns []string) string {
+	if len(patterns) == 1 {
+		return patterns[0]
+	}
+	parenthesisedPatterns := make([]string, len(patterns))
+	for i, p := range patterns {
+		parenthesisedPatterns[i] = fmt.Sprintf("(%s)", p)
+	}
+	return strings.Join(parenthesisedPatterns, "|")
 }
 
 // fillProviderSpecificFields fills the fields specific to the provider of given ExternalDNS
@@ -227,6 +304,9 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 
 // fillAzureFields fills the given container with the data specific to Azure provider
 func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Container) {
+	// https://github.com/kubernetes-sigs/external-dns/issues/2082
+	container.Args = addTXTPrefixFlag(container.Args)
+
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume
@@ -243,7 +323,10 @@ func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Containe
 
 // fillGCPFields fills the given container with the data specific to Google provider
 func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container) {
-	// don't add empty args GCP provider is not given
+	// https://github.com/kubernetes-sigs/external-dns/issues/262
+	container.Args = addTXTPrefixFlag(container.Args)
+
+	// don't add empty args if GCP provider is not given
 	if b.externalDNS.Spec.Provider.GCP == nil {
 		return
 	}
@@ -267,6 +350,10 @@ func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container)
 
 // fillBlueCatFields fills the given container with the data specific to BlueCat provider
 func (b *externalDNSContainerBuilder) fillBlueCatFields(container *corev1.Container) {
+	// only standard CNAME records are supported
+	// https://docs.bluecatnetworks.com/r/Address-Manager-API-Guide/ENUM-number-generic-methods/9.2.0
+	container.Args = addTXTPrefixFlag(container.Args)
+
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume
@@ -431,4 +518,10 @@ func (b *externalDNSVolumeBuilder) bluecatVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+// addTXTPrefixFlag adds the txt prefix flag with default value
+// needed if CNAME records are used: https://github.com/kubernetes-sigs/external-dns#note
+func addTXTPrefixFlag(args []string) []string {
+	return append(args, fmt.Sprintf("--txt-prefix=%s", defaultTXTRecordPrefix))
 }

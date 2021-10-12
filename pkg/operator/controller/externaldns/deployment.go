@@ -176,10 +176,21 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 
 	cbld := newExternalDNSContainerBuilder(image, provider, source, secretName, volumes, externalDNS)
-	for _, zone := range externalDNS.Spec.Zones {
-		depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *(cbld.build(zone)))
+	if len(externalDNS.Spec.Zones) == 0 {
+		container, err := cbld.build("")
+		if err != nil {
+			return nil, fmt.Errorf("failed to build container: %w", err)
+		}
+		depl.Spec.Template.Spec.Containers = []corev1.Container{*container}
+	} else {
+		for _, zone := range externalDNS.Spec.Zones {
+			container, err := cbld.build(zone)
+			if err != nil {
+				return nil, fmt.Errorf("failed to build container for zone %s: %w", zone, err)
+			}
+			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
+		}
 	}
-
 	return depl, nil
 }
 
