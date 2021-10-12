@@ -19,8 +19,8 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
     $ make deploy
     ```
 3. Deploy an instance of ExternalDNS:
-    * Create the `credentials` secret for AWS:
-       *Note*: For other providers, see options listed in `api/v1alpha1/externaldns_types.go`.
+    * Create the `credentials` secret for AWS:  
+       *Note*: See the following guide for the other providers: [usage guide](./docs/usage.md).
 
         ```bash
         $ kubectl -n external-dns-operator create secret generic aws-access-key \
@@ -29,8 +29,9 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
         ```
       
     * Run the following command:
-      ```
-      $ kubectl apply -k config/samples/aws` for AWS    
+      ```bash
+      # for AWS
+      $ kubectl apply -k config/samples/aws`
       ```
        *Note*: For other providers, see `config/samples/`.
 
