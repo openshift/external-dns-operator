@@ -110,13 +110,13 @@ Prerequisites
     $ make image-push
     ```
 ### Deploy `external-dns-operator`:
-- Run the following command:
-    ```bash
-    $ make deploy
-    ```
 - In case of not using any external registry, load the built `external-dns-operator` image into the cluster using the following command:
    ```bash
     $ kind load docker-image $IMG
+    ```
+- Run the following command:
+    ```bash
+    $ make deploy
     ```
 - List the pods deployed in the `external-dns-operator` namespace:
     ```bash
