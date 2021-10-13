@@ -33,7 +33,7 @@ CRC is a pre-built Container Development Environment based on Red Hat Enterprise
     ```
 - Set the `IMG` EnVar to the following URL:
 `default-route-openshift-image-registry.apps-crc.testing/<namespace>/<image-name>:tag`
-- Run the following commands to set the `IMG` EnVar:
+    Run the following commands to set the `IMG` EnVar, build and push the image:
     ```bash
     $ export IMG=default-route-openshift-image-registry.apps-crc.testing/external-dns-operator/external-dns-operator:dev
     $ CONTAINER_ENGINE=podman make image-build
@@ -111,6 +111,10 @@ Prerequisites
 - Run the following command:
     ```bash
     $ make deploy
+    ```
+- In case of not using any external registry, please load the above built image into the cluster using the following command:
+   ```bash
+    $ kind load docker-image $IMG
     ```
 - List the pods deployed in the `external-dns-operator` namespace:
     ```bash
