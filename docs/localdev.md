@@ -91,7 +91,7 @@ Prerequisites
 - [Go](https://golang.org/doc/install#install) and [Docker](https://docs.docker.com/engine/install/) are installed.
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) is installed and a local Kubernetes [cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#creating-a-cluster) is created.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) is installed and has an access to the above created cluster. To know how to configure `kubectl` to access the created cluster, see “**Configuring kubectl to access a cluster**”.
-- Any registry that is accessible from your cluster to store and distribute the docker images (quay.io is shown as an example in the following steps).
+- (optional) Any external registry that is accessible from your cluster to store and distribute the docker images (quay.io is shown as an example in the following steps).
 
 ### Build and push the docker image:
 1. Clone the `external-dns-operator` repository from your GitHub account to your local machine.
@@ -100,11 +100,13 @@ Prerequisites
     $ cd <projects-dir>/external-dns-operator
     ```
     `<projects-dir>` is the directory where you downloaded the  `external-dns-operator` repository.
-3. Run `docker login` and provide your login  credentials for quay.io to access the registry.
-4. Build and push the `external-dns-operator` docker image by providing the relevant registry name and tag:
+3. Run `docker login` and provide your login credentials for quay.io to access the registry.
+    **Note**: This step can be ignored in case you don't use an external registry.
+4. Build the `external-dns-operator` docker image by providing the relevant registry name and tag:
     ```bash
     $ export IMG=quay.io/<username>/external-dns-operator:latest
     $ make image-build
+    # The following step can be ignored in case you don't use an external registry.
     $ make image-push
     ```
 ### Deploy `external-dns-operator`:
