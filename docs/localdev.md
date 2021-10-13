@@ -112,7 +112,7 @@ Prerequisites
     ```bash
     $ make deploy
     ```
-- In case of not using any external registry, please load the above built image into the cluster using the following command:
+- In case of not using any external registry, load the built `external-dns-operator` image into the cluster using the following command:
    ```bash
     $ kind load docker-image $IMG
     ```
