@@ -1,7 +1,7 @@
 # Overview
 
 This document describes how to set up a local development environment to work with the `ExternalDNS` Operator.
-In this document, you can find information about working with the `ExternalDNS` Operator in CRC (code-ready containers), Kind (Kubernetes in Docker), and external clusters - Kubernetes or an OpenShift cluster.
+In this document, you can find information about working with the `ExternalDNS` Operator in [CRC](https://developers.redhat.com/products/cdk/overview) (code-ready containers), [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/) (Kubernetes in Docker), and external clusters - Kubernetes or an OpenShift cluster.
 ## Working with the `ExternalDNS` Operator in CRC
 Prerequisites:
 - You have a running instance of CRC.
@@ -56,7 +56,7 @@ CRC is a pre-built Container Development Environment based on Red Hat Enterprise
     ```bash
     $ oc get all
     ```
-- If you encounter any errors, run the following command:
+    If you encounter any errors, run the following command:
     ```bash
     $ oc get events
     ```
@@ -75,7 +75,7 @@ Examples:
     $ oc apply -k config/samples/aws
     $ oc get externaldns sample -o yaml
     ```
- Note: `config/samples/aws` is the sample configuration file for AWS. For other providers, see other samples in `config/samples/`
+ Note: `config/samples/aws` is the sample configuration file for AWS. For other providers, see other samples in `config/samples/`.
 
 
 ### Running the `ExternalDNS` Operator locally
@@ -116,7 +116,7 @@ Prerequisites
     ```bash
     $ kubectl get pods -n external-dns-operator
     ```
-**Note**: You can deploy an `ExternalDNS` instance based on the provider. A sample AWS configuration file is provided in the `config/samples/aws` folder. Make sure a secret named `aws-access-key` is created in the `external-dns-operator` namespace before applying this configuration.
+**Note**: You can deploy an `ExternalDNS` instance based on the provider. A sample AWS configuration file is provided in the `config/samples/aws` folder. Make sure you create a secret named `aws-access-key` in the `external-dns-operator` namespace before applying this configuration.
 
 ### Configuring `kubectl` to access a cluster
 - Get the name of the cluster created in `kind`:
@@ -125,7 +125,7 @@ Prerequisites
     # Sample output:
     kind
     ```
-- Set the kubectl context to point to the cluster:
+- Set the context of the `kubectl` to point the above cluster:
     ```bash
     $ kubectl config use-context kind-kind
     ```
