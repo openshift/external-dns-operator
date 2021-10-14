@@ -1,15 +1,15 @@
 apiVersion: externaldns.olm.openshift.io/v1alpha1
 kind: ExternalDNS
 metadata:
-  name: sample-aws
+  name: sample-bluecat
 spec:
   # DNS provider
   provider:
-    type: AWS
-    aws:
-      credentials:
+    type: BlueCat
+    blueCat:
+      configFile:
         # secret should be in the operator namespace
-        name: aws-access-key
+        name: bluecat-config
   # IDs of the hosted zones
   zones:
   - "myzoneid"
