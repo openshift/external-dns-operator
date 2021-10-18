@@ -79,7 +79,7 @@ spec:
                       - Exact
                       - Pattern
                       type: string
-                    names:
+                    name:
                       description: "Name is a string representing a single domain
                         value. Subdomains are included. \n e.g. my-app.my-cluster-domain.com
                         would also include foo.my-app.my-cluster-domain.com"

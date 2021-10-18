@@ -150,7 +150,7 @@ type ExternalDNSDomainUnion struct {
 	// foo.my-app.my-cluster-domain.com
 	//
 	// +optional
-	Name *string `json:"names,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// Pattern is a regular expression used to
 	// match a set of domains. Any provided
