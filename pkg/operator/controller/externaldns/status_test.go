@@ -3,23 +3,27 @@ package externaldnscontroller
 import (
 	"context"
 	"reflect"
-	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
-
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+// Option for comparison of conditions : ignore LastTransitionTime
+var ignoreTimeOpt = cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")
 
 func TestComputeDeploymentAvailableCondition(t *testing.T) {
 	testCases := []struct {
@@ -44,7 +48,7 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentAvailableConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "DeploymentUnavailable",
-				Message: "The deployment has Available status condition set to False ",
+				Message: "The deployment has Available status condition set to False (reason: Not really important for test) with message: Not really important for test",
 			},
 		},
 		{
@@ -62,17 +66,8 @@ func TestComputeDeploymentAvailableCondition(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeDeploymentAvailableCondition(&tc.existingDeployment)
-			if cond.Type != tc.expectedResult.Type {
-				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
-			}
-			if cond.Status != tc.expectedResult.Status {
-				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
-			}
-			if cond.Reason != tc.expectedResult.Reason {
-				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
-			}
-			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
-				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			if diff := cmp.Diff(tc.expectedResult, cond, ignoreTimeOpt); diff != "" {
+				t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
 			}
 		})
 	}
@@ -121,7 +116,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:  metav1.ConditionUnknown,
 				Reason:  "InvalidMaxUnavailableValue",
-				Message: "invalid value for max unavailable",
+				Message: "invalid value for max unavailable: invalid value for IntOrString: invalid type: string is not a percentage",
 			},
 		},
 		{
@@ -131,7 +126,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
 				Status:  metav1.ConditionUnknown,
 				Reason:  "InvalidMaxSurgeValue",
-				Message: "invalid value for max surge",
+				Message: "invalid value for max surge: invalid value for IntOrString: invalid type: string is not a percentage",
 			},
 		},
 		{
@@ -145,20 +140,12 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeMinReplicasCondition(&tc.existingDeployment)
-			if cond.Type != tc.expectedResult.Type {
-				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
-			}
-			if cond.Status != tc.expectedResult.Status {
-				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
-			}
-			if cond.Reason != tc.expectedResult.Reason {
-				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
-			}
-			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
-				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			if diff := cmp.Diff(tc.expectedResult, cond, ignoreTimeOpt); diff != "" {
+				t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
 			}
 		})
 	}
@@ -191,20 +178,12 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeAllReplicasCondition(&tc.existingDeployment)
-			if cond.Type != tc.expectedResult.Type {
-				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
-			}
-			if cond.Status != tc.expectedResult.Status {
-				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
-			}
-			if cond.Reason != tc.expectedResult.Reason {
-				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
-			}
-			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
-				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			if diff := cmp.Diff(tc.expectedResult, cond, ignoreTimeOpt); diff != "" {
+				t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
 			}
 		})
 	}
@@ -253,7 +232,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "NoLabelMatchingPods",
-				Message: "No matching pods found for label selector",
+				Message: "No matching pods found for label selector: &LabelSelector{MatchLabels:map[string]string{name: external-dns-operator,},MatchExpressions:[]LabelSelectorRequirement{},}",
 			},
 		},
 		{
@@ -280,7 +259,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Make sure you have sufficient worker nodes.",
+				Message: "Some pods are not scheduled:Some pods are not scheduled: Pod \"pod\" cannot be scheduled:  Make sure you have sufficient worker nodes.",
 			},
 		},
 		{
@@ -293,7 +272,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Some pods are not scheduled",
+				Message: "Some pods are not scheduled:Some pods are not scheduled: Pod \"pod\" is not yet scheduled: : ",
 			},
 		},
 	}
@@ -303,17 +282,8 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(fakeObjects...).Build()
 		t.Run(tc.name, func(t *testing.T) {
 			cond := computeDeploymentPodsScheduledCondition(context.TODO(), cl, &tc.existingDeployment)
-			if cond.Type != tc.expectedResult.Type {
-				t.Errorf("expected condition type %v; got condition type %v", tc.expectedResult.Type, cond.Type)
-			}
-			if cond.Status != tc.expectedResult.Status {
-				t.Errorf("expected condition status %v; got condition status %v", tc.expectedResult.Status, cond.Status)
-			}
-			if cond.Reason != tc.expectedResult.Reason {
-				t.Errorf("expected condition reason %v; got condition reason %v", tc.expectedResult.Reason, cond.Reason)
-			}
-			if !strings.Contains(cond.Message, tc.expectedResult.Message) {
-				t.Errorf("expected condition message %v; got condition message %v", tc.expectedResult.Message, cond.Message)
+			if diff := cmp.Diff(tc.expectedResult, cond, ignoreTimeOpt); diff != "" {
+				t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
 			}
 		})
 	}
@@ -382,14 +352,8 @@ func TestMergeConditions(t *testing.T) {
 				for _, cond := range conditions {
 					if cond.Type == expectedCondition.Type {
 						isConditionTypeFound = true
-						if cond.Status != expectedCondition.Status {
-							t.Errorf("expected condition status %v; got condition status %v", expectedCondition.Status, cond.Status)
-						}
-						if cond.Reason != expectedCondition.Reason {
-							t.Errorf("expected condition reason %v; got condition reason %v", expectedCondition.Reason, cond.Reason)
-						}
-						if !strings.Contains(cond.Message, expectedCondition.Message) {
-							t.Errorf("expected condition message %v; got condition message %v", expectedCondition.Message, cond.Message)
+						if diff := cmp.Diff(expectedCondition, cond, ignoreTimeOpt); diff != "" {
+							t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
 						}
 					}
 				}
@@ -482,6 +446,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 			expectedResult:     fakeExternalDNSWithStatus(),
 		},
 	}
+
 	for _, tc := range testCases {
 		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
 		r := &reconciler{
@@ -512,14 +477,8 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 				for _, cond := range outputExtDNS.Status.Conditions {
 					if cond.Type == expectedCondition.Type {
 						isConditionTypeFound = true
-						if cond.Status != expectedCondition.Status {
-							t.Errorf("expected condition status %v; got condition status %v", expectedCondition.Status, cond.Status)
-						}
-						if cond.Reason != expectedCondition.Reason {
-							t.Errorf("expected condition reason %v; got condition reason %v", expectedCondition.Reason, cond.Reason)
-						}
-						if !strings.Contains(cond.Message, expectedCondition.Message) {
-							t.Errorf("expected condition message %v; got condition message %v", expectedCondition.Message, cond.Message)
+						if diff := cmp.Diff(expectedCondition, cond, ignoreTimeOpt); diff != "" {
+							t.Errorf("expected condition %v; got condition %v: \n %s", expectedCondition, cond, diff)
 						}
 					}
 				}
