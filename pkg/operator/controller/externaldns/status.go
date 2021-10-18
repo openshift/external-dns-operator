@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,10 +34,12 @@ var clock utilclock.Clock = utilclock.RealClock{}
 func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
 	extDNSWithStatus := externalDNS.DeepCopy()
 	if currentDeployment != nil {
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentAvailableCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeMinReplicasCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeAllReplicasCondition(currentDeployment))
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment))
+		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions,
+			computeDeploymentAvailableCondition(currentDeployment),
+			computeMinReplicasCondition(currentDeployment),
+			computeAllReplicasCondition(currentDeployment),
+			computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment),
+		)
 	} else {
 		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
 	}
@@ -55,19 +58,17 @@ func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.C
 			switch cond.Status {
 			case corev1.ConditionFalse:
 				return metav1.Condition{
-					Type:               ExternalDNSDeploymentAvailableConditionType,
-					Status:             metav1.ConditionFalse,
-					Reason:             "DeploymentUnavailable",
-					Message:            fmt.Sprintf("The deployment has Available status condition set to False (reason: %s) with message: %s", cond.Reason, cond.Message),
-					LastTransitionTime: cond.LastUpdateTime,
+					Type:    ExternalDNSDeploymentAvailableConditionType,
+					Status:  metav1.ConditionFalse,
+					Reason:  "DeploymentUnavailable",
+					Message: fmt.Sprintf("The deployment has Available status condition set to False (reason: %s) with message: %s", cond.Reason, cond.Message),
 				}
 			case corev1.ConditionTrue:
 				return metav1.Condition{
-					Type:               ExternalDNSDeploymentAvailableConditionType,
-					Status:             metav1.ConditionTrue,
-					Reason:             "DeploymentAvailable",
-					Message:            "The deployment has Available status condition set to True",
-					LastTransitionTime: cond.LastUpdateTime,
+					Type:    ExternalDNSDeploymentAvailableConditionType,
+					Status:  metav1.ConditionTrue,
+					Reason:  "DeploymentAvailable",
+					Message: "The deployment has Available status condition set to True",
 				}
 			}
 			break
@@ -77,9 +78,9 @@ func computeDeploymentAvailableCondition(deployment *appsv1.Deployment) metav1.C
 
 }
 
-// computeMinReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods
-// its maxUnavailable, maxSurge and the number of available replicas.
-// the condition is true if the number of available replicas is greater than number of desired replicas minus maxUnavailable
+// computeMinReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods,
+// its maxUnavailable, maxSurge, and the number of available replicas.
+// The condition is true if the number of available replicas is at least the number of desired replicas minus maxUnavailable.
 func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
 	replicas := int32(1)
 	if deployment.Spec.Replicas != nil {
@@ -138,7 +139,7 @@ func computeMinReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 
 // computeAllReplicasCondition returns an externalDNS condition based on the deployment, its number of desired pods
 // and the number of available replicas.
-// the condition is true if the number of available replicas is the same or greater than number of desired replicas
+// The condition is true if the number of available replicas is the same as or greater than the number of desired replicas.
 func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition {
 	replicas := int32(1)
 	if deployment.Spec.Replicas != nil {
@@ -162,9 +163,9 @@ func computeAllReplicasCondition(deployment *appsv1.Deployment) metav1.Condition
 	}
 }
 
-// computeDeploymentPodsScheduledCondition lists the pods matching the namespace and the label selector of the deployment
-// returns condition true when all matching pods are scheduled
-// returns condition false if no matching pods were found, or if any of the pods is unscheduled
+// computeDeploymentPodsScheduledCondition lists the pods matching the namespace and the label selector of the deployment.
+// Returns condition true when all matching pods are scheduled.
+// Returns condition false if no matching pods were found, or if any of the pods is unscheduled.
 func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Client, deployment *appsv1.Deployment) metav1.Condition {
 	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
 	if err != nil || selector.Empty() {
@@ -172,14 +173,14 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 	}
 	pods, err := getFilteredPodsList(ctx, cl, deployment.Namespace, selector)
 	if err != nil {
-		return createPodsScheduledUnknownCondition("PodScheduledUnknown", "unable to list pods")
+		return createPodsScheduledUnknownCondition("PodScheduledUnknown", "Unable to list pods: "+err.Error())
 	}
 	if len(pods) == 0 {
 		return metav1.Condition{
 			Type:    ExternalDNSPodsScheduledConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  "NoLabelMatchingPods",
-			Message: fmt.Sprintf("no matching pods found for label selector %v.", deployment.Spec.Selector),
+			Message: fmt.Sprintf("No matching pods found for label selector: %v", deployment.Spec.Selector),
 		}
 	}
 	unscheduled := make(map[*corev1.Pod]corev1.PodCondition)
@@ -236,9 +237,9 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 
 }
 
-// mergeConditions updates the conditions list with new conditions
-//the condition is added if no conditions of the same type exists
-// otherwise, the condition is merged with the existing condition of the same type
+// mergeConditions updates the conditions list with new conditions.
+// Each condition is added if no condition of the same type already exists.
+// Otherwise, the condition is merged with the existing condition of the same type.
 func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
 	now := metav1.NewTime(clock.Now())
 	for i, update := range updates {

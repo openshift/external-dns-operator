@@ -95,7 +95,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			},
 		},
 		{
-			name:               "AvailableReplica = spec.replica - maxUnavailable shoud return ConditionTrue",
+			name:               "AvailableReplica = spec.replica - maxUnavailable should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 6, "external-dns-operator"),
 			expectedResult: metav1.Condition{
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
@@ -105,7 +105,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			},
 		},
 		{
-			name:               "AvailableReplica < spec.replica - maxUnavailable shoud return ConditionFalse",
+			name:               "AvailableReplica < spec.replica - maxUnavailable should return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 2, "external-dns-operator"),
 			expectedResult: metav1.Condition{
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
@@ -115,7 +115,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			},
 		},
 		{
-			name:               "maxUnavailable unparsable shoud return ConditionUnknown",
+			name:               "maxUnavailable not parseable should return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "a", "25%", 8, "external-dns-operator"),
 			expectedResult: metav1.Condition{
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
@@ -125,7 +125,7 @@ func TestComputeMinReplicasCondition(t *testing.T) {
 			},
 		},
 		{
-			name:               "maxSurge unparsable shoud return ConditionUnknown",
+			name:               "maxSurge not parseable should return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "b", 8, "external-dns-operator"),
 			expectedResult: metav1.Condition{
 				Type:    ExternalDNSDeploymentReplicasMinAvailableConditionType,
@@ -217,7 +217,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 		existingPods       []corev1.Pod
 		expectedResult     metav1.Condition
 	}{
-		//all podScheduledConditions are true
 		{
 			name:               "All pods are scheduled should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
@@ -231,7 +230,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message: "All pods are scheduled",
 			},
 		},
-		//deployment selector invalid
 		{
 			name:               "Deployment selector empty or invalid should return ConditionUnknown",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, ""),
@@ -245,7 +243,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message: "Deployment has an invalid label selector.",
 			},
 		},
-		//pods filtered empty, unrelated
 		{
 			name:               "No pods matching deployment selector should return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
@@ -256,10 +253,9 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "NoLabelMatchingPods",
-				Message: "no matching pods found for label selector",
+				Message: "No matching pods found for label selector",
 			},
 		},
-		//pods has mix of related  & unrelated
 		{
 			name:               "part of podList matches selector should return ConditionTrue",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
@@ -274,7 +270,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message: "All pods are scheduled",
 			},
 		},
-		//some pods are unschedulable
 		{
 			name:               "Pod unschedulable in list should return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
@@ -288,7 +283,6 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Message: "Make sure you have sufficient worker nodes.",
 			},
 		},
-		//some pods not yet scheduled
 		{
 			name:               "unscheduled pods in list should return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
@@ -438,12 +432,12 @@ func TestGetPodsList(t *testing.T) {
 		podList, err := getFilteredPodsList(context.TODO(), cl, "external-dns-operator", labelSelector)
 		if tc.errExpected && err == nil {
 			t.Error("expected an error but got none")
-		} else {
+		} else if !tc.errExpected {
 			if err != nil {
 				t.Errorf("expected no error but got %v", err)
 			}
-			if len(podList) != 1 {
-				t.Errorf("expected podList to contain 2 pods but got %v", len(podList))
+			if len(podList) != len(tc.expectedResult) {
+				t.Errorf("expected podList to contain %d pods but got %d", len(tc.expectedResult), len(podList))
 			}
 			for _, expectedPod := range tc.expectedResult {
 				isPodFound := false
@@ -500,7 +494,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 		err := r.updateExternalDNSStatus(context.TODO(), tc.existingExtDNS, &tc.existingDeployment)
 		if tc.errExpected && err == nil {
 			t.Error("expected an error but got none")
-		} else {
+		} else if !tc.errExpected {
 			if err != nil {
 				t.Errorf("expected no error but got %v", err)
 			}

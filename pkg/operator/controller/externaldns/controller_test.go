@@ -194,7 +194,6 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("timed out waiting for all expected events")
 				}
 			}
-
 		})
 	}
 }
