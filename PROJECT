@@ -1,16 +1,18 @@
 domain: openshift.io
 layout:
 - go.kubebuilder.io/v3
-projectName: test
-repo: openshift.io/external-dns-operator
+projectName: external-dns-operator
+repo: github.com/openshift/external-dns-operator
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: openshift.io
-  group: operator
+  group: externaldns.olm
   kind: ExternalDNS
-  path: openshift.io/external-dns-operator/api/v1alpha1
+  path: github.com/openshift/external-dns-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

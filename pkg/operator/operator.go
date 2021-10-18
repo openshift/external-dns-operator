@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	apiv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 	operatorctrl "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	credsecretctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/credentials-secret"
@@ -40,7 +41,7 @@ const (
 	operatorName = "external_dns_operator"
 )
 
-// Clients holds the API clients required by Operator.
+// Client holds the API clients required by Operator.
 type Client struct {
 	client.Client
 	meta.RESTMapper
@@ -74,6 +75,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 			opCfg.OperatorNamespace,
 			opCfg.OperandNamespace,
 		}),
+		CertDir: opCfg.CertDir,
 		// Use a non-caching client everywhere. The default split client does not
 		// promise to invalidate the cache during writes (nor does it promise
 		// sequential create/get coherence), and we have code which (probably
@@ -90,6 +92,13 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
 	}
+
+	if opCfg.EnableWebhook {
+		if err = (&apiv1alpha1.ExternalDNS{}).SetupWebhookWithManager(mgr); err != nil {
+			return nil, fmt.Errorf("unable to setup webhook for ExternalDNS: %w", err)
+		}
+	}
+	//+kubebuilder:scaffold:builder
 
 	// Create and register the externaldns controller with the operator manager.
 	if _, err := externaldnsctrl.New(mgr, externaldnsctrl.Config{

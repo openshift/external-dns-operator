@@ -1,0 +1,29 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-externaldns-olm-openshift-io-v1alpha1-externaldns
+  failurePolicy: Fail
+  name: vexternaldns.kb.io
+  rules:
+  - apiGroups:
+    - externaldns.olm.openshift.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - externaldnses
+  sideEffects: None

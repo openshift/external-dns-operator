@@ -8,5 +8,5 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
 - name: controller
-  newName: controller:latest
+  newName: controller
   newTag: latest

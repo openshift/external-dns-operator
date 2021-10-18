@@ -41,6 +41,8 @@ func main() {
 	flag.StringVar(&opCfg.OperatorNamespace, "operator-namespace", operatorconfig.DefaultOperatorNamespace, "The namespace that the operator is running in.")
 	flag.StringVar(&opCfg.OperandNamespace, "operand-namespace", operatorconfig.DefaultOperandNamespace, "The namespace that ExternalDNS containers should run in.")
 	flag.StringVar(&opCfg.ExternalDNSImage, "externaldns-image", operatorconfig.DefaultExternalDNSImage, "The container image used for running ExternalDNS.")
+	flag.StringVar(&opCfg.CertDir, "cert-dir", operatorconfig.DefaultCertDir, "The directory for keys and certificates for serving the webhook.")
+	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
 	opts := zap.Options{
 		Development: true,
 	}

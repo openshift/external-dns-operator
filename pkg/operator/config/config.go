@@ -16,12 +16,22 @@ limitations under the License.
 
 package config
 
+import (
+	"os"
+	"path/filepath"
+)
+
 const (
 	// TODO (alebedev): CPaaS onboarding is ongoing to replace this with Red Hat built image
 	DefaultExternalDNSImage  = "k8s.gcr.io/external-dns/external-dns:v0.8.0"
 	DefaultMetricsAddr       = "127.0.0.1:8080"
 	DefaultOperatorNamespace = "external-dns-operator"
 	DefaultOperandNamespace  = "external-dns"
+	DefaultEnableWebhook     = true
+)
+
+var (
+	DefaultCertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 )
 
 // Config is configuration of the operator.
@@ -39,6 +49,12 @@ type Config struct {
 
 	// OperandNamespace is the namespace that the operator should deploy ExternalDNS container(s) in.
 	OperandNamespace string
+
+	// CertDir is the directory from where the operator loads keys and certificates.
+	CertDir string
+
+	// EnableWebhook is the flag indicating if the webhook server should be started.
+	EnableWebhook bool
 }
 
 // New returns an operator config using default values.
@@ -48,5 +64,7 @@ func New() *Config {
 		MetricsBindAddress: DefaultMetricsAddr,
 		OperatorNamespace:  DefaultOperatorNamespace,
 		OperandNamespace:   DefaultOperandNamespace,
+		CertDir:            DefaultCertDir,
+		EnableWebhook:      DefaultEnableWebhook,
 	}
 }

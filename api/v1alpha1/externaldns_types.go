@@ -25,9 +25,9 @@ import (
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:path=externaldnses,scope=Cluster
+// +kubebuilder:resource:path=externaldnses,scope=Cluster,singular=externaldns
 // +kubebuilder:subresource:status
-//
+
 // ExternalDNS describes a managed ExternalDNS controller instance for a cluster.
 // The controller is responsible for creating external DNS records in supported
 // DNS providers based off of instances of select Kubernetes resources.
