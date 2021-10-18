@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	utilErrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -43,19 +44,33 @@ var _ webhook.Validator = &ExternalDNS{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ExternalDNS) ValidateCreate() error {
 	webhookLog.Info("validate create", "name", r.Name)
-	return r.validateFilters()
+	return r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *ExternalDNS) ValidateUpdate(_ runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
-	return r.validateFilters()
+	return r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *ExternalDNS) ValidateDelete() error {
 	webhookLog.Info("validate delete", "name", r.Name)
 	return nil
+}
+
+func (r *ExternalDNS) validate() error {
+	var errs []error
+	if err := r.validateFilters(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := r.validateHostnameAnnotationPolicy(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := r.validateProviderCredentials(); err != nil {
+		errs = append(errs, err)
+	}
+	return utilErrors.NewAggregate(errs)
 }
 
 func (r *ExternalDNS) validateFilters() error {
@@ -75,6 +90,41 @@ func (r *ExternalDNS) validateFilters() error {
 			}
 		default:
 			return fmt.Errorf("unsupported match type %q", f.MatchType)
+		}
+	}
+
+	return nil
+}
+
+func (r *ExternalDNS) validateHostnameAnnotationPolicy() error {
+	if r.Spec.Source.HostnameAnnotationPolicy == HostnameAnnotationPolicyIgnore && len(r.Spec.Source.FQDNTemplate) == 0 {
+		return errors.New(`"fqdnTemplate" must be specified when "hostnameAnnotation" is "Ignore"`)
+	}
+	return nil
+}
+
+func (r *ExternalDNS) validateProviderCredentials() error {
+	provider := r.Spec.Provider
+	switch provider.Type {
+	case ProviderTypeAWS:
+		if provider.AWS == nil || provider.AWS.Credentials.Name == "" {
+			return errors.New("credentials secret must be specified when provider type is AWS")
+		}
+	case ProviderTypeAzure:
+		if provider.Azure == nil || provider.Azure.ConfigFile.Name == "" {
+			return errors.New("config file name must be specified when provider type is Azure")
+		}
+	case ProviderTypeGCP:
+		if provider.GCP == nil || provider.GCP.Credentials.Name == "" {
+			return errors.New("credentials secret must be specified when provider type is GCP")
+		}
+	case ProviderTypeBlueCat:
+		if provider.BlueCat == nil || provider.BlueCat.ConfigFile.Name == "" {
+			return errors.New("config file name must be specified when provider type is BlueCat")
+		}
+	case ProviderTypeInfoblox:
+		if provider.Infoblox == nil || provider.Infoblox.WAPIVersion == "" || provider.Infoblox.WAPIPort == 0 || provider.Infoblox.GridHost == "" || provider.Infoblox.Credentials.Name == "" {
+			return errors.New(`"WAPIVersion", "WAPIPort", "GridHost" and credentials file must be specified when provider is Infoblox`)
 		}
 	}
 	return nil
