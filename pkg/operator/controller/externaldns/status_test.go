@@ -344,22 +344,13 @@ func TestMergeConditions(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			conditions := mergeConditions(tc.existingConditions, tc.updateCondition)
-			if len(conditions) != len(tc.expectedResult) {
-				t.Errorf("expected number of conditions %v; got %v conditions", len(tc.expectedResult), len(conditions))
+			conditionCmpOpts := []cmp.Option{
+				cmpopts.EquateEmpty(),
+				ignoreTimeOpt,
+				cmpopts.SortSlices(func(a, b metav1.Condition) bool { return a.Type < b.Type }),
 			}
-			for _, expectedCondition := range tc.expectedResult {
-				isConditionTypeFound := false
-				for _, cond := range conditions {
-					if cond.Type == expectedCondition.Type {
-						isConditionTypeFound = true
-						if diff := cmp.Diff(expectedCondition, cond, ignoreTimeOpt); diff != "" {
-							t.Errorf("expected condition %v; got condition %v: \n %s", tc.expectedResult, cond, diff)
-						}
-					}
-				}
-				if !isConditionTypeFound {
-					t.Errorf("expected condition type %v was not found in the result", expectedCondition.Type)
-				}
+			if diff := cmp.Diff(tc.expectedResult, conditions, conditionCmpOpts...); diff != "" {
+				t.Errorf("mergeConditions result differs from expected:\n%s", diff)
 			}
 		})
 	}
@@ -469,22 +460,13 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 					t.Error("outputExtDNS not found")
 				}
 			}
-			if len(outputExtDNS.Status.Conditions) != 4 {
-				t.Errorf("expected externalDNS.Status to contain 4 conditions but got %v", len(tc.existingExtDNS.Status.Conditions))
+			conditionCmpOpts := []cmp.Option{
+				cmpopts.EquateEmpty(),
+				ignoreTimeOpt,
+				cmpopts.SortSlices(func(a, b metav1.Condition) bool { return a.Type < b.Type }),
 			}
-			for _, expectedCondition := range tc.expectedResult.Status.Conditions {
-				isConditionTypeFound := false
-				for _, cond := range outputExtDNS.Status.Conditions {
-					if cond.Type == expectedCondition.Type {
-						isConditionTypeFound = true
-						if diff := cmp.Diff(expectedCondition, cond, ignoreTimeOpt); diff != "" {
-							t.Errorf("expected condition %v; got condition %v: \n %s", expectedCondition, cond, diff)
-						}
-					}
-				}
-				if !isConditionTypeFound {
-					t.Errorf("expected condition type %v was not found in the result", expectedCondition.Type)
-				}
+			if diff := cmp.Diff(tc.expectedResult.Status.Conditions, outputExtDNS.Status.Conditions, conditionCmpOpts...); diff != "" {
+				t.Errorf("mergeConditions result differs from expected:\n%s", diff)
 			}
 		}
 	}
