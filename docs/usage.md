@@ -107,3 +107,37 @@ spec:
   zones: # Replace with the desired hosted zones
     - "78127234..."
 ```
+# GCP
+
+Before creating an ExternalDNS resource for GCP, the following is required:
+
+1. create a secret with the service account credentials to be used by the operator
+
+```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: gcp-access-key
+    namespace: #operator namespace
+  data:
+    gcp-credentials.json: # gcp-service-account-key-file
+```
+
+2. sample ExternalDNS CR for GCP
+
+```yaml
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-gcp
+spec:
+  # DNS provider
+  provider:
+    type: GCP
+    gcp:
+      credentials:
+        name: gcp-access-key
+      project: gcp-devel
+  zones: # Replace with the desired hosted zones
+    - "3651032588905568971"
+```
