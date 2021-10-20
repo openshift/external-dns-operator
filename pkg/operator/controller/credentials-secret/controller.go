@@ -20,17 +20,20 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
 	"github.com/go-logr/logr"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -41,8 +44,10 @@ import (
 )
 
 const (
-	controllerName                  = "credentials_secret_controller"
-	credentialsSecretIndexFieldName = "credentialsSecretName"
+	controllerName                           = "credentials_secret_controller"
+	credentialsSecretIndexFieldName          = "credentialsSecretName"
+	secretFromCloudCredentialsOperator       = "externaldns-cloud-credentials"
+	credentialsSecretIndexFieldNameInOperand = "credentialsSecretNameofOperand"
 )
 
 // Config holds all the things necessary for the controller to run.
@@ -52,24 +57,35 @@ type Config struct {
 }
 
 type reconciler struct {
-	cache  cache.Cache
-	scheme *runtime.Scheme
-	client client.Client
-	config Config
-	log    logr.Logger
+	cache      cache.Cache
+	scheme     *runtime.Scheme
+	client     client.Client
+	config     Config
+	log        logr.Logger
+	kubeclient discovery.DiscoveryInterface
 }
+
+const (
+	notocpMajorVersion4 = 0
+	ocpMajorVersion4    = 4
+)
 
 // New creates a new controller that syncs ExternalDNS' providers credentials secrets
 // between the config and operand namespaces.
 func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	log := ctrl.Log.WithName(controllerName)
 
+	kubeClient, err := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		return nil, err
+	}
 	reconciler := &reconciler{
-		cache:  mgr.GetCache(),
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		config: config,
-		log:    log,
+		cache:      mgr.GetCache(),
+		client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
+		config:     config,
+		log:        log,
+		kubeclient: kubeClient.Discovery(),
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{
 		Reconciler: reconciler,
@@ -84,20 +100,20 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		&handler.EnqueueRequestForObject{},
 		predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
-				return hasSecret(e.Object)
+				return reconciler.hasSecret(e.Object)
 			},
 			DeleteFunc: func(e event.DeleteEvent) bool {
-				return hasSecret(e.Object)
+				return reconciler.hasSecret(e.Object)
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				oldED := e.ObjectOld.(*operatorv1alpha1.ExternalDNS)
 				newED := e.ObjectNew.(*operatorv1alpha1.ExternalDNS)
-				oldName := getExternalDNSCredentialsSecretName(oldED)
-				newName := getExternalDNSCredentialsSecretName(newED)
+				oldName := reconciler.getExternalDNSCredentialsSecretName(oldED)
+				newName := reconciler.getExternalDNSCredentialsSecretName(newED)
 				return oldName != newName || oldED.DeletionTimestamp != newED.DeletionTimestamp
 			},
 			GenericFunc: func(e event.GenericEvent) bool {
-				return hasSecret(e.Object)
+				return reconciler.hasSecret(e.Object)
 			},
 		},
 	); err != nil {
@@ -112,7 +128,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		credentialsSecretIndexFieldName,
 		client.IndexerFunc(func(o client.Object) []string {
 			ed := o.(*operatorv1alpha1.ExternalDNS)
-			name := getExternalDNSCredentialsSecretName(ed)
+			name := reconciler.getExternalDNSCredentialsSecretName(ed)
 			if len(name) == 0 {
 				return []string{}
 			}
@@ -143,6 +159,42 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		return requests
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.Background(),
+		&operatorv1alpha1.ExternalDNS{},
+		credentialsSecretIndexFieldNameInOperand,
+		client.IndexerFunc(func(o client.Object) []string {
+			ed := o.(*operatorv1alpha1.ExternalDNS)
+			name := "external-dns-credentials-" + ed.Name
+			if len(name) == 0 {
+				return []string{}
+			}
+			return []string{name}
+		}),
+	); err != nil {
+		return nil, fmt.Errorf("failed to create index for credentials secret: %w", err)
+	}
+
+	credSecretToExtDNSTargetNS := func(o client.Object) []reconcile.Request {
+		externalDNSList := &operatorv1alpha1.ExternalDNSList{}
+		listOpts := client.MatchingFields{credentialsSecretIndexFieldNameInOperand: o.GetName()}
+		requests := []reconcile.Request{}
+		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
+			log.Error(err, "failed to list externalDNS for secret")
+			return requests
+		}
+		for _, ed := range externalDNSList.Items {
+			log.Info("queueing externalDNS", "name", ed.Name)
+			request := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name: ed.Name,
+				},
+			}
+			requests = append(requests, request)
+		}
+		return requests
+	}
+
 	// Watch secrets from the source namespace
 	// and if a secret was indexed as belonging to ExternalDNS
 	// we send the reconcile requests with all the ExternalDNS resources
@@ -151,6 +203,18 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		&source.Kind{Type: &corev1.Secret{}},
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
 		predicate.NewPredicateFuncs(isInNS(config.SourceNamespace)),
+	); err != nil {
+		return nil, err
+	}
+
+	// Watch secrets from the target namespace
+	// and if a secret was indexed as belonging to ExternalDNS
+	// we send the reconcile requests with all the ExternalDNS resources
+	// which referenced it
+	if err := c.Watch(
+		&source.Kind{Type: &corev1.Secret{}},
+		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
+		predicate.NewPredicateFuncs(isInNS(config.TargetNamespace)),
 	); err != nil {
 		return nil, err
 	}
@@ -174,7 +238,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	srcSecretName := types.NamespacedName{
 		Namespace: r.config.SourceNamespace,
-		Name:      getExternalDNSCredentialsSecretName(extDNS),
+		Name:      r.getExternalDNSCredentialsSecretName(extDNS),
 	}
 
 	if _, _, err := r.ensureCredentialsSecret(ctx, srcSecretName, extDNS); err != nil {
@@ -186,10 +250,28 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, nil
 }
 
+// Returns Openshift Container Platform Major Version
+func getOCPMajorVersion(kubeClient discovery.DiscoveryInterface) int {
+	// Since, CRD for OpenShift API Server was introduced in OCP v4.x we can verify if the current cluster is on OCP v4.x by
+	// ensuring that resource exists against Group(operator.openshift.io), Version(v1) and Kind(OpenShiftAPIServer)
+	// In case it doesn't exist we assume that external dns is running on non OCP 4.x environment
+	resources, err := kubeClient.ServerResourcesForGroupVersion("operator.openshift.io/v1")
+	if err != nil {
+		return notocpMajorVersion4
+	}
+
+	for _, apiResource := range resources.APIResources {
+		if apiResource.Kind == "OpenShiftAPIServer" {
+			return ocpMajorVersion4
+		}
+	}
+	return notocpMajorVersion4
+}
+
 // hasSecret returns true if ExternalDNS references a secret
-func hasSecret(o client.Object) bool {
+func (r *reconciler) hasSecret(o client.Object) bool {
 	ed := o.(*operatorv1alpha1.ExternalDNS)
-	return len(getExternalDNSCredentialsSecretName(ed)) != 0
+	return len(r.getExternalDNSCredentialsSecretName(ed)) != 0
 }
 
 // isInNS returns a predicate which checks the belonging to the given namespace
@@ -200,7 +282,10 @@ func isInNS(namespace string) func(o client.Object) bool {
 }
 
 // getExternalDNSCredentialsSecretName returns the name of the credentials secret retrieved from externalDNS resource
-func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) string {
+func (r *reconciler) getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) string {
+	if ocpVersion := getOCPMajorVersion(r.kubeclient); ocpVersion == ocpMajorVersion4 {
+		return secretFromCloudCredentialsOperator
+	}
 	switch externalDNS.Spec.Provider.Type {
 	case operatorv1alpha1.ProviderTypeAWS:
 		if externalDNS.Spec.Provider.AWS != nil {

@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
+	kubernetesFakeClient "k8s.io/client-go/kubernetes/fake"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,11 +39,12 @@ import (
 )
 
 const (
-	testOperatorNamespace = "external-dns-operator"
-	testOperandNamespace  = "external-dns"
-	testExtDNSName        = "test"
-	testSrcSecretName     = "testsecret"
-	testTargetSecretName  = "external-dns-credentials-test"
+	testOperatorNamespace    = "external-dns-operator"
+	testOperandNamespace     = "external-dns"
+	testExtDNSName           = "test"
+	testSrcSecretName        = "testsecret"
+	testTargetSecretName     = "external-dns-credentials-test"
+	testSrcSecretNameWhenOCP = "externaldns-cloud-credentials"
 )
 
 var (
@@ -72,13 +74,51 @@ func TestReconcile(t *testing.T) {
 		expectedResult  reconcile.Result
 		expectedEvents  []testEvent
 		errExpected     bool
+		ocpPlatform     bool
 	}{
+		{
+			name:            "Bootstrap when platform is OCP and test AWS External DNS Instance when OCPRoute Source and when AWSCredentials are not provided",
+			existingObjects: []runtime.Object{testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided(), testSrcSecretWhenSourceOCP()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			ocpPlatform:     true,
+			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "secret",
+					NamespacedName: types.NamespacedName{
+						Namespace: testOperandNamespace,
+						Name:      testTargetSecretName,
+					},
+				},
+			},
+		},
+		{
+			name:            "Bootstrap when platform is OCP and test AWS External DNS Instance when OCPRoute Source and when AWSCredentials are provided mistakenly",
+			existingObjects: []runtime.Object{testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsProvidedMistakenly(), testSrcSecretWhenSourceOCP()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			ocpPlatform:     true,
+			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "secret",
+					NamespacedName: types.NamespacedName{
+						Namespace: testOperandNamespace,
+						Name:      testTargetSecretName,
+					},
+				},
+			},
+		},
 		{
 			name:            "Bootstrap",
 			existingObjects: []runtime.Object{testAWSExtDNSInstance(), testSrcSecret()},
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
+			ocpPlatform:     false,
 			expectedEvents: []testEvent{
 				{
 					eventType: watch.Added,
@@ -96,6 +136,7 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
+			ocpPlatform:     false,
 			expectedEvents: []testEvent{
 				{
 					eventType: watch.Modified,
@@ -112,6 +153,7 @@ func TestReconcile(t *testing.T) {
 			existingObjects: []runtime.Object{testAWSExtDNSInstance(), testSrcSecret(), testTargetSecret()},
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
+			ocpPlatform:     false,
 			expectedResult:  reconcile.Result{},
 		},
 		{
@@ -119,19 +161,29 @@ func TestReconcile(t *testing.T) {
 			existingObjects: []runtime.Object{},
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
+			ocpPlatform:     false,
 			expectedResult:  reconcile.Result{},
 		},
 	}
 
 	for _, tc := range testCases {
+
 		t.Run(tc.name, func(t *testing.T) {
 			cl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects(tc.existingObjects...).Build()
-			r := &reconciler{
-				client: cl,
-				scheme: testScheme,
-				config: tc.inputConfig,
-				log:    zap.New(zap.UseDevMode(true)),
+			kubeFakeClient := kubernetesFakeClient.NewSimpleClientset()
+
+			if tc.ocpPlatform {
+				kubeFakeClient.Fake.Resources = getfakeResource()
 			}
+
+			r := &reconciler{
+				client:     cl,
+				scheme:     testScheme,
+				config:     tc.inputConfig,
+				log:        zap.New(zap.UseDevMode(true)),
+				kubeclient: kubeFakeClient.Discovery(),
+			}
+
 			// get watch interfaces from all the type managed by the operator
 			watches := []watch.Interface{}
 			for _, managedType := range managedTypesList {
@@ -231,10 +283,112 @@ func TestGetExternalDNSCredentialsSecretName(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := getExternalDNSCredentialsSecretName(tc.input); got != tc.expected {
+			cl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects([]runtime.Object{tc.input}...).Build()
+			kubeFakeClient := kubernetesFakeClient.NewSimpleClientset()
+			r := &reconciler{
+				client:     cl,
+				scheme:     testScheme,
+				config:     testConfig(),
+				log:        zap.New(zap.UseDevMode(true)),
+				kubeclient: kubeFakeClient.Discovery(),
+			}
+			if got := r.getExternalDNSCredentialsSecretName(tc.input); got != tc.expected {
 				t.Errorf("unexpected name received. expected %s, got %s", tc.expected, got)
 			}
 		})
+	}
+}
+
+func TestGetExternalDNSCredentialsSecretNameOnOCP(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    *operatorv1alpha1.ExternalDNS
+		expected string
+	}{
+		//When external dns has source Service and is running on OCP
+		{
+			name:     "AWS",
+			input:    testAWSExtDNSInstance(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "Azure",
+			input:    testAzureExtDNSInstance(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "GCP",
+			input:    testGCPExtDNSInstance(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "BlueCat",
+			input:    testBlueCatExtDNSInstance(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "Infoblox",
+			input:    testInfobloxExtDNSInstance(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		//When external dns has source OCP Route and is running on OCP
+		{
+			name:     "AWS",
+			input:    testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "Azure",
+			input:    testAzureExtDNSInstanceWhenSourceIsOCPRoute(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "GCP",
+			input:    testGCPExtDNSInstanceWhenSourceIsOCPRoute(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "BlueCat",
+			input:    testBlueCatExtDNSInstanceWhenSourceIsOCPRoute(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+		{
+			name:     "Infoblox",
+			input:    testInfobloxExtDNSInstanceWhenSourceIsOCPRoute(),
+			expected: testSrcSecretNameWhenOCP,
+		},
+	}
+
+	for _, tc := range testCases {
+		cl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects([]runtime.Object{tc.input}...).Build()
+		kubeFakeClient := kubernetesFakeClient.NewSimpleClientset()
+		kubeFakeClient.Fake.Resources = getfakeResource()
+		r := &reconciler{
+			client:     cl,
+			scheme:     testScheme,
+			config:     testConfig(),
+			log:        zap.New(zap.UseDevMode(true)),
+			kubeclient: kubeFakeClient.Discovery(),
+		}
+		t.Run(tc.name, func(t *testing.T) {
+
+			if got := r.getExternalDNSCredentialsSecretName(tc.input); got != tc.expected {
+				t.Errorf("unexpected name received. expected %s, got %s", tc.expected, got)
+			}
+		})
+	}
+}
+
+func getfakeResource() []*metav1.APIResourceList {
+	return []*metav1.APIResourceList{
+		{
+			GroupVersion: "operator.openshift.io/v1",
+			APIResources: []metav1.APIResource{
+				{
+					Kind: "OpenShiftAPIServer",
+				},
+			},
+		},
 	}
 }
 
@@ -287,8 +441,16 @@ func TestHasSecret(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		cl := fake.NewClientBuilder().WithScheme(testScheme).WithRuntimeObjects([]runtime.Object{tc.input}...).Build()
+		r := &reconciler{
+			client:     cl,
+			scheme:     testScheme,
+			config:     testConfig(),
+			log:        zap.New(zap.UseDevMode(true)),
+			kubeclient: kubernetesFakeClient.NewSimpleClientset().Discovery(),
+		}
 		t.Run(tc.name, func(t *testing.T) {
-			if got := hasSecret(tc.input); got != tc.expected {
+			if got := r.hasSecret(tc.input); got != tc.expected {
 				t.Errorf("unexpected return value received. expected %t, got %t", tc.expected, got)
 			}
 		})
@@ -362,6 +524,23 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	}
 }
 
+func testExtDNSInstanceforOCPRouteSource() *operatorv1alpha1.ExternalDNS {
+	return &operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testExtDNSName,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeRoute,
+				},
+			},
+			Zones: []string{"public-zone"},
+		},
+	}
+}
+
+// AWS
 func testAWSExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -375,6 +554,28 @@ func testAWSExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsProvidedMistakenly() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1alpha1.SecretReference{
+				Name: testSrcSecretName,
+			},
+		},
+	}
+	return extDNS
+}
+
+func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+		AWS:  &operatorv1alpha1.ExternalDNSAWSProviderOptions{},
+	}
+	return extDNS
+}
+
 func testAWSExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -383,6 +584,7 @@ func testAWSExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+// Azure
 func testAzureExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -396,6 +598,16 @@ func testAzureExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+func testAzureExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type:  operatorv1alpha1.ProviderTypeAzure,
+		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{},
+	}
+	return extDNS
+}
+
+// BlueCat
 func testBlueCatExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -409,6 +621,16 @@ func testBlueCatExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+func testBlueCatExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type:    operatorv1alpha1.ProviderTypeBlueCat,
+		BlueCat: &operatorv1alpha1.ExternalDNSBlueCatProviderOptions{},
+	}
+	return extDNS
+}
+
+// InfoBlox
 func testInfobloxExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -422,6 +644,14 @@ func testInfobloxExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+func testInfobloxExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type:     operatorv1alpha1.ProviderTypeInfoblox,
+		Infoblox: &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{},
+	}
+	return extDNS
+}
 func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -435,10 +665,32 @@ func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+func testGCPExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeGCP,
+		GCP:  &operatorv1alpha1.ExternalDNSGCPProviderOptions{},
+	}
+	return extDNS
+}
+
 func testSrcSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"key1": []byte("val1"),
+			"key2": []byte("val2"),
+		},
+	}
+}
+
+func testSrcSecretWhenSourceOCP() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretNameWhenOCP,
 			Namespace: testOperatorNamespace,
 		},
 		Data: map[string][]byte{
