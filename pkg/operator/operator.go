@@ -18,6 +18,7 @@ package operator
 
 import (
 	"context"
+
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -64,7 +65,9 @@ type Operator struct {
 // +kubebuilder:rbac:groups="",resources=services;endpoints;pods;nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cloudcredential.openshift.io,resources=credentialsrequests;credentialsrequests/status;credentialsrequests/finalizers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;watch;list
+// +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {

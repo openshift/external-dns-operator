@@ -18,7 +18,6 @@ package externaldnscontroller
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -2608,12 +2607,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cl := fake.NewClientBuilder().WithRuntimeObjects(tc.existingObjects...).Build()
+			cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
 			r := &reconciler{
 				client: cl,
 				scheme: test.Scheme,
 				log:    zap.New(zap.UseDevMode(true)),
 			}
+
 			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, &tc.extDNS)
 			if err != nil {
 				if !tc.errExpected {
@@ -2758,13 +2758,11 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 		},
 	}
 	if source == operatorv1alpha1.SourceTypeRoute {
-		fmt.Printf("\nif source == operatorv1alpha1.SourceTypeRoute\n")
 		extDNS.Spec.Source = *extDnsSourceForRoute
 		return extDNS
 	}
 
 	if source == operatorv1alpha1.SourceTypeService {
-		fmt.Printf("\nsource == operatorv1alpha1.SourceTypeService\n")
 		extDNS.Spec.Source = *extDnsSource
 		return extDNS
 	}

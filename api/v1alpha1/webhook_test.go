@@ -31,6 +31,59 @@ func makeExternalDNS(name string, domains []ExternalDNSDomain) *ExternalDNS {
 	}
 }
 
+var _ = Describe("ExternalDNS admission webhook when platform is OCP", func() {
+	BeforeEach(func() {
+		// Add any setup steps that needs to be executed before each test
+		IsOpenShift = true
+
+	})
+
+	AfterEach(func() {
+		// Add any teardown steps that needs to be executed after each test
+		IsOpenShift = false
+
+	})
+
+	Context("platform OpenShift", func() {
+		Context("resource with AWS provider", func() {
+			It("ignores when credential not specified", func() {
+				resource := makeExternalDNS("test-missing-aws-credentials", nil)
+				resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).Should(Succeed())
+			})
+		})
+		Context("resource with Azure provider", func() {
+			It("ignores when provider Azure credentials are not specified", func() {
+				resource := makeExternalDNS("test-missing-azure-config", nil)
+				resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAzure}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).Should(Succeed())
+			})
+		})
+
+		Context("resource with GCP provider", func() {
+			It("ignores when provider GCP credentials are not specified", func() {
+				resource := makeExternalDNS("test-missing-gcp-credentials", nil)
+				resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeGCP}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).Should(Succeed())
+			})
+		})
+
+		Context("resource with Bluecat provider", func() {
+			It("rejected when provider Bluecat credentials are not specified", func() {
+				resource := makeExternalDNS("test-missing-bluecat-config", nil)
+				resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeBlueCat}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).ShouldNot(Succeed())
+				Expect(err.Error()).Should(ContainSubstring("config file name must be specified when provider type is BlueCat"))
+			})
+		})
+	})
+
+})
+
 var _ = Describe("ExternalDNS admission webhook", func() {
 	BeforeEach(func() {
 		// Add any setup steps that needs to be executed before each test

@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
+
 	"fmt"
 	"sort"
 
@@ -68,6 +69,7 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
+
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
@@ -119,6 +121,7 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
 func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
+
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
