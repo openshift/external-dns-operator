@@ -141,3 +141,37 @@ spec:
   zones: # Replace with the desired hosted zones
     - "3651032588905568971"
 ```
+
+# Azure
+
+Before creating an ExternalDNS resource for Azure, the following is required:
+
+1. create a secret with the service account credentials to be used by the operator
+
+```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: azure-config-file
+    namespace: #operator namespace
+  data:
+    azure.json: # azure-config-file
+```
+
+2. sample ExternalDNS CR for GCP
+
+```yaml
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-azure
+spec:
+  # DNS provider
+  provider:
+    type: Azure
+    azure:
+      configFile:
+        name: azure-config-file
+  zones: # Replace with the desired hosted zones
+    - "myzoneid"
+```
