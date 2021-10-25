@@ -1,0 +1,31 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-azure
+spec:
+  # DNS provider
+  provider:
+    type: Azure
+    azure:
+      configFile:
+        # secret should be in the operator namespace
+        name: azure-config-file
+  # IDs of the managed zones
+  zones:
+    - "myzoneid"
+  source:
+    type: Service
+    service:
+      # consider only those service types
+      serviceType:
+        - LoadBalancer
+        - ClusterIP
+    # consider source services only with these annotations
+    annotationFilter:
+      external-dns.mydomain.org/publish: "yes"
+    # if hostname annotation is ignored
+    # you can set a template for FQDN which will be created
+    # note that this template will add the name of the service to FQDN
+    # note also that the template has to match the hosted zone's domain name
+    fqdnTemplate:
+      - "{{.Name}}.myzonedomain.com"
