@@ -168,7 +168,7 @@ func TestComputeAllReplicasCondition(t *testing.T) {
 			},
 		},
 		{
-			name:               "AvailableReplica < spec.replica shoud return ConditionFalse",
+			name:               "AvailableReplica < spec.replica shouLd return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentProgressing, corev1.ConditionFalse, 8, "25%", "25%", 6, "external-dns-operator"),
 			expectedResult: metav1.Condition{
 				Type:    ExternalDNSDeploymentReplicasAllAvailableConditionType,
@@ -250,6 +250,20 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 			},
 		},
 		{
+			name:               "part of podList matches selector while another doesnt and is not scheduled should return ConditionTrue",
+			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
+			existingPods: []corev1.Pod{
+				fakePod("otherPod", "external-dns-operator", "not-external-dns", corev1.ConditionFalse, corev1.PodReasonUnschedulable),
+				fakePod("extDNSPod", "external-dns-operator", "external-dns-operator", corev1.ConditionTrue, "Scheduled"),
+			},
+			expectedResult: metav1.Condition{
+				Type:    ExternalDNSPodsScheduledConditionType,
+				Status:  metav1.ConditionTrue,
+				Reason:  "AllPodsScheduled",
+				Message: "All pods are scheduled",
+			},
+		},
+		{
 			name:               "Pod unschedulable in list should return ConditionFalse",
 			existingDeployment: fakeDeployment(appsv1.DeploymentAvailable, corev1.ConditionTrue, 8, "25%", "25%", 8, "external-dns-operator"),
 			existingPods: []corev1.Pod{
@@ -259,7 +273,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Some pods are not scheduled:Some pods are not scheduled: Pod \"pod\" cannot be scheduled:  Make sure you have sufficient worker nodes.",
+				Message: "Some pods are not scheduled: Pod \"pod\" cannot be scheduled:  Make sure you have sufficient worker nodes.",
 			},
 		},
 		{
@@ -272,7 +286,7 @@ func TestComputeDeploymentPodsScheduledCondition(t *testing.T) {
 				Type:    ExternalDNSPodsScheduledConditionType,
 				Status:  metav1.ConditionFalse,
 				Reason:  "PodsNotScheduled",
-				Message: "Some pods are not scheduled:Some pods are not scheduled: Pod \"pod\" is not yet scheduled: : ",
+				Message: "Some pods are not scheduled: Pod \"pod\" is not yet scheduled: : ",
 			},
 		},
 	}
@@ -466,7 +480,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 				cmpopts.SortSlices(func(a, b metav1.Condition) bool { return a.Type < b.Type }),
 			}
 			if diff := cmp.Diff(tc.expectedResult.Status.Conditions, outputExtDNS.Status.Conditions, conditionCmpOpts...); diff != "" {
-				t.Errorf("mergeConditions result differs from expected:\n%s", diff)
+				t.Errorf("updateExternalDNSStatus result differs from expected:\n%s", diff)
 			}
 		}
 	}

@@ -197,7 +197,7 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 	}
 	if len(unscheduled) != 0 {
 		var haveUnschedulable bool
-		message := "Some pods are not scheduled:"
+		message := "Some pods are not scheduled: "
 		// Sort keys so that the result is deterministic.
 		keys := make([]*corev1.Pod, 0, len(unscheduled))
 		for pod := range unscheduled {
@@ -213,9 +213,9 @@ func computeDeploymentPodsScheduledCondition(ctx context.Context, cl client.Clie
 			cond := unscheduled[pod]
 			if cond.Reason == corev1.PodReasonUnschedulable {
 				haveUnschedulable = true
-				message += fmt.Sprintf("%s Pod %q cannot be scheduled: %s", message, pod.Name, cond.Message)
+				message += fmt.Sprintf("Pod %q cannot be scheduled: %s", pod.Name, cond.Message)
 			} else {
-				message += fmt.Sprintf("%s Pod %q is not yet scheduled: %s: %s", message, pod.Name, cond.Reason, cond.Message)
+				message += fmt.Sprintf("Pod %q is not yet scheduled: %s: %s", pod.Name, cond.Reason, cond.Message)
 			}
 		}
 		if haveUnschedulable {
