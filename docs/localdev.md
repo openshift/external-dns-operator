@@ -60,6 +60,12 @@ CRC is a pre-built Container Development Environment based on Red Hat Enterprise
     ```bash
     $ oc get events
     ```
+    If you see any errors in the form of `MountVolume.SetUp failed for volume "cert" : secret "webhook-server-cert" not found`, execute the following script
+    ```bash
+    $ hack/generate-certs.sh --service webhook-service --webhook validating-webhook-configuration --secret webhook-server-cert --namespace external-dns-operator
+    # execute make deploy again
+    $ make deploy
+    ```
 8. Create the `credentials` secret for AWS:
 Note: Ensure you have your AWS credentials set up in  `~/.aws/credentials`. For other providers, see `api/v1alpha1/externaldns_types.go`.
 Examples:
