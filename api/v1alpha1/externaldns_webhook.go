@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/runtime"
+
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -67,6 +68,7 @@ func (r *ExternalDNS) validate() error {
 	if err := r.validateHostnameAnnotationPolicy(); err != nil {
 		errs = append(errs, err)
 	}
+
 	if err := r.validateProviderCredentials(); err != nil {
 		errs = append(errs, err)
 	}
