@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -64,7 +65,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal AWS",
 			inputSecretName:  "awssecret",
-			inputExternalDNS: testAWSExternalDNS(),
+			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -99,6 +100,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 						Env: []corev1.EnvVar{
 							{
@@ -130,7 +132,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials AWS",
-			inputExternalDNS: testAWSExternalDNS(),
+			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -165,6 +167,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -173,7 +176,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Azure",
 			inputSecretName:  "azuresecret",
-			inputExternalDNS: testAzureExternalDNS(),
+			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -240,7 +243,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Azure",
-			inputExternalDNS: testAzureExternalDNS(),
+			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -284,7 +287,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal GCP",
 			inputSecretName:  "gcpsecret",
-			inputExternalDNS: testGCPExternalDNS(),
+			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -357,7 +360,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No project GCP",
-			inputExternalDNS: testGCPExternalDNSNoProject(),
+			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -401,7 +404,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Bluecat",
 			inputSecretName:  "bluecatsecret",
-			inputExternalDNS: testBlueCatExternalDNS(),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -468,7 +471,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Bluecat",
-			inputExternalDNS: testBlueCatExternalDNS(),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -512,7 +515,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Infoblox",
 			inputSecretName:  "infobloxsecret",
-			inputExternalDNS: testInfobloxExternalDNS(),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -581,7 +584,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Infoblox",
-			inputExternalDNS: testInfobloxExternalDNS(),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -623,7 +626,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Hostname allowed, no clusterip type",
-			inputExternalDNS: testAWSExternalDNSHostnameAllow(),
+			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -652,6 +655,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--log-level=debug",
 							"--namespace=testns",
 							"--service-type-filter=LoadBalancer",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -690,6 +694,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--service-type-filter=LoadBalancer",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com,{{.Name}}.{{.Namespace}}.example.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -697,7 +702,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Many zones",
-			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}),
+			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -732,6 +737,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 					{
@@ -754,6 +760,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -761,7 +768,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter",
-			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}),
+			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -797,6 +804,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -804,7 +812,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones && no domain filter",
-			inputExternalDNS: testAWSExternalDNSZones([]string{}),
+			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -838,6 +846,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -845,7 +854,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones + Domain filter",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -880,6 +889,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -887,7 +897,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Zone + Domain filter",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -923,6 +933,749 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--publish-internal-services",
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		// OCP Route Source
+		{
+			name:             "Nominal AWS",
+			inputSecretName:  "awssecret",
+			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name: "AWS_ACCESS_KEY_ID",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "awssecret",
+										},
+										Key: "aws_access_key_id",
+									},
+								},
+							},
+							{
+								Name: "AWS_SECRET_ACCESS_KEY",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "awssecret",
+										},
+										Key: "aws_secret_access_key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No credentials AWS",
+			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Nominal Azure",
+			inputSecretName:  "azuresecret",
+			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "azure-config-file",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "azuresecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "azure.json",
+										Path: "azure.json",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=azure",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--azure-config-file=/etc/kubernetes/azure.json",
+							"--txt-prefix=external-dns-",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "azure-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No credentials Azure",
+			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=azure",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Nominal GCP",
+			inputSecretName:  "gcpsecret",
+			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "gcp-credentials-file",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "gcpsecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "gcp-credentials.json",
+										Path: "gcp-credentials.json",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=google",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--google-project=external-dns-gcp-project",
+							"--txt-prefix=external-dns-",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+								Value: "/etc/kubernetes/gcp-credentials.json",
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "gcp-credentials-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No project GCP",
+			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=google",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Nominal Bluecat",
+			inputSecretName:  "bluecatsecret",
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "bluecat-config-file",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "bluecatsecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "bluecat.json",
+										Path: "bluecat.json",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=bluecat",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--bluecat-config-file=/etc/kubernetes/bluecat.json",
+							"--txt-prefix=external-dns-",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "bluecat-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No credentials Bluecat",
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=bluecat",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Nominal Infoblox",
+			inputSecretName:  "infobloxsecret",
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=infoblox",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--infoblox-wapi-port=443",
+							"--infoblox-grid-host=gridhost.example.com",
+							"--infoblox-wapi-version=2.3.1",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name: "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "infobloxsecret",
+										},
+										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME",
+									},
+								},
+							},
+							{
+								Name: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "infobloxsecret",
+										},
+										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No credentials Infoblox",
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=infoblox",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Hostname allowed, no clusterip type",
+			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Many zones",
+			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+					{
+						Name:  "external-dns-n656hcdh5d9hf6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7980",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-private-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Annotation filter",
+			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}, operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--annotation-filter=testannotation=yes",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No zones && no domain filter",
+			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "No zones + Domain filter",
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--domain-filter=abc.com",
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Zone + Domain filter",
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--domain-filter=abc.com",
+							"--zone-id-filter=my-dns-public-zone",
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
 						},
 					},
 				},
@@ -1052,10 +1805,477 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		expectedExist      bool
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
+		extDNS             operatorv1alpha1.ExternalDNS
+		ocpRouterNames     []string
 	}{
 		{
 			name:            "Does not exist",
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{},
+			expectedExist:   true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--txt-prefix=external-dns-",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist as expected",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			existingObjects: []runtime.Object{
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								Kind:               "ExternalDNS",
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": "test",
+									"app.kubernetes.io/name":     "external-dns",
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-nfbh54h648h6q",
+										Image: "quay.io/test/external-dns:latest",
+										Args: []string{
+											"--metrics-address=127.0.0.1:7979",
+											"--txt-owner-id=external-dns-test",
+											"--zone-id-filter=my-dns-public-zone",
+											"--provider=aws",
+											"--source=openshift-route",
+											"--policy=sync",
+											"--registry=txt",
+											"--log-level=debug",
+											"--namespace=testns",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--txt-prefix=external-dns-",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist as expected with one Router Names added as flag",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, "default"),
+			existingObjects: []runtime.Object{
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								Kind:               "ExternalDNS",
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": "test",
+									"app.kubernetes.io/name":     "external-dns",
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-nfbh54h648h6q",
+										Image: "quay.io/test/external-dns:latest",
+										Args: []string{
+											"--metrics-address=127.0.0.1:7979",
+											"--txt-owner-id=external-dns-test",
+											"--zone-id-filter=my-dns-public-zone",
+											"--provider=aws",
+											"--source=openshift-route",
+											"--policy=sync",
+											"--registry=txt",
+											"--log-level=debug",
+											"--namespace=testns",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ocpRouterNames: []string{"default"},
+			expectedExist:  true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--txt-prefix=external-dns-",
+										"--openshift-router-name=default",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist and drifted",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			existingObjects: []runtime.Object{
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								Kind:               "ExternalDNS",
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": "test",
+									"app.kubernetes.io/name":     "external-dns",
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-unexpected",
+										Image: "quay.io/test/external-dns:latest",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							Kind:               "ExternalDNS",
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": "test",
+							"app.kubernetes.io/name":     "external-dns",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": "test",
+								"app.kubernetes.io/name":     "external-dns",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-nfbh54h648h6q",
+									Image: "quay.io/test/external-dns:latest",
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--namespace=testns",
+										"--txt-prefix=external-dns-",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		//Source OCP Routes
+		{
+			name:            "Does not exist",
+			existingObjects: []runtime.Object{},
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1114,6 +2334,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--namespace=testns",
 										"--service-type-filter=LoadBalancer",
+										"--txt-prefix=external-dns-",
 									},
 								},
 							},
@@ -1123,7 +2344,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name: "Exist as expected",
+			name:   "Exist as expected",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1182,6 +2404,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											"--log-level=debug",
 											"--namespace=testns",
 											"--service-type-filter=LoadBalancer",
+											"--txt-prefix=external-dns-",
 										},
 									},
 								},
@@ -1248,6 +2471,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--namespace=testns",
 										"--service-type-filter=LoadBalancer",
+										"--txt-prefix=external-dns-",
 									},
 								},
 							},
@@ -1257,7 +2481,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name: "Exist and drifted",
+			name:   "Exist and drifted",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1370,6 +2595,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--namespace=testns",
 										"--service-type-filter=LoadBalancer",
+										"--txt-prefix=external-dns-",
 									},
 								},
 							},
@@ -1388,7 +2614,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				scheme: test.Scheme,
 				log:    zap.New(zap.UseDevMode(true)),
 			}
-			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, testAWSExternalDNSHostnameAllow())
+			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, &tc.extDNS)
 			if err != nil {
 				if !tc.errExpected {
 					t.Fatalf("unexpected error received: %v", err)
@@ -1494,7 +2720,31 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 	annotationFilter map[string]string,
 	hostnamePolicy operatorv1alpha1.HostnameAnnotationPolicy,
 	fqdnTemplate []string,
-	zones []string) *operatorv1alpha1.ExternalDNS {
+	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
+	extDnsSource := &operatorv1alpha1.ExternalDNSSource{
+		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+			Type:      source,
+			Namespace: &sourceNamespace,
+			Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+				ServiceType: svcType,
+			},
+			AnnotationFilter: annotationFilter,
+		},
+		HostnameAnnotationPolicy: hostnamePolicy,
+		FQDNTemplate:             fqdnTemplate,
+	}
+	// As FQDNTemplate: not needed for openshift-route source
+	extDnsSourceForRoute := &operatorv1alpha1.ExternalDNSSource{
+		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+			Type:      source,
+			Namespace: &sourceNamespace,
+			OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+				RouterName: routerName,
+			},
+			AnnotationFilter: annotationFilter,
+		},
+		HostnameAnnotationPolicy: hostnamePolicy,
+	}
 	extDNS := &operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: test.Name,
@@ -1503,69 +2753,75 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 			Provider: operatorv1alpha1.ExternalDNSProvider{
 				Type: provider,
 			},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type:      source,
-					Namespace: &sourceNamespace,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
-						ServiceType: svcType,
-					},
-					AnnotationFilter: annotationFilter,
-				},
-				HostnameAnnotationPolicy: hostnamePolicy,
-				FQDNTemplate:             fqdnTemplate,
-			},
+
 			Zones: zones,
 		},
 	}
+	if source == operatorv1alpha1.SourceTypeRoute {
+		fmt.Printf("\nif source == operatorv1alpha1.SourceTypeRoute\n")
+		extDNS.Spec.Source = *extDnsSourceForRoute
+		return extDNS
+	}
 
+	if source == operatorv1alpha1.SourceTypeService {
+		fmt.Printf("\nsource == operatorv1alpha1.SourceTypeService\n")
+		extDNS.Spec.Source = *extDnsSource
+		return extDNS
+	}
 	return extDNS
 }
 
 func testExternalDNSHostnameIgnore(provider operatorv1alpha1.ExternalDNSProviderType,
 	source operatorv1alpha1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones)
+	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones, routerName)
 }
 
 func testExternalDNSHostnameAllow(provider operatorv1alpha1.ExternalDNSProviderType,
 	source operatorv1alpha1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyAllow, nil, zones)
+	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyAllow, nil, zones, routerName)
 }
 
-func testAWSExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testAWSExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, nil, "")
 }
 
-func testAWSExternalDNSZones(zones []string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, zones)
+func testAWSExternalDNSZones(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, zones, "")
 }
 
-func testAWSExternalDNSHostnameAllow() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone})
+func testAWSExternalDNSHostnameAllow(source operatorv1alpha1.ExternalDNSSourceType, routerName string) *operatorv1alpha1.ExternalDNS {
+	switch source {
+	case operatorv1alpha1.SourceTypeService:
+		return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, source, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, routerName)
+
+	case operatorv1alpha1.SourceTypeRoute:
+		return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, source, nil, []string{test.PublicZone}, routerName)
+	}
+	return nil
 }
 
 func testAWSExternalDNSManyFQDN() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone})
+	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, "")
 	extdns.Spec.Source.FQDNTemplate = append(extdns.Spec.Source.FQDNTemplate, "{{.Name}}.{{.Namespace}}.example.com")
 	return extdns
 }
 
-func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string) *operatorv1alpha1.ExternalDNS {
-	extdns := testAWSExternalDNS()
+func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, nil, "")
 	extdns.Spec.Source.AnnotationFilter = annotationFilter
 	return extdns
 }
 
-func testAzureExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAzure, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testAzureExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAzure, nil, "")
 }
 
-func testGCPExternalDNS() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testGCPExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeGCP, nil, "")
 	project := "external-dns-gcp-project"
 	extdns.Spec.Provider.GCP = &operatorv1alpha1.ExternalDNSGCPProviderOptions{
 		Project: &project,
@@ -1573,16 +2829,36 @@ func testGCPExternalDNS() *operatorv1alpha1.ExternalDNS {
 	return extdns
 }
 
-func testGCPExternalDNSNoProject() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testCreateDNSFromSourceWRTCloudProvider(source operatorv1alpha1.ExternalDNSSourceType, providerType operatorv1alpha1.ExternalDNSProviderType, zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
+	switch source {
+	case operatorv1alpha1.SourceTypeService:
+		//we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
+		//then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
+		if zones != nil {
+			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, zones, routerName)
+		} else {
+			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, []string{test.PublicZone}, routerName)
+		}
+	case operatorv1alpha1.SourceTypeRoute:
+		if zones != nil {
+			return testExternalDNSHostnameIgnore(providerType, source, nil, zones, routerName)
+		} else {
+			return testExternalDNSHostnameIgnore(providerType, source, nil, []string{test.PublicZone}, routerName)
+		}
+	}
+	return nil
 }
 
-func testBlueCatExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeBlueCat, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testGCPExternalDNSNoProject(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeGCP, nil, "")
 }
 
-func testInfobloxExternalDNS() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeInfoblox, operatorv1alpha1.SourceTypeService, allSvcTypes, []string{test.PublicZone})
+func testBlueCatExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeBlueCat, nil, "")
+}
+
+func testInfobloxExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeInfoblox, nil, "")
 	extdns.Spec.Provider.Infoblox = &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{
 		GridHost:    "gridhost.example.com",
 		WAPIPort:    443,
@@ -1591,8 +2867,8 @@ func testInfobloxExternalDNS() *operatorv1alpha1.ExternalDNS {
 	return extdns
 }
 
-func testAWSExternalDNSDomainFilter(zones []string) *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, allSvcTypes, zones)
+func testAWSExternalDNSDomainFilter(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, zones, "")
 	extdns.Spec.Domains = []v1alpha1.ExternalDNSDomain{
 		{
 			ExternalDNSDomainUnion: v1alpha1.ExternalDNSDomainUnion{

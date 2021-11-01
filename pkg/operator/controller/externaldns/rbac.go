@@ -37,10 +37,10 @@ import (
 // ensureExternalDNSClusterRole ensures that the externalDNS cluster role exists.
 // Returns a boolean if the cluster role exists, its current state if it exists
 // and an error if it cannot be created or updated.
-func (r *reconciler) ensureExternalDNSClusterRole(ctx context.Context) (bool, *rbacv1.ClusterRole, error) {
+func (r *reconciler) ensureExternalDNSClusterRole(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *rbacv1.ClusterRole, error) {
 	name := types.NamespacedName{Name: controller.ExternalDNSGlobalResourceName()}
 
-	desired := desiredExternalDNSClusterRole()
+	desired := desiredExternalDNSClusterRole(externalDNS)
 
 	exists, current, err := r.currentExternalDNSClusterRole(ctx, name)
 	if err != nil {
@@ -97,23 +97,34 @@ func (r *reconciler) ensureExternalDNSClusterRoleBinding(ctx context.Context, na
 }
 
 // desiredExternalDNSClusterRole returns the desired cluster role definition for externalDNS
-func desiredExternalDNSClusterRole() *rbacv1.ClusterRole {
+func desiredExternalDNSClusterRole(externalDNS *operatorv1alpha1.ExternalDNS) *rbacv1.ClusterRole {
+	rules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"networking.k8s.io"},
+			Resources: []string{"ingresses"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"endpoints", "services", "pods", "nodes"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	if externalDNS.Spec.Source.Type == operatorv1alpha1.SourceTypeRoute {
+		rule := rbacv1.PolicyRule{
+			APIGroups: []string{"route.openshift.io"},
+			Resources: []string{"routes"},
+			Verbs:     []string{"get", "watch", "list"},
+		}
+		rules = append(rules, rule)
+	}
+
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: controller.ExternalDNSBaseName,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"networking.k8s.io"},
-				Resources: []string{"ingresses"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"endpoints", "services", "pods", "nodes"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
