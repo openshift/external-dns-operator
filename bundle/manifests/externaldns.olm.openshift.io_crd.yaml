@@ -1,4 +1,3 @@
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -359,17 +358,17 @@ spec:
                     description: Namespace instructs ExternalDNS to only acknowledge
                       source resource instances in a specific namespace.
                     type: string
-                  openshift_route:
+                  openshiftRouteOptions:
                     description: OpenShiftRoute source configuration options for specifying
                       ingress controller names.
                     properties:
-                      ocpRouterName:
+                      routerName:
                         description: If source is openshift-route then you can pass
-                          the ingress controller name or names. Based on this name
-                          external-dns will select the respective router.
+                          the ingress controller name. Based on this name external-dns
+                          will select the respective router.
                         type: string
                     required:
-                    - ocpRouterName
+                    - routerName
                     type: object
                   service:
                     description: Service describes source configuration options specific

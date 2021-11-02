@@ -130,7 +130,7 @@ olm-manifests: manifests
 	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
 	# opm is unable to find CRD if the standard yaml --- is at the top
-	sed -i '/^---$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
+	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests
