@@ -1,11 +1,52 @@
 # Usage
 
+- [AWS](#aws)
+- [Infoblox](#infoblox)
+- [BlueCat](#bluecat)
+- [GCP](#gcp)
+- [Azure](#azure)
+
 ### Credentials for DNS providers
 
 The _external-dns-operator_ manages external-dns deployments. It creates pods with correct credentials based on the
 provider configuration in the `ExternalDNS` resource. However, it does not provision the credentials themselves, instead
 it expects the credentials to be in the same namespace as the operator itself. It then copies over the credentials into
 the namespace where the _external-dns_ deployments are created so that they can be mounted by the pods.
+
+## AWS
+
+Create a secret with the access key id and secret:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-access-key
+  namespace: #operator namespace
+data:
+  aws_access_key_id: # Base-64 encoded access key id
+  aws_secret_access_key: # Base-64 encoded access key secret
+```
+
+Then create an `ExternalDNS` resource as follows:
+
+```yaml
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: aws-example
+spec:
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        name: aws-access-key
+  zones: # Replace with the desired hosted zone IDs
+    - "Z3URY6TWQ91KXX"
+```
+
+Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
+manage DNS records in AWS Route53.
 
 ## Infoblox
 
@@ -107,6 +148,7 @@ spec:
   zones: # Replace with the desired hosted zones
     - "78127234..."
 ```
+
 # GCP
 
 Before creating an ExternalDNS resource for GCP, the following is required:
@@ -138,7 +180,7 @@ spec:
       credentials:
         name: gcp-access-key
       project: gcp-devel
-  zones: # Replace with the desired hosted zones
+  zones: # Replace with the desired managed zones
     - "3651032588905568971"
 ```
 
@@ -158,7 +200,7 @@ Before creating an ExternalDNS resource for Azure, the following is required:
     azure.json: # azure-config-file
 ```
 
-2. sample ExternalDNS CR for GCP
+2. sample ExternalDNS CR for Azure
 
 ```yaml
 apiVersion: externaldns.olm.openshift.io/v1alpha1

@@ -1,0 +1,51 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-aws
+spec:
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        name: aws-access-key
+  # Multiple zone IDs can be specified. ExternalDNS then manages DNS records which belong to the specified zones.
+  # When zones are not specified ExternalDNS discovers all the zones in the account.
+  zones:
+  - "myzoneid1"
+  - "myzoneid2"
+  # Domains is another way of telling which zones need to be managed.
+  # If both zones and domains are specified: only the overlap between them is used.
+  domains:
+  - filterType: Include
+    matchType: Exact
+    name: "myzonedomain1.com"
+  - filterType: Include
+    matchType: Exact
+    name: "myzonedomain2.com"
+  # Zones selected from the domain below won't be managed.
+  # Because they don't overlap with the domains of the before specified zone IDs.
+  - filterType: Include
+    matchType: Pattern
+    pattern: ".*\\.otherzonedomain.com"
+  source:
+    type: Service
+    service:
+      serviceType:
+      - LoadBalancer
+      - ClusterIP
+      - NodePort
+    annotationFilter:
+      external-dns.mydomain.org/publish: "yes"
+    # Allow the hostname annotation on the sources.
+    # Note that it's possible to have many hostnames in the annotation.
+    hostnameAnnotation: "Allow"
+    # FQDNTemplate will be used for the sources NOT annotated with hostname.
+    # It makes sense to specify the same domains as the before mentioned hosted zones.
+    fqdnTemplate:
+    - "{{.Name}}.myzonedomain1.com"
+    - "{{.Name}}.myzonedomain2.com"
+    - "{{.Name}}.otherzonedomain.com" # won't be useful as this domain is not selected, see above
+
+# Given the configuration above you can expect the following to happen:
+# Example 1: service A of type LoadBalancer not annotated with the hostname will be published in myzoneid1 with FQDN "A.myzonedomain1.com" and in myzoneid2 with FQDN "A.myzonedomain2.com"
+# Example 2: service B of type NodePort annotated with hostname "X.myzonedomain1.com,Y.myzonedomain2.com,Z.otherzonedomain.com" will be published in myzoneid1 with FQDN "X.myzonedomain1.com" and in myzoneid2 with FQDN "Y.myzonedomain2.com"
