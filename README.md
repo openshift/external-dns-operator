@@ -45,23 +45,90 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
 
 
 ### Installing the `ExternalDNS` Operator using a custom index image on OperatorHub
-
-1. Build and push the bundle image to a registry:
+**Note**: By default container engine used is docker but you can specify podman by adding CONTAINER_ENGINE=podman to your image build and push commands as mentioned below.
+    
+1. Build and push operator image to registry.
+   
+a. Select the container runtime you want. Either podman or docker. 
+   ```sh
+   export CONTAINER_ENGINE=podman
+   ```
+   b. Set your image name 
+   ```sh
+   $ export IMG=<registry>/<username>/external-dns-operator:latest
+   ```
+   c. Build and push the image
+```sh
+   make image-build
+   make image-push
+```
+   
+2. Build the bundle image to a registry:
+  
+  a. Export your expected image name which shall have your registry name in an env var.
    ```sh
    $ export BUNDLE_IMG=<registry>/<username>/external-dns-operator-bundle:latest
+   ```
+   
+  b. In the bundle/manifests/external-dns-operator_clusterserviceversion.yaml
+     add the operator image created in Step 0 as follows - 
+   ```sh
+    In annotations:
+    Change containerImage: quay.io/openshift/origin-external-dns-operator:latest
+    to containerImage: <registry>/<username, repository name>/external-dns-operator:latest
+   
+    In spec:
+    Change image: quay.io/openshift/origin-external-dns-operator:latest
+    to image: <registry>/<username, repository name>/external-dns-operator:latest
+  ```
+  
+  c. Build the image
+   ```sh   
    $ make bundle-image-build
+   ```
+   
+3. Push the image.
+  ```sh
    $ make bundle-image-push
    ```
 
-2. Build and push the image index for `operator-registry`:
+4. Build and push the image index for `operator-registry`:
    ```sh
    $ export INDEX_IMG=<registry>/<username>/external-dns-operator-bundle-index:1.0.0
    $ make index-image-build
    $ make index-image-push
    ```
 
-3. Create the `Catalogsource` object (you may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace): \
-   *Note* the secret to the pod of `external-dns-operator` is part of the bundle created in step 1.
+5. Create the `external-dns-operator` namespace:
+   ```sh
+   $ oc create ns external-dns-operator
+   ```
+
+6. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.9/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets). If you are using podman then these are the instructions:
+
+Login to your registry
+   ```sh
+      $ podman login quay.io
+Authenticating with existing credentials...
+Existing credentials are valid. Already logged in to quay.io
+   ```
+
+Create a secret with registry auth details
+```sh
+$ oc -n openshift-marketplace create secret generic extdns-olm-secret  --type=kubernetes.io/dockercfg  --from-file=.dockercfg=${XDG_RUNTIME_DIR}/containers/auth.json
+```
+
+Link the secret to default and builder service accounts
+```sh
+$ oc secrets link builder extdns-olm-secret -n openshift-marketplace
+$ oc secrets link default extdns-olm-secret --for=pull -n openshift-marketplace
+````
+
+*Note* the secret to the pod of `external-dns-operator` is part of the bundle created in step 1.
+
+
+7. Create the `Catalogsource` object 
+   
    ```yaml
    $ cat <<EOF | oc apply -f -
    apiVersion: operators.coreos.com/v1alpha1
@@ -75,11 +142,14 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    EOF
    ```
 
-4. Create the `external-dns-operator` namespace:
-   ```sh
-   $ oc create ns external-dns-operator
-   ```
-5. Create a subscription object to install the Operator:
+8. Now go to the web console of OCP, then select Operator -> Operator Hub.
+   Type external-dns-operator in search, select and install it in external-dns-operator namespace.
+   
+**Note**: Subscription object is created in subsequent steps when you install via web console.
+       So ignore step 9 if you are installing operator via web console.
+
+9. Create a subscription object to install the Operator:
+   
     ```yaml
     cat <<EOF | oc apply -f -
     apiVersion: operators.coreos.com/v1alpha1
