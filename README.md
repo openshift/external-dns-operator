@@ -71,7 +71,7 @@ a. Select the container runtime you want. Either podman or docker.
    ```
    
   b. In the bundle/manifests/external-dns-operator_clusterserviceversion.yaml
-     add the operator image created in Step 0 as follows - 
+     add the operator image created in Step 1 as follows - 
    ```sh
     In annotations:
     Change containerImage: quay.io/openshift/origin-external-dns-operator:latest
