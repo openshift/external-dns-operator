@@ -30,7 +30,7 @@ BIN_DIR=$(shell pwd)/bin
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-CONTAINER_ENGINE ?= docker
+CONTAINER_ENGINE ?= podman
 
 BUNDLE_MANIFEST_DIR := bundle/manifests
 BUNDLE_IMG ?= olm-bundle:latest
@@ -111,9 +111,12 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/operand_rbac | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/operand_rbac | kubectl delete -f -
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
 
 .PHONY: olm-manifests
 # A little helper command to generate the manifests of OLM bundle from the files in config/.
@@ -129,6 +132,7 @@ olm-manifests: manifests
 	cp -f config/rbac/auth_proxy_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrole.yaml
 	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
+	cp -f config/operand_rbac/operand_rbac.yaml $(BUNDLE_MANIFEST_DIR)/operand_rbac.yaml
 	# opm is unable to find CRD if the standard yaml --- is at the top
 	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 
