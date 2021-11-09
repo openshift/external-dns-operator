@@ -40,3 +40,4 @@ subjects:
 - kind: ServiceAccount
   name:  external-dns-operator
   namespace:  external-dns-operator
+  
