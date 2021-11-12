@@ -77,6 +77,16 @@ test: manifests generate fmt vet ## Run tests.
 	mkdir -p "$(ENVTEST_ASSETS_DIR)"
 	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" go test ./... -race -covermode=atomic -coverprofile coverage.out
 
+.PHONY: test-e2e
+test-e2e:
+	go test \
+	-timeout 1h \
+	-count 1 \
+	-v \
+	-tags e2e \
+	-run "$(TEST)" \
+	./test/e2e
+
 verify: lint
 	hack/verify-gofmt.sh
 	hack/verify-deps.sh

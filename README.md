@@ -165,3 +165,23 @@ $ oc secrets link default extdns-olm-secret --for=pull -n openshift-marketplace
     EOF
     ```
     **Note**: You can install the `ExternalDNS` Operator through the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS operator`,  and install the operator.
+
+### Running end-to-end tests
+
+1. Deploy the operator as described above
+
+2. Set the necessary environment variables
+   In order for records created during the tests to be accessible, the e2e
+   suite creates a public hosted zone as a subdomain of an existing zone. You
+   must specify the existing zone's domain name and its zone id in the
+   environment variables `EXTDNS_PARENT_DOMAIN` and `EXTDNS_PARENT_ZONEID`,
+   respectively.
+   ```sh
+   $ export EXTDNS_PARENT_ZONEID="ZABCD123456789"
+   $ export EXTDNS_PARENT_DOMAIN="example.com." # must include the trailing `.`
+   ```
+
+3. Run the test suite
+   ```sh
+   $ make test-e2e
+   ```
