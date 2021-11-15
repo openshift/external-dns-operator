@@ -30,7 +30,7 @@ BIN_DIR=$(shell pwd)/bin
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-CONTAINER_ENGINE ?= podman
+CONTAINER_ENGINE ?= docker
 
 BUNDLE_MANIFEST_DIR := bundle/manifests
 BUNDLE_IMG ?= olm-bundle:latest
