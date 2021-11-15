@@ -13,10 +13,11 @@ metadata:
           "spec": {
             "provider": {
               "type": "AWS",
-              "aws":
+              "aws": {
                 "credentials": {
                   "name": "aws-access-key"
                 }
+              }
             },
             "source": {
               "type": "Service"
@@ -122,6 +123,7 @@ spec:
   provider:
     name: Red Hat, Inc.
   version: 0.0.1
+  minKubeVersion: 1.22
   webhookdefinitions:
     - admissionReviewVersions:
         - v1

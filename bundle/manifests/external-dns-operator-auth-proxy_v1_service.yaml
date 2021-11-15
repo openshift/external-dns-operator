@@ -4,7 +4,6 @@ metadata:
   labels:
     name: external-dns-operator
   name: external-dns-operator-metrics-service
-  namespace: external-dns-operator
 spec:
   ports:
   - name: https

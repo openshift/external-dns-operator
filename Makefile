@@ -135,12 +135,14 @@ olm-manifests: manifests
 	cp -f config/crd/bases/externaldns.olm.openshift.io_externaldnses.yaml $(BUNDLE_MANIFEST_DIR)/externaldns.olm.openshift.io_crd.yaml
 	cp -f config/rbac/role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrole.yaml
 	cp -f config/rbac/role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
-	cp -f config/rbac/service_account.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_v1_serviceaccount.yaml
 	cp -f config/rbac/auth_proxy_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrole.yaml
 	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
 	# opm is unable to find CRD if the standard yaml --- is at the top
 	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
+	# as per the recommendation of 'operator-sdk bundle validate' command
+	# strip the namespaces from the bundle manifests
+	sed -i '/namespace:/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests
