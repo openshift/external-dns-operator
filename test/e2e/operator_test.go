@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	awsSession "github.com/aws/aws-sdk-go/aws/session"
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	awsSession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
@@ -142,19 +142,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	defaultParentDomainName = os.Getenv("EXTDNS_PARENT_DOMAIN")
-	if defaultParentDomainName == "" {
-		fmt.Printf("No parent domain specified. Please set the environment variable EXTDNS_PARENT_DOMAIN\n")
-		os.Exit(1)
-	}
-	defaultParentZoneID = os.Getenv("EXTDNS_PARENT_ZONEID")
-	if defaultParentZoneID == "" {
-		fmt.Printf("No parent zone ID specified. Please set the environment variable EXTDNS_PARENT_ZONEID\n")
-		os.Exit(1)
-	}
-
-	domainName = generateDomainName()
-
 	platform := infraConfig.Status.PlatformStatus
 	if platform == nil {
 		fmt.Printf("platform status is missing for infrastructure %s", infraConfig.Name)
@@ -169,26 +156,41 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	dialer = &net.Dialer{
-		Resolver: &net.Resolver{
-			PreferGo: true,
-			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-				d := net.Dialer{
-					Timeout: dnsLookupTimeout,
-				}
-				return d.DialContext(ctx, "udp", dnsServer)
+	/*
+		defaultParentDomainName = os.Getenv("EXTDNS_PARENT_DOMAIN")
+		if defaultParentDomainName == "" {
+			fmt.Printf("No parent domain specified. Please set the environment variable EXTDNS_PARENT_DOMAIN\n")
+			os.Exit(1)
+		}
+		defaultParentZoneID = os.Getenv("EXTDNS_PARENT_ZONEID")
+		if defaultParentZoneID == "" {
+			fmt.Printf("No parent zone ID specified. Please set the environment variable EXTDNS_PARENT_ZONEID\n")
+			os.Exit(1)
+		}
+
+		domainName = generateDomainName()
+
+		dialer = &net.Dialer{
+			Resolver: &net.Resolver{
+				PreferGo: true,
+				Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+					d := net.Dialer{
+						Timeout: dnsLookupTimeout,
+					}
+					return d.DialContext(ctx, "udp", dnsServer)
+				},
 			},
-		},
-	}
+		}
 
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			Dial:        dialer.Dial,
-			DialContext: dialer.DialContext,
-		},
-	}
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				Dial:        dialer.Dial,
+				DialContext: dialer.DialContext,
+			},
+		}
 
-	os.Exit(m.Run())
+		os.Exit(m.Run())
+	*/
 }
 
 func TestOperatorAvailable(t *testing.T) {
