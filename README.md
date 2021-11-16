@@ -151,7 +151,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
       sourceNamespace: openshift-marketplace
     EOF
     ```
-    **Note**: You can install the `ExternalDNS` Operator through the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS operator`,  and install the operator.
+    **Note**: You can install the `ExternalDNS` Operator through the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS operator`,  and install it in the `external-dns-operator` namespace.
 
 ### Running end-to-end tests
 
