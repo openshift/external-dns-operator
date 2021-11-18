@@ -101,6 +101,9 @@ spec:
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: external-dns-operator
+      permissions:
+      - rules: []
+        serviceAccountName: external-dns-operator
     strategy: deployment
   installModes:
   - supported: true
