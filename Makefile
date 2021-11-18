@@ -128,8 +128,8 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	$(KUSTOMIZE) build config/operand_rbac | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
 	$(KUSTOMIZE) build config/operand_rbac | kubectl delete -f -
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: olm-manifests
 # A little helper command to generate the manifests of OLM bundle from the files in config/.
