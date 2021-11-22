@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -5,30 +6,31 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"strconv"
-	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	_ "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
+	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 )
 
-const(
-	RESOURCE_GROUP="azure_resourcegroup"
-    SUBSCIPTION_ID = "azure_subscription_id"
-	TANENT_ID = "azure_tenant_id"
+const (
+	RESOURCE_GROUP = "azure_resourcegroup"
+	SUBSCIPTION_ID = "azure_subscription_id"
+	TANENT_ID      = "azure_tenant_id"
+	CLIENT_ID      = "azure_client_id"
+	CLIENT_SECRET  = "azure_client_secret"
 )
-
 
 // config represents common config items for Azure DNS and Azure Private DNS
 type cluserConfig struct {
@@ -44,42 +46,41 @@ type cluserConfig struct {
 	UserAssignedIdentityID      string            `json:"userAssignedIdentityID" yaml:"userAssignedIdentityID"`
 }
 
-
 type azureTestHelper struct {
-	tenantId string
-	subscriptionId string
-	resourceGroup string
-	clientID string
-	clientSecret string
+	tenantId                    string
+	subscriptionId              string
+	resourceGroup               string
+	clientID                    string
+	clientSecret                string
 	useManagedIdentityExtension bool
-	congi cluserConfig
-
+	congi                       cluserConfig
 }
 
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
-	tenantId,subscriptionId,resourceGroup , err := fetchCredentials(kubeClient)
-	if err != nil{
+	data, err := fetchCredentials(kubeClient)
+	if err != nil {
 		return nil, err
 	}
 	return &azureTestHelper{
-		tenantId:                    tenantId,
-		subscriptionId:              subscriptionId,
-		resourceGroup:               resourceGroup,
+		tenantId:                    string(data[TANENT_ID]),
+		subscriptionId:              string(data[SUBSCIPTION_ID]),
+		resourceGroup:               string(data[RESOURCE_GROUP]),
 		useManagedIdentityExtension: true,
+		clientID:                    string(data[RESOURCE_GROUP]),
+		clientSecret:                string(data[RESOURCE_GROUP]),
 	}, nil
 }
 
-
-func  fetchCredentials(kubeClient client.Client) (tenantId,subscriptionId,resourceGroup string, err error ){
+func fetchCredentials(kubeClient client.Client) (data map[string][]byte, err error) {
 	secret := &corev1.Secret{}
 	secretName := types.NamespacedName{
 		Name:      "azure-credentials",
 		Namespace: "kube-system",
 	}
 	if err = kubeClient.Get(context.Background(), secretName, secret); err != nil {
-		return "", "","", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+		return nil, fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
 	}
-	return string(secret.Data[TANENT_ID]), string(secret.Data[SUBSCIPTION_ID]),string(secret.Data[RESOURCE_GROUP]), nil
+	return secret.Data, nil
 }
 
 func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
@@ -89,9 +90,9 @@ func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"tenantId":     []byte(a.tenantId),
-			"subscriptionId": []byte(a.subscriptionId),
-			"resourceGroup": []byte(a.resourceGroup),
+			"tenantId":                    []byte(a.tenantId),
+			"subscriptionId":              []byte(a.subscriptionId),
+			"resourceGroup":               []byte(a.resourceGroup),
 			"useManagedIdentityExtension": []byte(strconv.FormatBool(a.useManagedIdentityExtension)),
 		},
 	}
@@ -102,30 +103,27 @@ func (a *azureTestHelper) platform() string {
 }
 
 func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
-
-	//msiClient := msi.NewUserAssignedIdentitiesClient(a.subscriptionId)
-	//fmt.Printf(msiClient.BaseURI)
 	cfg := &cluserConfig{}
 	cfg, err := a.getConfig()
-	if err != nil{
+	if err != nil {
 		return "", []string{}, err
 	}
 
 	token, err := getAccessToken(*cfg)
-	if err != nil{
+	if err != nil {
 		return "", []string{}, err
 	}
 	zone := dns.NewZonesClient(a.subscriptionId)
 	zone.Authorizer = autorest.NewBearerAuthorizer(token)
-	z, err := zone.CreateOrUpdate(context.TODO(),a.resourceGroup,"example-test.info",dns.Zone{},"","")
+	z, err := zone.CreateOrUpdate(context.TODO(), a.resourceGroup, "example-test.info", dns.Zone{}, "", "")
 	if err != nil {
 		return "", []string{}, err
 	}
 	var zoneID string
 	zoneID = *z.ID
 	nameservers := append(*z.ZoneProperties.NameServers)
-	fmt.Printf("ZoneID : %s, Name Servers : %v",zoneID, nameservers)
-	return zoneID,nameservers, nil
+	fmt.Printf("ZoneID : %s, Name Servers : %v", zoneID, nameservers)
+	return zoneID, nameservers, nil
 }
 
 func (a *azureTestHelper) deleteHostedZone(zoneID string) error {
@@ -156,9 +154,6 @@ func (a *azureTestHelper) deleteHostedZone(zoneID string) error {
 //	})
 //	return &id, err
 //}
-
-
-
 
 func (a *azureTestHelper) getConfig() (*cluserConfig, error) {
 	cfg := &cluserConfig{
