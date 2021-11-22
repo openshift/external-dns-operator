@@ -5,17 +5,16 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"testing"
-	"time"
-
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"net"
+	"os"
+	"testing"
+	"time"
+
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -51,19 +50,6 @@ func init() {
 	}
 }
 
-func initKubeClient() error {
-	kubeConfig, err := config.GetConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get kube config: %w\n", err)
-	}
-
-	kubeClient, err = client.New(kubeConfig, client.Options{})
-	if err != nil {
-		return fmt.Errorf("failed to create kube client: %w\n", err)
-	}
-	return nil
-}
-
 func initProviderHelper() (providerTestHelper, error) {
 	var (
 		openshiftCI  bool
@@ -97,9 +83,25 @@ func initProviderHelper() (providerTestHelper, error) {
 			awsSecretAccessKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
 		}
 		return newAWSHelper(awsAccessKeyID, awsSecretAccessKey)
+	case string(configv1.AzurePlatformType):
+		return newAzureHelper(kubeClient)
+
 	default:
 		return nil, fmt.Errorf("unsupported Provider: '%s'", platformType)
 	}
+}
+
+func initKubeClient() error {
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get kube config: %w\n", err)
+	}
+
+	kubeClient, err = client.New(kubeConfig, client.Options{})
+	if err != nil {
+		return fmt.Errorf("failed to create kube client: %w\n", err)
+	}
+	return nil
 }
 
 func TestMain(m *testing.M) {
@@ -132,14 +134,7 @@ func TestMain(m *testing.M) {
 	os.Exit(exitStatus)
 }
 
-func TestOperatorAvailable(t *testing.T) {
-	expected := []appsv1.DeploymentCondition{
-		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
-	}
-	if err := waitForOperatorDeploymentStatusCondition(t, kubeClient, expected...); err != nil {
-		t.Errorf("did not get expected available condition: %v", err)
-	}
-}
+
 
 func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
