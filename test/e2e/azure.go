@@ -6,18 +6,21 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/adal"
+	"github.com/Azure/go-autorest/autorest/azure"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"os"
 	"strconv"
+	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	_ "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
-
-	"github.com/Azure/azure-sdk-for-go/services/msi/mgmt/2018-11-30/msi"
 )
 
 const(
@@ -25,11 +28,31 @@ const(
     SUBSCIPTION_ID = "azure_subscription_id"
 	TANENT_ID = "azure_tenant_id"
 )
+
+
+// config represents common config items for Azure DNS and Azure Private DNS
+type cluserConfig struct {
+	Cloud                       string            `json:"cloud" yaml:"cloud"`
+	Environment                 azure.Environment `json:"-" yaml:"-"`
+	TenantID                    string            `json:"tenantId" yaml:"tenantId"`
+	SubscriptionID              string            `json:"subscriptionId" yaml:"subscriptionId"`
+	ResourceGroup               string            `json:"resourceGroup" yaml:"resourceGroup"`
+	Location                    string            `json:"location" yaml:"location"`
+	ClientID                    string            `json:"aadClientId" yaml:"aadClientId"`
+	ClientSecret                string            `json:"aadClientSecret" yaml:"aadClientSecret"`
+	UseManagedIdentityExtension bool              `json:"useManagedIdentityExtension" yaml:"useManagedIdentityExtension"`
+	UserAssignedIdentityID      string            `json:"userAssignedIdentityID" yaml:"userAssignedIdentityID"`
+}
+
+
 type azureTestHelper struct {
 	tenantId string
 	subscriptionId string
 	resourceGroup string
+	clientID string
+	clientSecret string
 	useManagedIdentityExtension bool
+	congi cluserConfig
 
 }
 
@@ -80,10 +103,20 @@ func (a *azureTestHelper) platform() string {
 
 func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
 
-	msiClient := msi.NewUserAssignedIdentitiesClient(a.subscriptionId)
-	fmt.Printf(msiClient.BaseURI)
-	zone := dns.NewZonesClient(a.subscriptionId)
+	//msiClient := msi.NewUserAssignedIdentitiesClient(a.subscriptionId)
+	//fmt.Printf(msiClient.BaseURI)
+	cfg := &cluserConfig{}
+	cfg, err := a.getConfig()
+	if err != nil{
+		return "", []string{}, err
+	}
 
+	token, err := getAccessToken(*cfg)
+	if err != nil{
+		return "", []string{}, err
+	}
+	zone := dns.NewZonesClient(a.subscriptionId)
+	zone.Authorizer = autorest.NewBearerAuthorizer(token)
 	z, err := zone.CreateOrUpdate(context.TODO(),a.resourceGroup,"example-test.info",dns.Zone{},"","")
 	if err != nil {
 		return "", []string{}, err
@@ -123,3 +156,80 @@ func (a *azureTestHelper) deleteHostedZone(zoneID string) error {
 //	})
 //	return &id, err
 //}
+
+
+
+
+func (a *azureTestHelper) getConfig() (*cluserConfig, error) {
+	cfg := &cluserConfig{
+		Cloud:                       "",
+		TenantID:                    "",
+		SubscriptionID:              a.subscriptionId,
+		ResourceGroup:               a.resourceGroup,
+		Location:                    "",
+		ClientID:                    a.clientID,
+		ClientSecret:                a.clientSecret,
+		UseManagedIdentityExtension: true,
+		UserAssignedIdentityID:      "",
+	}
+
+	var environment azure.Environment
+	if cfg.Cloud == "" {
+		environment = azure.PublicCloud
+	}
+	cfg.Environment = environment
+
+	return cfg, nil
+}
+
+// getAccessToken retrieves Azure API access token.
+func getAccessToken(cfg cluserConfig) (*adal.ServicePrincipalToken, error) {
+	// Try to retrieve token with service principal credentials.
+	// Try to use service principal first, some AKS clusters are in an intermediate state that `UseManagedIdentityExtension` is `true`
+	// and service principal exists. In this case, we still want to use service principal to authenticate.
+	if len(cfg.ClientID) > 0 &&
+		len(cfg.ClientSecret) > 0 &&
+		// due to some historical reason, for pure MSI cluster,
+		// they will use "msi" as placeholder in azure.json.
+		// In this case, we shouldn't try to use SPN to authenticate.
+		!strings.EqualFold(cfg.ClientID, "msi") &&
+		!strings.EqualFold(cfg.ClientSecret, "msi") {
+		oauthConfig, err := adal.NewOAuthConfig(cfg.Environment.ActiveDirectoryEndpoint, cfg.TenantID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve OAuth config: %v", err)
+		}
+
+		token, err := adal.NewServicePrincipalToken(*oauthConfig, cfg.ClientID, cfg.ClientSecret, cfg.Environment.ResourceManagerEndpoint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create service principal token: %v", err)
+		}
+		return token, nil
+	}
+
+	// Try to retrieve token with MSI.
+	if cfg.UseManagedIdentityExtension {
+		os.Setenv("MSI_ENDPOINT", "http://dummy")
+		defer func() {
+			os.Unsetenv("MSI_ENDPOINT")
+		}()
+
+		if cfg.UserAssignedIdentityID != "" {
+			token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, &adal.ManagedIdentityOptions{
+				ClientID: cfg.UserAssignedIdentityID,
+			})
+
+			if err != nil {
+				return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
+			}
+			return token, nil
+		}
+
+		token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
+		}
+		return token, nil
+	}
+
+	return nil, fmt.Errorf("no credentials provided for Azure API")
+}
