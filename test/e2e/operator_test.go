@@ -102,6 +102,23 @@ func initProviderHelper() (providerTestHelper, error) {
 			awsSecretAccessKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
 		}
 		return newAWSHelper(awsAccessKeyID, awsSecretAccessKey)
+	case string(configv1.GCPPlatformType):
+		var gcpCredentials string
+		var gcpProjectId string
+		if openshiftCI {
+			gcpCredentials, err = rootGCPCredentials(kubeClient)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GCP credentials from CCO: %w", err)
+			}
+			gcpProjectId, err = getGCPProjectId(kubeClient)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get GCP project id: %w", err)
+			}
+		} else {
+			gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
+			gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
+		}
+		return newGCPHelper(gcpCredentials, gcpProjectId)
 	default:
 		return nil, fmt.Errorf("unsupported Provider: '%s'", platformType)
 	}
