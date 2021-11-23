@@ -6,26 +6,16 @@ package e2e
 import (
 	"context"
 	"fmt"
-<<<<<<< HEAD
 	"net"
 	"os"
 	"testing"
 	"time"
 
-=======
->>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-<<<<<<< HEAD
-=======
-	"net"
-	"os"
-	"testing"
-	"time"
->>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -146,11 +136,6 @@ func TestMain(m *testing.M) {
 	os.Exit(exitStatus)
 }
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
