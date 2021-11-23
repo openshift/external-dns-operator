@@ -86,6 +86,7 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", rootDomain)},
 			},
 		},
+		Status: operatorv1alpha1.ExternalDNSStatus{},
 	}
 
 	var provider operatorv1alpha1.ExternalDNSProvider
@@ -95,6 +96,15 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 			Type: operatorv1alpha1.ProviderTypeAWS,
 			AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
 				Credentials: operatorv1alpha1.SecretReference{
+					Name: credsSecret.Name,
+				},
+			},
+		}
+	case string(configv1.AzurePlatformType):
+		provider = operatorv1alpha1.ExternalDNSProvider{
+			Type: operatorv1alpha1.ProviderTypeAzure,
+			Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
+				ConfigFile: operatorv1alpha1.SecretReference{
 					Name: credsSecret.Name,
 				},
 			},

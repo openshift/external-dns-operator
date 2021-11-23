@@ -6,9 +6,9 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -20,8 +20,6 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 )
 
 const (
@@ -30,6 +28,9 @@ const (
 	TANENT_ID      = "azure_tenant_id"
 	CLIENT_ID      = "azure_client_id"
 	CLIENT_SECRET  = "azure_client_secret"
+	REGION         = "azure_region"
+
+	KUBE_SYSTEM_SECRET_NAME = "azure-credentials"
 )
 
 // config represents common config items for Azure DNS and Azure Private DNS
@@ -47,40 +48,64 @@ type cluserConfig struct {
 }
 
 type azureTestHelper struct {
-	tenantId                    string
-	subscriptionId              string
-	resourceGroup               string
-	clientID                    string
-	clientSecret                string
-	useManagedIdentityExtension bool
-	congi                       cluserConfig
+	config     *cluserConfig
+	kubeClient client.Client
+	zoneClient dns.ZonesClient
+	zoneName string
 }
 
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
-	data, err := fetchCredentials(kubeClient)
-	if err != nil {
+	azureProvider := &azureTestHelper{
+		kubeClient: kubeClient,
+	}
+
+	if err := azureProvider.prepareCredentials(); err != nil {
 		return nil, err
 	}
-	return &azureTestHelper{
-		tenantId:                    string(data[TANENT_ID]),
-		subscriptionId:              string(data[SUBSCIPTION_ID]),
-		resourceGroup:               string(data[RESOURCE_GROUP]),
-		useManagedIdentityExtension: true,
-		clientID:                    string(data[RESOURCE_GROUP]),
-		clientSecret:                string(data[RESOURCE_GROUP]),
-	}, nil
+
+	if err := azureProvider.prepareZoneClient(); err != nil{
+		return nil, err
+	}
+	return azureProvider, nil
 }
 
-func fetchCredentials(kubeClient client.Client) (data map[string][]byte, err error) {
+func (a *azureTestHelper) prepareCredentials() (err error) {
 	secret := &corev1.Secret{}
 	secretName := types.NamespacedName{
-		Name:      "azure-credentials",
+		Name:      KUBE_SYSTEM_SECRET_NAME,
 		Namespace: "kube-system",
 	}
-	if err = kubeClient.Get(context.Background(), secretName, secret); err != nil {
-		return nil, fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+	if err = a.kubeClient.Get(context.Background(), secretName, secret); err != nil {
+		return fmt.Errorf("failed to get credentials secret %s, error : %v", secretName.Name, err)
 	}
-	return secret.Data, nil
+
+	a.config = &cluserConfig{
+		TenantID:                    string(secret.Data[TANENT_ID]),
+		SubscriptionID:              string(secret.Data[SUBSCIPTION_ID]),
+		ResourceGroup:               string(secret.Data[RESOURCE_GROUP]),
+		Location:                    string(secret.Data[REGION]),
+		ClientID:                    string(secret.Data[CLIENT_ID]),
+		ClientSecret:                string(secret.Data[CLIENT_SECRET]),
+		UseManagedIdentityExtension: true,
+	}
+
+	var environment azure.Environment
+	if a.config.Cloud == "" {
+		environment = azure.PublicCloud
+	}
+	a.config.Environment = environment
+
+	return nil
+}
+
+func (a *azureTestHelper) prepareZoneClient() error {
+	token, err := getAccessToken(a.config)
+	if err != nil {
+		return err
+	}
+	a.zoneClient = dns.NewZonesClientWithBaseURI(a.config.Environment.ResourceManagerEndpoint, a.config.SubscriptionID)
+	a.zoneClient.Authorizer = autorest.NewBearerAuthorizer(token)
+	return nil
 }
 
 func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
@@ -90,10 +115,11 @@ func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
-			"tenantId":                    []byte(a.tenantId),
-			"subscriptionId":              []byte(a.subscriptionId),
-			"resourceGroup":               []byte(a.resourceGroup),
-			"useManagedIdentityExtension": []byte(strconv.FormatBool(a.useManagedIdentityExtension)),
+			"tenantId":        []byte(a.config.TenantID),
+			"subscriptionId":  []byte(a.config.SubscriptionID),
+			"resourceGroup":   []byte(a.config.ResourceGroup),
+			"aadClientId":     []byte(a.config.ClientID),
+			"aadClientSecret": []byte(a.config.ClientSecret),
 		},
 	}
 }
@@ -103,82 +129,60 @@ func (a *azureTestHelper) platform() string {
 }
 
 func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
-	cfg := &cluserConfig{}
-	cfg, err := a.getConfig()
-	if err != nil {
-		return "", []string{}, err
-	}
-
-	token, err := getAccessToken(*cfg)
-	if err != nil {
-		return "", []string{}, err
-	}
-	zone := dns.NewZonesClient(a.subscriptionId)
-	zone.Authorizer = autorest.NewBearerAuthorizer(token)
-	z, err := zone.CreateOrUpdate(context.TODO(), a.resourceGroup, "example-test.info", dns.Zone{}, "", "")
+	location := "global"
+	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, rootDomain,
+		dns.Zone{Location: &location}, "", "")
 	if err != nil {
 		return "", []string{}, err
 	}
 	var zoneID string
 	zoneID = *z.ID
 	nameservers := append(*z.ZoneProperties.NameServers)
-	fmt.Printf("ZoneID : %s, Name Servers : %v", zoneID, nameservers)
+	a.zoneName = rootDomain
 	return zoneID, nameservers, nil
 }
 
-func (a *azureTestHelper) deleteHostedZone(zoneID string) error {
+func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
+	if a.zoneName == ""{
+		fmt.Printf("ZoneName is empty, nothing to be deleted")
+		return nil
+	}
+	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, a.zoneName, ""); err != nil {
+		return fmt.Errorf("unable to delete zone :%s, failed error: %v", a.zoneName, err)
+	}
+	// verify the zone is present
+	if _, err := a.isZoneNameExists(); err != nil {
+		return fmt.Errorf("unable to verfy zone deletion,failed with error : %v",err)
+	}
 
 	return nil
 }
 
-//
-//func getMSIUserAssignedIDClient() (*msi.UserAssignedIdentitiesClient, error) {
-//	a, err := iam.GetResourceManagementAuthorizer()
-//	if err != nil {
-//		return nil, errors.Wrap(err, "failed to get authorizer")
-//	}
-//	msiClient := msi.NewUserAssignedIdentitiesClient(config.SubscriptionID())
-//	msiClient.Authorizer = a
-//	msiClient.AddToUserAgent(config.UserAgent())
-//	return &msiClient, nil
-//}
-//
-//// CreateUserAssignedIdentity creates a user-assigned identity in the specified resource group.
-//func (a *azureTestHelper) CreateUserAssignedIdentity(resourceGroup, identity string) (*msi.Identity, error) {
-//	msiClient, err := getMSIUserAssignedIDClient()
-//	if err != nil {
-//		return nil, err
-//	}
-//	id, err := msiClient.CreateOrUpdate(context.Background(), a.resourceGroup, a.subscriptionId, msi.Identity{
-//		Location: to.StringPtr(config.Location()),
-//	})
-//	return &id, err
-//}
-
-func (a *azureTestHelper) getConfig() (*cluserConfig, error) {
-	cfg := &cluserConfig{
-		Cloud:                       "",
-		TenantID:                    "",
-		SubscriptionID:              a.subscriptionId,
-		ResourceGroup:               a.resourceGroup,
-		Location:                    "",
-		ClientID:                    a.clientID,
-		ClientSecret:                a.clientSecret,
-		UseManagedIdentityExtension: true,
-		UserAssignedIdentityID:      "",
+func (a *azureTestHelper) isZoneNameExists() (bool, error) {
+	ctx := context.TODO()
+	zonesIterator, err := a.zoneClient.ListByResourceGroupComplete(ctx, a.config.ResourceGroup, nil)
+	if err != nil {
+		return false, err
 	}
 
-	var environment azure.Environment
-	if cfg.Cloud == "" {
-		environment = azure.PublicCloud
-	}
-	cfg.Environment = environment
+	for zonesIterator.NotDone() {
+		zone := zonesIterator.Value()
 
-	return cfg, nil
+		if zone.Name != nil  &&  a.zoneName == *zone.Name{
+			return true, nil
+		}
+		err = zonesIterator.NextWithContext(ctx)
+		if err != nil {
+			return false, err
+		}
+	}
+	return false, nil
 }
 
+
+// ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
 // getAccessToken retrieves Azure API access token.
-func getAccessToken(cfg cluserConfig) (*adal.ServicePrincipalToken, error) {
+func getAccessToken(cfg *cluserConfig) (*adal.ServicePrincipalToken, error) {
 	// Try to retrieve token with service principal credentials.
 	// Try to use service principal first, some AKS clusters are in an intermediate state that `UseManagedIdentityExtension` is `true`
 	// and service principal exists. In this case, we still want to use service principal to authenticate.
@@ -200,31 +204,5 @@ func getAccessToken(cfg cluserConfig) (*adal.ServicePrincipalToken, error) {
 		}
 		return token, nil
 	}
-
-	// Try to retrieve token with MSI.
-	if cfg.UseManagedIdentityExtension {
-		os.Setenv("MSI_ENDPOINT", "http://dummy")
-		defer func() {
-			os.Unsetenv("MSI_ENDPOINT")
-		}()
-
-		if cfg.UserAssignedIdentityID != "" {
-			token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, &adal.ManagedIdentityOptions{
-				ClientID: cfg.UserAssignedIdentityID,
-			})
-
-			if err != nil {
-				return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
-			}
-			return token, nil
-		}
-
-		token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
-		}
-		return token, nil
-	}
-
 	return nil, fmt.Errorf("no credentials provided for Azure API")
 }

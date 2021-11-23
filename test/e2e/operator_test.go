@@ -1,19 +1,21 @@
-//+build e2e
+//go:build e2e
+// +build e2e
 
 package e2e
 
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"testing"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"net"
-	"os"
-	"testing"
-	"time"
 
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -26,7 +28,7 @@ import (
 )
 
 const (
-	hostedZoneDomain   = "example-test.info"
+	hostedZoneDomain   = "example-test_3.info"
 	testNamespace      = "external-dns-test"
 	dnsPollingInterval = 15 * time.Second
 	dnsPollingTimeout  = 15 * time.Minute
@@ -134,31 +136,36 @@ func TestMain(m *testing.M) {
 	os.Exit(exitStatus)
 }
 
-
-
 func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
+		t.Fail()
+		return //t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
 	}
 
 	resourceSecret := helper.makeCredentialsSecret("external-dns-operator")
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
-		t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
+		t.Fail()
+		return
+		//t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
 	extDNS := defaultExternalDNS(t, "test-extdns", testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
-		t.Fatalf("Failed to create external DNS: %v", err)
+		t.Fail()
+		return
+		//t.Fatalf("Failed to create external DNS: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
 	service := defaultService("test-service", testNamespace)
 	if err := kubeClient.Create(context.Background(), service); err != nil {
-		t.Fatalf("Failed to create test service: %v", err)
+		t.Fail()
+		return
+		//t.Fatalf("Failed to create test service: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), service)
 
@@ -192,7 +199,9 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
-		t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, "test-service", err)
+		t.Fail()
+		return
+		//t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, "test-service", err)
 	}
 
 	// create a DNS resolver which uses the nameservers of the test hosted zone
@@ -220,6 +229,8 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
-		t.Fatalf("failed to verify that DNS has been correctly set.")
+		t.Fail()
+		return
+		//t.Fatalf("failed to verify that DNS has been correctly set.")
 	}
 }

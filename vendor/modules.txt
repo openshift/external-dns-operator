@@ -1,6 +1,6 @@
 # cloud.google.com/go v0.94.1
 cloud.google.com/go/compute/metadata
-# github.com/Azure/azure-sdk-for-go v59.3.0+incompatible
+# github.com/Azure/azure-sdk-for-go v46.4.0+incompatible
 ## explicit
 github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns
 github.com/Azure/azure-sdk-for-go/version
