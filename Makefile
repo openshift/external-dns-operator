@@ -32,7 +32,8 @@ SHELL = /usr/bin/env bash -o pipefail
 
 CONTAINER_ENGINE ?= docker
 
-BUNDLE_MANIFEST_DIR := bundle/manifests
+BUNDLE_DIR := bundle
+BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
 BUNDLE_IMG ?= olm-bundle:latest
 INDEX_IMG ?= olm-bundle-index:latest
 OPM_VERSION ?= v1.17.4
@@ -126,6 +127,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: olm-manifests
+# TODO: try to replace this rule with 'operator-sdk generate bundle'
 # A little helper command to generate the manifests of OLM bundle from the files in config/.
 # The idea is that config/ is the main directory for the manifests and OLM manifests are secondary
 # and is supposed to be updated afterwards.
@@ -141,8 +143,13 @@ olm-manifests: manifests
 	# opm is unable to find CRD if the standard yaml --- is at the top
 	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 	# as per the recommendation of 'operator-sdk bundle validate' command
-	# strip the namespaces from the bundle manifests
-	sed -i '/namespace:/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
+	# doing the best (yaml regexp is far from perfect) to strip the metadata.namespace from the bundle manifests
+	# trying to not touch cluster level resources as they don't have the namespace
+	for f in $$(\grep -l 'kind: *\(Service\|ConfigMap\|Secret\|Role\) *$$' $(BUNDLE_MANIFEST_DIR)/*.yaml); do sed -i '/namespace:/d' $${f};done
+
+.PHONY: validate-bundle
+validate-bundle:
+	operator-sdk bundle validate $(BUNDLE_DIR) --select-optional suite=operatorframework
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests
