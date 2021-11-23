@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	hostedZoneDomain   = "example-test_3.info"
+	hostedZoneDomain   = "example-test.info"
 	testNamespace      = "external-dns-test"
 	dnsPollingInterval = 15 * time.Second
 	dnsPollingTimeout  = 15 * time.Minute
@@ -50,6 +50,19 @@ func init() {
 	if err := operatorv1alpha1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
+}
+
+func initKubeClient() error {
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get kube config: %w\n", err)
+	}
+
+	kubeClient, err = client.New(kubeConfig, client.Options{})
+	if err != nil {
+		return fmt.Errorf("failed to create kube client: %w\n", err)
+	}
+	return nil
 }
 
 func initProviderHelper() (providerTestHelper, error) {
@@ -93,19 +106,6 @@ func initProviderHelper() (providerTestHelper, error) {
 	}
 }
 
-func initKubeClient() error {
-	kubeConfig, err := config.GetConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get kube config: %w\n", err)
-	}
-
-	kubeClient, err = client.New(kubeConfig, client.Options{})
-	if err != nil {
-		return fmt.Errorf("failed to create kube client: %w\n", err)
-	}
-	return nil
-}
-
 func TestMain(m *testing.M) {
 	var (
 		err error
@@ -134,6 +134,15 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	os.Exit(exitStatus)
+}
+
+func TestOperatorAvailable(t *testing.T) {
+	expected := []appsv1.DeploymentCondition{
+		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
+	}
+	if err := waitForOperatorDeploymentStatusCondition(t, kubeClient, expected...); err != nil {
+		t.Errorf("did not get expected available condition: %v", err)
+	}
 }
 
 func TestExternalDNSRecordLifecycle(t *testing.T) {

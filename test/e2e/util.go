@@ -63,6 +63,10 @@ func getPlatformType(kubeClient client.Client) (string, error) {
 
 func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID string, rootDomain string, credsSecret *corev1.Secret, platformType string) operatorv1alpha1.ExternalDNS {
 	resource := operatorv1alpha1.ExternalDNS{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ExternalDNS",
+			APIVersion: "externaldns.olm.openshift.io/v1alpha1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
