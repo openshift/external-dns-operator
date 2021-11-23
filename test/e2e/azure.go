@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 //go:build e2e
+=======
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 // +build e2e
 
 package e2e
@@ -6,20 +9,31 @@ package e2e
 import (
 	"context"
 	"fmt"
+<<<<<<< HEAD
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 
+=======
+	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+<<<<<<< HEAD
+=======
+	"os"
+	"strconv"
+	"strings"
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 
 	configv1 "github.com/openshift/api/config/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+<<<<<<< HEAD
 )
 
 const (
@@ -33,6 +47,19 @@ const (
 	KUBE_SYSTEM_SECRET_NAME = "azure-credentials"
 )
 
+=======
+
+	_ "github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2017-10-01/dns"
+)
+
+const(
+	RESOURCE_GROUP="azure_resourcegroup"
+    SUBSCIPTION_ID = "azure_subscription_id"
+	TANENT_ID = "azure_tenant_id"
+)
+
+
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 // config represents common config items for Azure DNS and Azure Private DNS
 type cluserConfig struct {
 	Cloud                       string            `json:"cloud" yaml:"cloud"`
@@ -47,6 +74,7 @@ type cluserConfig struct {
 	UserAssignedIdentityID      string            `json:"userAssignedIdentityID" yaml:"userAssignedIdentityID"`
 }
 
+<<<<<<< HEAD
 type azureTestHelper struct {
 	config     *cluserConfig
 	kubeClient client.Client
@@ -106,6 +134,44 @@ func (a *azureTestHelper) prepareZoneClient() error {
 	a.zoneClient = dns.NewZonesClientWithBaseURI(a.config.Environment.ResourceManagerEndpoint, a.config.SubscriptionID)
 	a.zoneClient.Authorizer = autorest.NewBearerAuthorizer(token)
 	return nil
+=======
+
+type azureTestHelper struct {
+	tenantId string
+	subscriptionId string
+	resourceGroup string
+	clientID string
+	clientSecret string
+	useManagedIdentityExtension bool
+	congi cluserConfig
+
+}
+
+func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
+	tenantId,subscriptionId,resourceGroup , err := fetchCredentials(kubeClient)
+	if err != nil{
+		return nil, err
+	}
+	return &azureTestHelper{
+		tenantId:                    tenantId,
+		subscriptionId:              subscriptionId,
+		resourceGroup:               resourceGroup,
+		useManagedIdentityExtension: true,
+	}, nil
+}
+
+
+func  fetchCredentials(kubeClient client.Client) (tenantId,subscriptionId,resourceGroup string, err error ){
+	secret := &corev1.Secret{}
+	secretName := types.NamespacedName{
+		Name:      "azure-credentials",
+		Namespace: "kube-system",
+	}
+	if err = kubeClient.Get(context.Background(), secretName, secret); err != nil {
+		return "", "","", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+	}
+	return string(secret.Data[TANENT_ID]), string(secret.Data[SUBSCIPTION_ID]),string(secret.Data[RESOURCE_GROUP]), nil
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 }
 
 func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
@@ -115,11 +181,18 @@ func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
+<<<<<<< HEAD
 			"tenantId":        []byte(a.config.TenantID),
 			"subscriptionId":  []byte(a.config.SubscriptionID),
 			"resourceGroup":   []byte(a.config.ResourceGroup),
 			"aadClientId":     []byte(a.config.ClientID),
 			"aadClientSecret": []byte(a.config.ClientSecret),
+=======
+			"tenantId":     []byte(a.tenantId),
+			"subscriptionId": []byte(a.subscriptionId),
+			"resourceGroup": []byte(a.resourceGroup),
+			"useManagedIdentityExtension": []byte(strconv.FormatBool(a.useManagedIdentityExtension)),
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 		},
 	}
 }
@@ -129,15 +202,35 @@ func (a *azureTestHelper) platform() string {
 }
 
 func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
+<<<<<<< HEAD
 	location := "global"
 	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, rootDomain,
 		dns.Zone{Location: &location}, "", "")
+=======
+
+	//msiClient := msi.NewUserAssignedIdentitiesClient(a.subscriptionId)
+	//fmt.Printf(msiClient.BaseURI)
+	cfg := &cluserConfig{}
+	cfg, err := a.getConfig()
+	if err != nil{
+		return "", []string{}, err
+	}
+
+	token, err := getAccessToken(*cfg)
+	if err != nil{
+		return "", []string{}, err
+	}
+	zone := dns.NewZonesClient(a.subscriptionId)
+	zone.Authorizer = autorest.NewBearerAuthorizer(token)
+	z, err := zone.CreateOrUpdate(context.TODO(),a.resourceGroup,"example-test.info",dns.Zone{},"","")
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 	if err != nil {
 		return "", []string{}, err
 	}
 	var zoneID string
 	zoneID = *z.ID
 	nameservers := append(*z.ZoneProperties.NameServers)
+<<<<<<< HEAD
 	a.zoneName = rootDomain
 	return zoneID, nameservers, nil
 }
@@ -154,10 +247,18 @@ func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
 	if _, err := a.isZoneNameExists(); err != nil {
 		return fmt.Errorf("unable to verfy zone deletion,failed with error : %v",err)
 	}
+=======
+	fmt.Printf("ZoneID : %s, Name Servers : %v",zoneID, nameservers)
+	return zoneID,nameservers, nil
+}
+
+func (a *azureTestHelper) deleteHostedZone(zoneID string) error {
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 
 	return nil
 }
 
+<<<<<<< HEAD
 func (a *azureTestHelper) isZoneNameExists() (bool, error) {
 	ctx := context.TODO()
 	zonesIterator, err := a.zoneClient.ListByResourceGroupComplete(ctx, a.config.ResourceGroup, nil)
@@ -183,6 +284,59 @@ func (a *azureTestHelper) isZoneNameExists() (bool, error) {
 // ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
 // getAccessToken retrieves Azure API access token.
 func getAccessToken(cfg *cluserConfig) (*adal.ServicePrincipalToken, error) {
+=======
+//
+//func getMSIUserAssignedIDClient() (*msi.UserAssignedIdentitiesClient, error) {
+//	a, err := iam.GetResourceManagementAuthorizer()
+//	if err != nil {
+//		return nil, errors.Wrap(err, "failed to get authorizer")
+//	}
+//	msiClient := msi.NewUserAssignedIdentitiesClient(config.SubscriptionID())
+//	msiClient.Authorizer = a
+//	msiClient.AddToUserAgent(config.UserAgent())
+//	return &msiClient, nil
+//}
+//
+//// CreateUserAssignedIdentity creates a user-assigned identity in the specified resource group.
+//func (a *azureTestHelper) CreateUserAssignedIdentity(resourceGroup, identity string) (*msi.Identity, error) {
+//	msiClient, err := getMSIUserAssignedIDClient()
+//	if err != nil {
+//		return nil, err
+//	}
+//	id, err := msiClient.CreateOrUpdate(context.Background(), a.resourceGroup, a.subscriptionId, msi.Identity{
+//		Location: to.StringPtr(config.Location()),
+//	})
+//	return &id, err
+//}
+
+
+
+
+func (a *azureTestHelper) getConfig() (*cluserConfig, error) {
+	cfg := &cluserConfig{
+		Cloud:                       "",
+		TenantID:                    "",
+		SubscriptionID:              a.subscriptionId,
+		ResourceGroup:               a.resourceGroup,
+		Location:                    "",
+		ClientID:                    a.clientID,
+		ClientSecret:                a.clientSecret,
+		UseManagedIdentityExtension: true,
+		UserAssignedIdentityID:      "",
+	}
+
+	var environment azure.Environment
+	if cfg.Cloud == "" {
+		environment = azure.PublicCloud
+	}
+	cfg.Environment = environment
+
+	return cfg, nil
+}
+
+// getAccessToken retrieves Azure API access token.
+func getAccessToken(cfg cluserConfig) (*adal.ServicePrincipalToken, error) {
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 	// Try to retrieve token with service principal credentials.
 	// Try to use service principal first, some AKS clusters are in an intermediate state that `UseManagedIdentityExtension` is `true`
 	// and service principal exists. In this case, we still want to use service principal to authenticate.
@@ -204,5 +358,34 @@ func getAccessToken(cfg *cluserConfig) (*adal.ServicePrincipalToken, error) {
 		}
 		return token, nil
 	}
+<<<<<<< HEAD
+=======
+
+	// Try to retrieve token with MSI.
+	if cfg.UseManagedIdentityExtension {
+		os.Setenv("MSI_ENDPOINT", "http://dummy")
+		defer func() {
+			os.Unsetenv("MSI_ENDPOINT")
+		}()
+
+		if cfg.UserAssignedIdentityID != "" {
+			token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, &adal.ManagedIdentityOptions{
+				ClientID: cfg.UserAssignedIdentityID,
+			})
+
+			if err != nil {
+				return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
+			}
+			return token, nil
+		}
+
+		token, err := adal.NewServicePrincipalTokenFromManagedIdentity(cfg.Environment.ServiceManagementEndpoint, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the managed service identity token: %v", err)
+		}
+		return token, nil
+	}
+
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
 	return nil, fmt.Errorf("no credentials provided for Azure API")
 }

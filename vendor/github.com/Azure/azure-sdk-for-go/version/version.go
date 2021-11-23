@@ -1,5 +1,6 @@
 package version
 
+<<<<<<< HEAD
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,3 +20,10 @@ package version
 
 // Number contains the semantic version of this SDK.
 const Number = "v46.4.0"
+=======
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+
+// Number contains the semantic version of this SDK.
+const Number = "v59.3.0"
+>>>>>>> eea37326e8e12f96e90e2ca67c01592a2ea06557
