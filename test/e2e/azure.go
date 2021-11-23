@@ -51,7 +51,7 @@ type azureTestHelper struct {
 	config     *cluserConfig
 	kubeClient client.Client
 	zoneClient dns.ZonesClient
-	zoneName string
+	zoneName   string
 }
 
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
@@ -63,7 +63,7 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 		return nil, err
 	}
 
-	if err := azureProvider.prepareZoneClient(); err != nil{
+	if err := azureProvider.prepareZoneClient(); err != nil {
 		return nil, err
 	}
 	return azureProvider, nil
@@ -143,7 +143,7 @@ func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string,
 }
 
 func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
-	if a.zoneName == ""{
+	if a.zoneName == "" {
 		fmt.Printf("ZoneName is empty, nothing to be deleted")
 		return nil
 	}
@@ -152,7 +152,7 @@ func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
 	}
 	// verify the zone is present
 	if _, err := a.isZoneNameExists(); err != nil {
-		return fmt.Errorf("unable to verfy zone deletion,failed with error : %v",err)
+		return fmt.Errorf("unable to verfy zone deletion,failed with error : %v", err)
 	}
 
 	return nil
@@ -168,7 +168,7 @@ func (a *azureTestHelper) isZoneNameExists() (bool, error) {
 	for zonesIterator.NotDone() {
 		zone := zonesIterator.Value()
 
-		if zone.Name != nil  &&  a.zoneName == *zone.Name{
+		if zone.Name != nil && a.zoneName == *zone.Name {
 			return true, nil
 		}
 		err = zonesIterator.NextWithContext(ctx)
@@ -178,7 +178,6 @@ func (a *azureTestHelper) isZoneNameExists() (bool, error) {
 	}
 	return false, nil
 }
-
 
 // ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
 // getAccessToken retrieves Azure API access token.

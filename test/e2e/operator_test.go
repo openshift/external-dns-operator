@@ -149,32 +149,33 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
+		t.Logf("failed to ensure namespace %s: %v", testNamespace, err)
 		t.Fail()
-		return //t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
+		return
 	}
 
 	resourceSecret := helper.makeCredentialsSecret("external-dns-operator")
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
+		t.Logf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 		t.Fail()
 		return
-		//t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
 	extDNS := defaultExternalDNS(t, "test-extdns", testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
+		t.Logf("Failed to create external DNS: %v", err)
 		t.Fail()
 		return
-		//t.Fatalf("Failed to create external DNS: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
 	service := defaultService("test-service", testNamespace)
 	if err := kubeClient.Create(context.Background(), service); err != nil {
+		t.Logf("Failed to create test service: %v", err)
 		t.Fail()
 		return
-		//t.Fatalf("Failed to create test service: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), service)
 
@@ -208,9 +209,9 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
+		t.Logf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, "test-service", err)
 		t.Fail()
 		return
-		//t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, "test-service", err)
 	}
 
 	// create a DNS resolver which uses the nameservers of the test hosted zone
@@ -238,8 +239,8 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
+		t.Logf("failed to verify that DNS has been correctly set.")
 		t.Fail()
 		return
-		//t.Fatalf("failed to verify that DNS has been correctly set.")
 	}
 }
