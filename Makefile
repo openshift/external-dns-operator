@@ -40,6 +40,10 @@ OPM_VERSION ?= v1.17.4
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
 GOLANGCI_LINT_VERSION=v1.42.1
 
+COMMIT ?= $(shell git rev-parse HEAD)
+SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
+GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
+
 all: build
 
 ##@ General
@@ -80,6 +84,7 @@ test: manifests generate fmt vet ## Run tests.
 .PHONY: test-e2e
 test-e2e:
 	go test \
+	$(GOBUILD_VERSION_ARGS) \
 	-timeout 1h \
 	-count 1 \
 	-v \
@@ -93,11 +98,10 @@ verify: lint
 	hack/verify-generated.sh
 
 ##@ Build
-
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
 
 build-operator: ## Build operator binary, no additional checks or code generation
-	$(GO) build -o $(BIN) $(MAIN_PACKAGE)
+	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(MAIN_PACKAGE)
 
 build: generate build-operator fmt vet ## Build operator binary.
 

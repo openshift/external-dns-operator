@@ -24,21 +24,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	"github.com/openshift/external-dns-operator/pkg/version"
 )
 
 const (
-	hostedZoneDomain   = "example-test.info"
+	baseZoneDomain     = "example-test.info"
 	testNamespace      = "external-dns-test"
+	testServiceName    = "test-service"
+	testExtDNSName     = "test-extdns"
 	dnsPollingInterval = 15 * time.Second
 	dnsPollingTimeout  = 15 * time.Minute
+	dialTimeout        = 10 * time.Second
 )
 
 var (
-	kubeClient   client.Client
-	scheme       *runtime.Scheme
-	nameServers  []string
-	hostedZoneID string
-	helper       providerTestHelper
+	kubeClient       client.Client
+	scheme           *runtime.Scheme
+	nameServers      []string
+	hostedZoneID     string
+	helper           providerTestHelper
+	hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
 )
 
 func init() {
@@ -116,6 +121,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	fmt.Printf("ensuring hosted zone: %s\n", hostedZoneDomain)
 	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
 	if err != nil {
 		fmt.Printf("Failed to created hosted zone for domain %s: %v", hostedZoneDomain, err)
@@ -154,14 +160,14 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
-	extDNS := defaultExternalDNS(t, "test-extdns", testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
+	extDNS := defaultExternalDNS(t, testExtDNSName, testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
-	service := defaultService("test-service", testNamespace)
+	service := defaultService(testServiceName, testNamespace)
 	if err := kubeClient.Create(context.Background(), service); err != nil {
 		t.Fatalf("Failed to create test service: %v", err)
 	}
@@ -173,7 +179,7 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		var service corev1.Service
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: testNamespace,
-			Name:      "test-service",
+			Name:      testServiceName,
 		}, &service)
 		if err != nil {
 			return false, err
@@ -186,7 +192,8 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 
 		// get the IPs of the loadbalancer
 		lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
-		ips, err := net.LookupIP(lbHostname)
+		// use built in Go resolver instead of the platform's one
+		ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
 		if err != nil {
 			t.Logf("waiting for loadbalancer IP for %s", lbHostname)
 			// if the hostname cannot be resolved currently then retry later
@@ -197,34 +204,48 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
-		t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, "test-service", err)
+		t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, testServiceName, err)
 	}
 
-	// create a DNS resolver which uses the nameservers of the test hosted zone
-	customResolver := net.Resolver{
+	// try all nameservers and fail only if all failed
+	for _, nameSrv := range nameServers {
+		t.Logf("looking for DNS record in nameserver: %s", nameSrv)
+		// create a DNS resolver which uses the nameservers of the test hosted zone
+		customResolver := customResolver(nameSrv)
+
+		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
+		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			ips, err := customResolver.LookupHost(context.TODO(), fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain))
+			if err != nil {
+				t.Log("waiting for dns record")
+				return false, nil
+			}
+			for _, ip := range ips {
+				if _, ok := serviceIPs[ip]; !ok {
+					return false, nil
+				}
+			}
+			return true, nil
+		}); err != nil {
+			t.Logf("failed to verify that DNS has been correctly set.")
+		} else {
+			return
+		}
+	}
+	t.Fatalf("all nameservers failed to verify that DNS has been correctly set.")
+}
+
+func customResolver(nameserver string) *net.Resolver {
+	return &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			d := net.Dialer{
-				Timeout: time.Second * 10,
+				Timeout: dialTimeout,
 			}
-			return d.DialContext(ctx, network, fmt.Sprintf("%s:53", nameServers[0]))
+			if len(nameserver) > 0 {
+				return d.DialContext(ctx, network, fmt.Sprintf("%s:53", nameserver))
+			}
+			return d.DialContext(ctx, network, address)
 		},
-	}
-
-	// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-		ips, err := customResolver.LookupHost(context.TODO(), fmt.Sprintf("%s.%s", "test-service", hostedZoneDomain))
-		if err != nil {
-			t.Log("waiting for dns record")
-			return false, nil
-		}
-		for _, ip := range ips {
-			if _, ok := serviceIPs[ip]; !ok {
-				return false, nil
-			}
-		}
-		return true, nil
-	}); err != nil {
-		t.Fatalf("failed to verify that DNS has been correctly set.")
 	}
 }

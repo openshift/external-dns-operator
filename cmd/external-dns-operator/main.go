@@ -29,6 +29,7 @@ import (
 
 	"github.com/openshift/external-dns-operator/pkg/operator"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
+	"github.com/openshift/external-dns-operator/pkg/version"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -51,6 +52,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	setupLog := ctrl.Log.WithName("setup")
+	ctrl.Log.Info("build info", "commit", version.COMMIT)
 	ctrl.Log.Info("using operator namespace", "namespace", opCfg.OperatorNamespace)
 	ctrl.Log.Info("using operand namespace", "namespace", opCfg.OperandNamespace)
 	ctrl.Log.Info("using ExternalDNS image", "image", opCfg.ExternalDNSImage)
