@@ -1,4 +1,5 @@
-//+build e2e
+//go:build e2e
+// +build e2e
 
 package e2e
 
@@ -43,7 +44,7 @@ var (
 	nameServers      []string
 	hostedZoneID     string
 	helper           providerTestHelper
-	hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+	hostedZoneDomain = baseZoneDomain
 )
 
 func init() {
@@ -124,6 +125,9 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	if version.SHORTCOMMIT != "" {
+		hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+	}
 	fmt.Printf("ensuring hosted zone: %s\n", hostedZoneDomain)
 	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
 	if err != nil {
@@ -154,24 +158,18 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		t.Logf("failed to ensure namespace %s: %v", testNamespace, err)
-		t.Fail()
-		return
+		t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
 	}
 
 	resourceSecret := helper.makeCredentialsSecret("external-dns-operator")
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
-		t.Logf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
-		t.Fail()
-		return
+		t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
 	extDNS := defaultExternalDNS(t, testExtDNSName, testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
-		t.Logf("Failed to create external DNS: %v", err)
-		t.Fail()
-		return
+		t.Fatalf("Failed to create external DNS: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
@@ -200,16 +198,20 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 
 		// get the IPs of the loadbalancer
-		lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
-		// use built in Go resolver instead of the platform's one
-		ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
-		if err != nil {
-			t.Logf("waiting for loadbalancer IP for %s", lbHostname)
-			// if the hostname cannot be resolved currently then retry later
-			return false, nil
-		}
-		for _, ip := range ips {
-			serviceIPs[ip.String()] = struct{}{}
+		if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
+			lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
+			// use built in Go resolver instead of the platform's one
+			ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
+			if err != nil {
+				t.Logf("waiting for loadbalancer IP for %s", lbHostname)
+				// if the hostname cannot be resolved currently then retry later
+				return false, nil
+			}
+			for _, ip := range ips {
+				serviceIPs[ip.String()] = struct{}{}
+			}
+		} else {
+			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
 		}
 		return true, nil
 	}); err != nil {
