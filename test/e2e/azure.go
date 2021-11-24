@@ -26,7 +26,7 @@ import (
 const (
 	RESOURCE_GROUP = "azure_resourcegroup"
 	SUBSCIPTION_ID = "azure_subscription_id"
-	TANENT_ID      = "azure_tenant_id"
+	TENANT_ID      = "azure_tenant_id"
 	CLIENT_ID      = "azure_client_id"
 	CLIENT_SECRET  = "azure_client_secret"
 	REGION         = "azure_region"
@@ -81,7 +81,7 @@ func (a *azureTestHelper) prepareCredentials() (err error) {
 	}
 
 	a.config = &cluserConfig{
-		TenantID:                    string(secret.Data[TANENT_ID]),
+		TenantID:                    string(secret.Data[TENANT_ID]),
 		SubscriptionID:              string(secret.Data[SUBSCIPTION_ID]),
 		ResourceGroup:               string(secret.Data[RESOURCE_GROUP]),
 		Location:                    string(secret.Data[REGION]),
