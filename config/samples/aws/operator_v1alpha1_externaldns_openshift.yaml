@@ -1,0 +1,23 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-aws
+spec:
+  domains:
+  - filterType: Include
+    matchType: Exact
+    name: testextdnsoperator.apacshift.support
+  provider:
+    type: AWS
+  # Incase you have multiple ingress controllers you must specify ingress controller name in the routerName
+  # so that the external dns will use the router canonical name correrponding to it to create a dns record.
+  source:
+    openshiftRouteOptions:
+      routerName: default
+    # Source Type is route resource of OpenShift
+    type: OpenShiftRoute
+    # It's not possible to not have FQDNTemplate if the hostname annotation policy is ignore.
+    fqdnTemplate:
+    - '{{.Name}}.apps.testextdnsoperator.apacshift.support'
+  zones:
+  - Z04015592QJX3EK1YYYYY
