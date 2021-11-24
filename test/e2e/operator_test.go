@@ -31,6 +31,7 @@ const (
 	baseZoneDomain     = "example-test.info"
 	testNamespace      = "external-dns-test"
 	testServiceName    = "test-service"
+	testCredSecretName = "external-dns-operator"
 	testExtDNSName     = "test-extdns"
 	dnsPollingInterval = 15 * time.Second
 	dnsPollingTimeout  = 15 * time.Minute
@@ -42,6 +43,7 @@ var (
 	scheme           *runtime.Scheme
 	nameServers      []string
 	hostedZoneID     string
+	providerOptions  []string
 	helper           providerTestHelper
 	hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
 )
@@ -59,12 +61,12 @@ func init() {
 func initKubeClient() error {
 	kubeConfig, err := config.GetConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get kube config: %w\n", err)
+		return fmt.Errorf("failed to get kube config: %w", err)
 	}
 
 	kubeClient, err = client.New(kubeConfig, client.Options{})
 	if err != nil {
-		return fmt.Errorf("failed to create kube client: %w\n", err)
+		return fmt.Errorf("failed to create kube client: %w", err)
 	}
 	return nil
 }
@@ -95,7 +97,7 @@ func initProviderHelper() (providerTestHelper, error) {
 		if openshiftCI {
 			awsAccessKeyID, awsSecretAccessKey, err = rootAWSCredentials(kubeClient)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get AWS credentials from CCO: %w", err)
+				return nil, fmt.Errorf("failed to get AWS credentials: %w", err)
 			}
 		} else {
 			awsAccessKeyID = mustGetEnv("AWS_ACCESS_KEY_ID")
@@ -108,7 +110,7 @@ func initProviderHelper() (providerTestHelper, error) {
 		if openshiftCI {
 			gcpCredentials, err = rootGCPCredentials(kubeClient)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get GCP credentials from CCO: %w", err)
+				return nil, fmt.Errorf("failed to get GCP credentials: %w", err)
 			}
 			gcpProjectId, err = getGCPProjectId(kubeClient)
 			if err != nil {
@@ -118,9 +120,10 @@ func initProviderHelper() (providerTestHelper, error) {
 			gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
 			gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
 		}
+		providerOptions = append(providerOptions, gcpProjectId)
 		return newGCPHelper(gcpCredentials, gcpProjectId)
 	default:
-		return nil, fmt.Errorf("unsupported Provider: '%s'", platformType)
+		return nil, fmt.Errorf("unsupported provider: %q", platformType)
 	}
 }
 
@@ -129,27 +132,28 @@ func TestMain(m *testing.M) {
 		err error
 	)
 	if err = initKubeClient(); err != nil {
-		fmt.Print(err)
+		fmt.Printf("Failed to init kube client: %v\n", err)
 		os.Exit(1)
 	}
 
 	if helper, err = initProviderHelper(); err != nil {
-		fmt.Print(err)
+		fmt.Printf("Failed to init provider helper: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("ensuring hosted zone: %s\n", hostedZoneDomain)
+	fmt.Printf("Ensuring hosted zone: %s\n", hostedZoneDomain)
 	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
 	if err != nil {
-		fmt.Printf("Failed to created hosted zone for domain %s: %v", hostedZoneDomain, err)
+		fmt.Printf("Failed to created hosted zone for domain %s: %v\n", hostedZoneDomain, err)
 		os.Exit(1)
 	}
 
 	exitStatus := m.Run()
 
+	fmt.Printf("Deleting hosted zone: %s\n", hostedZoneDomain)
 	err = helper.deleteHostedZone(hostedZoneID)
 	if err != nil {
-		fmt.Printf("failed to delete hosted zone %s: %v", hostedZoneID, err)
+		fmt.Printf("Failed to delete hosted zone %s: %v\n", hostedZoneID, err)
 		os.Exit(1)
 	}
 	os.Exit(exitStatus)
@@ -160,39 +164,43 @@ func TestOperatorAvailable(t *testing.T) {
 		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
 	}
 	if err := waitForOperatorDeploymentStatusCondition(t, kubeClient, expected...); err != nil {
-		t.Errorf("did not get expected available condition: %v", err)
+		t.Errorf("Did not get expected available condition: %v", err)
 	}
 }
 
 func TestExternalDNSRecordLifecycle(t *testing.T) {
-	// ensure test namespace
+	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
+		t.Fatalf("Failed to ensure namespace %s: %v", testNamespace, err)
 	}
 
-	resourceSecret := helper.makeCredentialsSecret("external-dns-operator")
+	t.Log("Creating credentials secret")
+	resourceSecret := helper.makeCredentialsSecret(testCredSecretName)
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
-		t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
+		t.Fatalf("Failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
-	extDNS := defaultExternalDNS(t, testExtDNSName, testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
+	t.Log("Creating external dns instance")
+	extDNS := defaultExternalDNS(t, testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform(), providerOptions)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
-		t.Fatalf("Failed to create external DNS: %v", err)
+		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
+	t.Log("Creating source service")
 	service := defaultService(testServiceName, testNamespace)
 	if err := kubeClient.Create(context.Background(), service); err != nil {
-		t.Fatalf("Failed to create test service: %v", err)
+		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testServiceName, err)
 	}
 	defer kubeClient.Delete(context.TODO(), service)
 
 	serviceIPs := make(map[string]struct{})
 	// get the IPs of the loadbalancer which is created for the service
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		t.Log("Getting IPs of service's load balancer")
 		var service corev1.Service
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: testNamespace,
@@ -212,7 +220,7 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		// use built in Go resolver instead of the platform's one
 		ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
 		if err != nil {
-			t.Logf("waiting for loadbalancer IP for %s", lbHostname)
+			t.Logf("Waiting for IP of loadbalancer: %s", lbHostname)
 			// if the hostname cannot be resolved currently then retry later
 			return false, nil
 		}
@@ -221,20 +229,21 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
-		t.Fatalf("failed to get loadbalancers IPs for service %s/%s: %v", testNamespace, testServiceName, err)
+		t.Fatalf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testServiceName, err)
 	}
 
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
-		t.Logf("looking for DNS record in nameserver: %s", nameSrv)
+		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 		// create a DNS resolver which uses the nameservers of the test hosted zone
 		customResolver := customResolver(nameSrv)
 
 		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			ips, err := customResolver.LookupHost(context.TODO(), fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain))
+			rec := fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain)
+			ips, err := customResolver.LookupHost(context.TODO(), rec)
 			if err != nil {
-				t.Log("waiting for dns record")
+				t.Logf("Waiting for dns record: %s", rec)
 				return false, nil
 			}
 			for _, ip := range ips {
@@ -244,12 +253,12 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 			}
 			return true, nil
 		}); err != nil {
-			t.Logf("failed to verify that DNS has been correctly set.")
+			t.Logf("Failed to verify that DNS has been correctly set.")
 		} else {
 			return
 		}
 	}
-	t.Fatalf("all nameservers failed to verify that DNS has been correctly set.")
+	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
 }
 
 func customResolver(nameserver string) *net.Resolver {
