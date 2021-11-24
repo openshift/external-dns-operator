@@ -210,8 +210,11 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 			for _, ip := range ips {
 				serviceIPs[ip.String()] = struct{}{}
 			}
-		} else {
+		} else if service.Status.LoadBalancer.Ingress[0].IP != "" {
 			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
+		} else {
+			t.Logf("waiting for loadbalancer details for service  %s", testServiceName)
+			return false, nil
 		}
 		return true, nil
 	}); err != nil {
