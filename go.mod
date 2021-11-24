@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.15.0
 	github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
-	google.golang.org/api v0.58.0 // indirect
+	google.golang.org/api v0.58.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
