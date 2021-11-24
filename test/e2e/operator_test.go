@@ -102,6 +102,9 @@ func initProviderHelper() (providerTestHelper, error) {
 			awsSecretAccessKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
 		}
 		return newAWSHelper(awsAccessKeyID, awsSecretAccessKey)
+	case string(configv1.AzurePlatformType):
+		return newAzureHelper(kubeClient)
+
 	default:
 		return nil, fmt.Errorf("unsupported Provider: '%s'", platformType)
 	}
@@ -151,18 +154,24 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// ensure test namespace
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("failed to ensure namespace %s: %v", testNamespace, err)
+		t.Logf("failed to ensure namespace %s: %v", testNamespace, err)
+		t.Fail()
+		return
 	}
 
 	resourceSecret := helper.makeCredentialsSecret("external-dns-operator")
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
-		t.Fatalf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
+		t.Logf("failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
+		t.Fail()
+		return
 	}
 
 	extDNS := defaultExternalDNS(t, testExtDNSName, testNamespace, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform())
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
-		t.Fatalf("Failed to create external DNS: %v", err)
+		t.Logf("Failed to create external DNS: %v", err)
+		t.Fail()
+		return
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 

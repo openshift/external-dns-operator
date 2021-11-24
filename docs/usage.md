@@ -200,6 +200,18 @@ Before creating an ExternalDNS resource for Azure, the following is required:
     azure.json: # azure-config-file
 ```
 
+The contents of `azure.json` should be similar to this:
+
+```json
+{
+  "tenantId": "01234abc-de56-ff78-abc1-234567890def",
+  "subscriptionId": "01234abc-de56-ff78-abc1-234567890def",
+  "resourceGroup": "MyDnsResourceGroup",
+  "aadClientId": "01234abc-de56-ff78-abc1-234567890def",
+  "aadClientSecret": "uKiuXeiwui4jo9quae9o"
+}
+```
+
 2. sample ExternalDNS CR for Azure
 
 ```yaml
