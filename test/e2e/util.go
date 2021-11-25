@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -82,11 +83,10 @@ func getGCPProjectId(kubeClient client.Client) (string, error) {
 	return infraConfig.Status.PlatformStatus.GCP.ProjectID, nil
 }
 
-func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID string, rootDomain string, credsSecret *corev1.Secret, platformType string) operatorv1alpha1.ExternalDNS {
+func defaultExternalDNS(t *testing.T, name, zoneID, rootDomain string, credsSecret *corev1.Secret, platformType string, providerOptions []string) operatorv1alpha1.ExternalDNS {
 	resource := operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name: name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
 			Zones: []string{zoneID},
@@ -136,6 +136,7 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 				Credentials: operatorv1alpha1.SecretReference{
 					Name: credsSecret.Name,
 				},
+				Project: &providerOptions[0],
 			},
 		}
 	default:
@@ -147,6 +148,14 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 }
 
 func defaultService(name, namespace string) *corev1.Service {
+	return testService(name, namespace, corev1.ServiceTypeLoadBalancer)
+}
+
+func clusterIPService(name, namespace string) *corev1.Service {
+	return testService(name, namespace, corev1.ServiceTypeClusterIP)
+}
+
+func testService(name, namespace string, svcType corev1.ServiceType) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -159,7 +168,7 @@ func defaultService(name, namespace string) *corev1.Service {
 			Selector: map[string]string{
 				"name": "hello-openshift",
 			},
-			Type: corev1.ServiceTypeLoadBalancer,
+			Type: svcType,
 			Ports: []corev1.ServicePort{
 				{
 					Protocol: corev1.ProtocolTCP,

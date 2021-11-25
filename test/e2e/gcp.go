@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -5,11 +6,12 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"google.golang.org/api/option"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
 	dns "google.golang.org/api/dns/v1"
@@ -37,7 +39,7 @@ func newGCPHelper(gcpCredentials, gcpProjectId string) (providerTestHelper, erro
 func (g *gcpTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gcp-access-key",
+			Name:      fmt.Sprintf("gcp-credentials-%s", randomString(16)),
 			Namespace: namespace,
 		},
 		Data: map[string][]byte{
@@ -51,25 +53,30 @@ func (g *gcpTestHelper) platform() string {
 }
 
 func (g *gcpTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
+	gcpRootDomain := rootDomain + "."
+
 	resp, err := g.dnsService.ManagedZones.List(g.gcpProjectId).Do()
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to list hosted zones: %w", err)
+		return "", nil, fmt.Errorf("failed to list managed zones: %w", err)
 	}
 	zones := resp.ManagedZones
 	// if managed zone exists then return its id and nameservers
 	for _, zone := range zones {
-		if zone.DnsName == rootDomain {
+		if zone.DnsName == gcpRootDomain {
 			return strconv.FormatUint(zone.Id, 10), zone.NameServers, nil
 		}
 	}
 
 	// if zone does not exist, create managed zone and return its id and nameservers
 	zone, err := g.dnsService.ManagedZones.Create(g.gcpProjectId, &dns.ManagedZone{
-		CreationTime: time.Now().Format(time.RFC3339),
-		DnsName:      rootDomain,
+		// must be 1-63 characters long, must begin with a letter,
+		// end with a letter or digit, and only contain lowercase letters, digits or dashes
+		Name:        "a" + strings.ToLower(strings.ReplaceAll(rootDomain, ".", "-")),
+		DnsName:     gcpRootDomain,
+		Description: "ExternalDNS Operator test managed zone.",
 	}).Do()
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to create hosted zone: %w", err)
+		return "", nil, fmt.Errorf("error creating managed zone: %w", err)
 	}
 	return strconv.FormatUint(zone.Id, 10), zone.NameServers, nil
 }
@@ -80,7 +87,7 @@ func (g *gcpTestHelper) deleteHostedZone(zoneID string) error {
 		return fmt.Errorf("failed to retrieve dns records for zoneID %v: %w", zoneID, err)
 	}
 
-	var recordChanges *dns.Change
+	recordChanges := &dns.Change{}
 
 	// create change set deleting all DNS records which are not of NS and SOA types in managed zone
 	for len(resp.Rrsets) != 0 {
@@ -97,7 +104,7 @@ func (g *gcpTestHelper) deleteHostedZone(zoneID string) error {
 			token := resp.NextPageToken
 			resp, err = g.dnsService.ResourceRecordSets.List(g.gcpProjectId, zoneID).PageToken(token).Do()
 			if err != nil {
-				return fmt.Errorf("failed to retrieve dns records for zoneID %v and pageToke %v: %w", zoneID, token, err)
+				return fmt.Errorf("failed to retrieve dns records for zoneID %v and pageToken %v: %w", zoneID, token, err)
 			}
 		}
 	}
