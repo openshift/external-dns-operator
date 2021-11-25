@@ -44,6 +44,111 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
        *Note*: For other providers, see `config/samples/`.
 
 
+### Verify ExternalDNS works with sample service example:
+**Note**: On completion of the step 4, Make sure that the ExternalDNS should up and running.
+
+Create the following sample application to test that ExternalDNS works.
+
+> For services ExternalDNS will look for the annotation `external-dns.mydomain.org/publish: "yes"` on the service and use the corresponding value.
+
+Sample service creation yaml as below:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  annotations:
+    external-dns.mydomain.org/publish: "yes"
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: nginx
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+```
+After roughly two minutes check that a corresponding DNS record for nginx service was created.
+
+*logs from externalDNS service to confirm the entries' creation*:
+```
+time="2021-11-25T08:31:01Z" level=debug msg="Refreshing zones list cache"
+time="2021-11-25T08:31:02Z" level=debug msg="Considering zone: /hostedzone/Z02538821DNU9OAO61F0B (domain: myzonedomain.com.)"
+time="2021-11-25T08:31:03Z" level=debug msg="Endpoints generated from service: test-service/nginx: [nginx.myzonedomain.com 0 IN A  10.96.255.127 []]"
+time="2021-11-25T08:31:03Z" level=debug msg="Endpoints generated from service: external-dns-operator/webhook-service: [webhook-service.myzonedomain.com 0 IN A  10.96.125.29 []]"
+time="2021-11-25T08:31:03Z" level=debug msg="Refreshing zones list cache"
+time="2021-11-25T08:31:03Z" level=debug msg="Considering zone: /hostedzone/Z02538821DNU9OAO61F0B (domain: myzonedomain.com.)"
+time="2021-11-25T08:31:03Z" level=debug msg="Adding nginx.myzonedomain.com. to zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:31:03Z" level=debug msg="Adding nginx.myzonedomain.com. to zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:31:03Z" level=info msg="Desired change: CREATE nginx.myzonedomain.com A [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:31:03Z" level=info msg="Desired change: CREATE nginx.myzonedomain.com TXT [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:31:04Z" level=info msg="2 record(s) in zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B] were successfully updated"
+```
+
+*Cli command to fetch the records from aws which created by externalDNS service*:
+ ```
+$ aws route53 list-resource-record-sets --output json --hosted-zone-id "/hostedzone/Z02538821DNU9OAO61F0B" \
+>     --query "ResourceRecordSets[?Name == 'nginx.myzonedomain.com.']|[?Type == 'A']"
+[
+    {
+        "Name": "nginx.myzonedomain.com.",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [
+            {
+                "Value": "10.96.255.127"
+            }
+        ]
+    }
+]
+```
+>**Note**: Here the zone is `myzonedomain.com` and hostID is `Z02538821DNU9OAO61F0B`
+
+
+##### Deletion of service and make sure the entries removed in aws
+Ofter deleting the service then externalDNS will remove these entries from hostedZone.
+ 
+*logs from externalDNS service to confirm the entries' deletion*:
+```
+time="2021-11-25T08:38:05Z" level=debug msg="Refreshing zones list cache"
+time="2021-11-25T08:38:08Z" level=debug msg="Considering zone: /hostedzone/Z02538821DNU9OAO61F0B (domain: myzonedomain.com.)"
+time="2021-11-25T08:38:08Z" level=debug msg="Endpoints generated from service: external-dns-operator/webhook-service: [webhook-service.myzonedomain.com 0 IN A  10.96.125.29 []]"
+time="2021-11-25T08:38:08Z" level=debug msg="Refreshing zones list cache"
+time="2021-11-25T08:38:09Z" level=debug msg="Considering zone: /hostedzone/Z02538821DNU9OAO61F0B (domain: myzonedomain.com.)"
+time="2021-11-25T08:38:09Z" level=debug msg="Adding nginx.myzonedomain.com. to zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:38:09Z" level=debug msg="Adding nginx.myzonedomain.com. to zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:38:09Z" level=info msg="Desired change: DELETE nginx.myzonedomain.com A [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:38:09Z" level=info msg="Desired change: DELETE nginx.myzonedomain.com TXT [Id: /hostedzone/Z02538821DNU9OAO61F0B]"
+time="2021-11-25T08:38:09Z" level=info msg="2 record(s) in zone myzonedomain.com. [Id: /hostedzone/Z02538821DNU9OAO61F0B] were successfully updated"
+
+```
+
+*Cli command to fetch the records from aws, there should not be any entries with `nginx.myzonedomain.com`*:
+```
+$ aws route53 list-resource-record-sets --output json --hosted-zone-id "/hostedzone/Z02538821DNU9OAO61F0B"     --query "ResourceRecordSets[?Name == 'nginx.myzonedomain.com.']|[?Type == 'A']"
+[]
+```
+    
 ### Installing the `ExternalDNS` Operator using a custom index image on OperatorHub
 **Note**: By default container engine used is docker but you can specify podman by adding CONTAINER_ENGINE=podman to your image build and push commands as mentioned below.
     
