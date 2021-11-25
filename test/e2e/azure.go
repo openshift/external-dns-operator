@@ -149,8 +149,6 @@ func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
 // getAccessToken retrieves Azure API access token.
 func getAccessToken(cfg *clusterConfig) (*adal.ServicePrincipalToken, error) {
 	// Try to retrieve token with service principal credentials.
-	// Try to use service principal first, some AKS clusters are in an intermediate state that `UseManagedIdentityExtension` is `true`
-	// and service principal exists. In this case, we still want to use service principal to authenticate.
 	if len(cfg.ClientID) > 0 &&
 		len(cfg.ClientSecret) > 0 &&
 		// due to some historical reason, for pure MSI cluster,
