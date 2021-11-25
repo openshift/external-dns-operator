@@ -17,8 +17,11 @@ limitations under the License.
 package operator
 
 import (
+	cco "github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	configv1 "github.com/openshift/api/config/v1"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
@@ -38,6 +41,12 @@ func init() {
 		panic(err)
 	}
 	if err := operatorv1alpha1.AddToScheme(scheme); err != nil {
+		panic(err)
+	}
+	if err := cco.AddToScheme(scheme); err != nil {
+		panic(err)
+	}
+	if err := configv1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
 }

@@ -20,18 +20,30 @@ import (
 	"fmt"
 	"hash"
 	"hash/fnv"
-
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
+	"strings"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
+
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 const (
 	// ExternalDNSBaseName is the base name for any ExternalDNS resource.
-	ExternalDNSBaseName = "external-dns"
+	ExternalDNSBaseName                = "external-dns"
+	CredentialsRequestNamespace        = "openshift-cloud-credential-operator"
+	ControllerName                     = "external_dns_controller"
+	SecretFromCloudCredentialsOperator = "externaldns-cloud-credentials"
+	ServiceAccountName                 = "external-dns-operator"
 )
+
+func ExternalDNSCredentialsRequestName(externalDNS *operatorv1alpha1.ExternalDNS) types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: CredentialsRequestNamespace,
+		Name:      "externaldns-credentials-request-" + strings.ToLower(string(externalDNS.Spec.Provider.Type)),
+	}
+}
 
 // ExternalDNSResourceName returns the name for the resources unique for the given ExternalDNS instance.
 func ExternalDNSResourceName(externalDNS *operatorv1alpha1.ExternalDNS) string {

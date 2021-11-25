@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"fmt"
+
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -334,14 +335,18 @@ func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container)
 	container.Args = addTXTPrefixFlag(container.Args)
 
 	// don't add empty args if GCP provider is not given
-	if b.externalDNS.Spec.Provider.GCP == nil {
-		return
-	}
 
-	if b.externalDNS.Spec.Provider.GCP.Project != nil && len(*b.externalDNS.Spec.Provider.GCP.Project) > 0 {
-		container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", *b.externalDNS.Spec.Provider.GCP.Project))
-	}
+	if !operatorv1alpha1.IsOpenShift {
+		if b.externalDNS.Spec.Provider.GCP == nil {
+			return
+		}
 
+		if b.externalDNS.Spec.Provider.GCP.Project != nil && len(*b.externalDNS.Spec.Provider.GCP.Project) > 0 {
+			container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", *b.externalDNS.Spec.Provider.GCP.Project))
+		}
+	} else {
+		container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", operatorv1alpha1.PlatformStatus.GCP.ProjectID))
+	}
 	for _, v := range b.volumes {
 		// credentials volume
 		if v.Name == gcpCredentialsVolumeName {

@@ -18,7 +18,11 @@ package externaldnscontroller
 
 import (
 	"context"
+
+	cco "github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1"
+
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -45,6 +50,7 @@ const (
 
 func TestReconcile(t *testing.T) {
 	managedTypesList := []client.ObjectList{
+		&cco.CredentialsRequestList{},
 		&corev1.NamespaceList{},
 		&appsv1.DeploymentList{},
 		&corev1.ServiceAccountList{},
@@ -62,6 +68,7 @@ func TestReconcile(t *testing.T) {
 		expectedResult  reconcile.Result
 		expectedEvents  []testEvent
 		errExpected     bool
+		ocpPlatform     bool
 	}{
 		{
 			name:            "Bootstrap",
@@ -70,6 +77,67 @@ func TestReconcile(t *testing.T) {
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
 			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "clusterrole",
+					NamespacedName: types.NamespacedName{
+						Name: "external-dns",
+					},
+				},
+				{
+					eventType: watch.Added,
+					objType:   "deployment",
+					NamespacedName: types.NamespacedName{
+						Namespace: test.OperandNamespace,
+						Name:      "external-dns-test",
+					},
+				},
+				{
+					eventType: watch.Added,
+					objType:   "serviceaccount",
+					NamespacedName: types.NamespacedName{
+						Namespace: test.OperandNamespace,
+						Name:      "external-dns-test",
+					},
+				},
+				{
+					eventType: watch.Modified,
+					objType:   "externaldns",
+					NamespacedName: types.NamespacedName{
+						Name: test.Name,
+					},
+				},
+				{
+					eventType: watch.Added,
+					objType:   "clusterrolebinding",
+					NamespacedName: types.NamespacedName{
+						Name: "external-dns-test",
+					},
+				},
+				{
+					eventType: watch.Added,
+					objType:   "namespace",
+					NamespacedName: types.NamespacedName{
+						Name: "external-dns",
+					},
+				},
+			},
+		},
+		{
+			name:            "Bootstrap when OCP",
+			existingObjects: []runtime.Object{testExtDNSInstance(), testSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			ocpPlatform:     true,
+			expectedResult:  reconcile.Result{},
+			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "credentialsrequest",
+					NamespacedName: types.NamespacedName{
+						Name: "externaldns-credentials-request-" + strings.ToLower(string(testExtDNSInstance().Spec.Provider.Type)),
+					},
+				},
 				{
 					eventType: watch.Added,
 					objType:   "clusterrole",
@@ -128,12 +196,16 @@ func TestReconcile(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
+
 			r := &reconciler{
 				client: cl,
 				scheme: test.Scheme,
 				config: tc.inputConfig,
 				log:    zap.New(zap.UseDevMode(true)),
 			}
+
+			operatorv1alpha1.IsOpenShift = tc.ocpPlatform
+
 			// get watch interfaces from all the type managed by the operator
 			watches := []watch.Interface{}
 			for _, managedType := range managedTypesList {
@@ -241,6 +313,9 @@ func watch2test(we watch.Event) testEvent {
 		te.Name = obj.Name
 	case *operatorv1alpha1.ExternalDNS:
 		te.objType = "externaldns"
+		te.Name = obj.Name
+	case *cco.CredentialsRequest:
+		te.objType = "credentialsrequest"
 		te.Name = obj.Name
 	}
 	return te
