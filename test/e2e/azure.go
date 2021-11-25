@@ -127,11 +127,8 @@ func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string,
 	if err != nil {
 		return "", []string{}, err
 	}
-	var zoneID string
-	zoneID = *z.ID
-	nameservers := append(*z.ZoneProperties.NameServers)
 	a.zoneName = rootDomain
-	return zoneID, nameservers, nil
+	return *z.ID, *z.ZoneProperties.NameServers, nil
 }
 
 func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
