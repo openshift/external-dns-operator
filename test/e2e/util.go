@@ -1,4 +1,5 @@
-//+build e2e
+//go:build e2e
+// +build e2e
 
 package e2e
 
@@ -125,6 +126,10 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 			Type: operatorv1alpha1.ProviderTypeAzure,
 			Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
 				ConfigFile: operatorv1alpha1.SecretReference{
+					Name: credsSecret.Name,
+				},
+			},
+		}
 	case string(configv1.GCPPlatformType):
 		provider = operatorv1alpha1.ExternalDNSProvider{
 			Type: operatorv1alpha1.ProviderTypeGCP,

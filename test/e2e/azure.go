@@ -23,33 +23,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	RESOURCE_GROUP = "azure_resourcegroup"
-	SUBSCIPTION_ID = "azure_subscription_id"
-	TENANT_ID      = "azure_tenant_id"
-	CLIENT_ID      = "azure_client_id"
-	CLIENT_SECRET  = "azure_client_secret"
-	REGION         = "azure_region"
-
-	KUBE_SYSTEM_SECRET_NAME = "azure-credentials"
-)
-
-// config represents common config items for Azure DNS and Azure Private DNS
-type cluserConfig struct {
-	Cloud                       string            `json:"cloud" yaml:"cloud"`
-	Environment                 azure.Environment `json:"-" yaml:"-"`
-	TenantID                    string            `json:"tenantId" yaml:"tenantId"`
-	SubscriptionID              string            `json:"subscriptionId" yaml:"subscriptionId"`
-	ResourceGroup               string            `json:"resourceGroup" yaml:"resourceGroup"`
-	Location                    string            `json:"location" yaml:"location"`
-	ClientID                    string            `json:"aadClientId" yaml:"aadClientId"`
-	ClientSecret                string            `json:"aadClientSecret" yaml:"aadClientSecret"`
-	UseManagedIdentityExtension bool              `json:"useManagedIdentityExtension" yaml:"useManagedIdentityExtension"`
-	UserAssignedIdentityID      string            `json:"userAssignedIdentityID" yaml:"userAssignedIdentityID"`
+// clusterConfig represents common config items for Azure DNS and Azure Private DNS
+type clusterConfig struct {
+	Cloud          string
+	Environment    azure.Environment
+	TenantID       string
+	SubscriptionID string
+	ResourceGroup  string
+	Location       string
+	ClientID       string
+	ClientSecret   string
 }
 
 type azureTestHelper struct {
-	config     *cluserConfig
+	config     *clusterConfig
 	kubeClient client.Client
 	zoneClient dns.ZonesClient
 	zoneName   string
@@ -73,28 +60,22 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 func (a *azureTestHelper) prepareCredentials() (err error) {
 	secret := &corev1.Secret{}
 	secretName := types.NamespacedName{
-		Name:      KUBE_SYSTEM_SECRET_NAME,
+		Name:      "azure-credentials",
 		Namespace: "kube-system",
 	}
 	if err = a.kubeClient.Get(context.Background(), secretName, secret); err != nil {
 		return fmt.Errorf("failed to get credentials secret %s, error : %v", secretName.Name, err)
 	}
 
-	a.config = &cluserConfig{
-		TenantID:                    string(secret.Data[TENANT_ID]),
-		SubscriptionID:              string(secret.Data[SUBSCIPTION_ID]),
-		ResourceGroup:               string(secret.Data[RESOURCE_GROUP]),
-		Location:                    string(secret.Data[REGION]),
-		ClientID:                    string(secret.Data[CLIENT_ID]),
-		ClientSecret:                string(secret.Data[CLIENT_SECRET]),
-		UseManagedIdentityExtension: true,
+	a.config = &clusterConfig{
+		TenantID:       string(secret.Data["azure_tenant_id"]),
+		SubscriptionID: string(secret.Data["azure_subscription_id"]),
+		ResourceGroup:  string(secret.Data["azure_resourcegroup"]),
+		Location:       string(secret.Data["azure_region"]),
+		ClientID:       string(secret.Data["azure_client_id"]),
+		ClientSecret:   string(secret.Data["azure_client_secret"]),
+		Environment:    azure.PublicCloud,
 	}
-
-	var environment azure.Environment
-	if a.config.Cloud == "" {
-		environment = azure.PublicCloud
-	}
-	a.config.Environment = environment
 
 	return nil
 }
@@ -124,11 +105,7 @@ func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret
 		ClientID:       a.config.ClientID,
 		ClientSecret:   a.config.ClientSecret,
 	}
-	azureCreds, err := json.Marshal(credData)
-	if err != nil {
-
-	}
-
+	azureCreds, _ := json.Marshal(credData)
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("azure-config-file-%s", randomString(16)),
@@ -166,38 +143,12 @@ func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
 	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, a.zoneName, ""); err != nil {
 		return fmt.Errorf("unable to delete zone :%s, failed error: %v", a.zoneName, err)
 	}
-	// verify the zone is present
-	if _, err := a.isZoneNameExists(); err != nil {
-		return fmt.Errorf("unable to verfy zone deletion,failed with error : %v", err)
-	}
-
 	return nil
-}
-
-func (a *azureTestHelper) isZoneNameExists() (bool, error) {
-	ctx := context.TODO()
-	zonesIterator, err := a.zoneClient.ListByResourceGroupComplete(ctx, a.config.ResourceGroup, nil)
-	if err != nil {
-		return false, err
-	}
-
-	for zonesIterator.NotDone() {
-		zone := zonesIterator.Value()
-
-		if zone.Name != nil && a.zoneName == *zone.Name {
-			return true, nil
-		}
-		err = zonesIterator.NextWithContext(ctx)
-		if err != nil {
-			return false, err
-		}
-	}
-	return false, nil
 }
 
 // ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
 // getAccessToken retrieves Azure API access token.
-func getAccessToken(cfg *cluserConfig) (*adal.ServicePrincipalToken, error) {
+func getAccessToken(cfg *clusterConfig) (*adal.ServicePrincipalToken, error) {
 	// Try to retrieve token with service principal credentials.
 	// Try to use service principal first, some AKS clusters are in an intermediate state that `UseManagedIdentityExtension` is `true`
 	// and service principal exists. In this case, we still want to use service principal to authenticate.

@@ -214,7 +214,9 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 
 		// get the IPs of the loadbalancer
-		if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
+		if service.Status.LoadBalancer.Ingress[0].IP != "" {
+			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
+		} else if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
 			lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
 			// use built in Go resolver instead of the platform's one
 			ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
@@ -226,8 +228,6 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 			for _, ip := range ips {
 				serviceIPs[ip.String()] = struct{}{}
 			}
-		} else if service.Status.LoadBalancer.Ingress[0].IP != "" {
-			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
 		} else {
 			t.Logf("waiting for loadbalancer details for service  %s", testServiceName)
 			return false, nil
