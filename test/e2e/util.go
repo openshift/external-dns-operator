@@ -43,6 +43,18 @@ func rootAWSCredentials(kubeClient client.Client) (string, string, error) {
 	return string(secret.Data["aws_access_key_id"]), string(secret.Data["aws_secret_access_key"]), nil
 }
 
+func rootGCPCredentials(kubeClient client.Client) (string, error) {
+	secret := &corev1.Secret{}
+	secretName := types.NamespacedName{
+		Name:      "gcp-credentials",
+		Namespace: "kube-system",
+	}
+	if err := kubeClient.Get(context.TODO(), secretName, secret); err != nil {
+		return "", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+	}
+	return string(secret.Data["service_account.json"]), nil
+}
+
 func randomString(n int) string {
 	var chars = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	str := make([]rune, n)
@@ -59,6 +71,15 @@ func getPlatformType(kubeClient client.Client) (string, error) {
 		return "", err
 	}
 	return string(infraConfig.Status.PlatformStatus.Type), nil
+}
+
+func getGCPProjectId(kubeClient client.Client) (string, error) {
+	infraConfig := &configv1.Infrastructure{}
+	err := kubeClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, infraConfig)
+	if err != nil {
+		return "", err
+	}
+	return infraConfig.Status.PlatformStatus.GCP.ProjectID, nil
 }
 
 func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID string, rootDomain string, credsSecret *corev1.Secret, platformType string) operatorv1alpha1.ExternalDNS {
@@ -104,6 +125,11 @@ func defaultExternalDNS(t *testing.T, name string, namespace string, zoneID stri
 			Type: operatorv1alpha1.ProviderTypeAzure,
 			Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
 				ConfigFile: operatorv1alpha1.SecretReference{
+	case string(configv1.GCPPlatformType):
+		provider = operatorv1alpha1.ExternalDNSProvider{
+			Type: operatorv1alpha1.ProviderTypeGCP,
+			GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
+				Credentials: operatorv1alpha1.SecretReference{
 					Name: credsSecret.Name,
 				},
 			},
