@@ -32,7 +32,9 @@ SHELL = /usr/bin/env bash -o pipefail
 
 CONTAINER_ENGINE ?= podman
 
-BUNDLE_MANIFEST_DIR := bundle/manifests
+
+BUNDLE_DIR := bundle
+BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
 BUNDLE_IMG ?= olm-bundle:latest
 INDEX_IMG ?= olm-bundle-index:latest
 OPM_VERSION ?= v1.17.4
@@ -142,12 +144,17 @@ olm-manifests: manifests
 	cp -f config/rbac/auth_proxy_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrole.yaml
 	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
 	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
-	cp -f config/operand_rbac/operand_rbac.yaml $(BUNDLE_MANIFEST_DIR)/operand_rbac.yaml
+	cp -f config/operand_namespace/operand_namespace.yaml $(BUNDLE_MANIFEST_DIR)/operand_namespace.yaml
 	# opm is unable to find CRD if the standard yaml --- is at the top
 	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 	# as per the recommendation of 'operator-sdk bundle validate' command
-	# strip the namespaces from the bundle manifests
-	ls -I *crd.yaml | xargs sed -i '/namespace:/d'
+	# doing the best (yaml regexp is far from perfect) to strip the metadata.namespace from the bundle manifests
+	# trying to not touch cluster level resources as they don't have the namespace
+	for f in $$(\grep -l 'kind: *\(Service\|ConfigMap\|Secret\|Role\) *$$' $(BUNDLE_MANIFEST_DIR)/*.yaml); do sed -i '/namespace:/d' $${f};done
+
+.PHONY: validate-bundle
+validate-bundle:
+	operator-sdk bundle validate $(BUNDLE_DIR) --select-optional suite=operatorframework
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests
