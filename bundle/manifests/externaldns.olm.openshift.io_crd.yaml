@@ -354,7 +354,6 @@ spec:
                     - Ignore
                     - Allow
                     type: string
-                  namespace:
                     description: Namespace instructs ExternalDNS to only acknowledge
                       source resource instances in a specific namespace.
                     type: string

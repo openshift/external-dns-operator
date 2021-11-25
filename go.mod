@@ -10,8 +10,13 @@ require (
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
 	github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
+	golang.org/x/sys v0.0.0-20210917161153-d61c044b1678 // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
-	google.golang.org/api v0.58.0
+	golang.org/x/tools v0.1.5 // indirect
+	google.golang.org/api v0.30.0
+	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
