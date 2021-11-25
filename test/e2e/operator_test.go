@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -71,22 +72,10 @@ func initKubeClient() error {
 	return nil
 }
 
-func initProviderHelper() (providerTestHelper, error) {
+func initProviderHelper(openshiftCI bool, platformType string) (providerTestHelper, error) {
 	var (
-		openshiftCI  bool
-		platformType string
-		err          error
+		err error
 	)
-
-	if os.Getenv("OPENSHIFT_CI") != "" {
-		openshiftCI = true
-		platformType, err = getPlatformType(kubeClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to determine platform type: %w", err)
-		}
-	} else {
-		platformType = mustGetEnv("CLOUD_PROVIDER")
-	}
 
 	switch platformType {
 	case string(configv1.AWSPlatformType):
@@ -129,14 +118,36 @@ func initProviderHelper() (providerTestHelper, error) {
 
 func TestMain(m *testing.M) {
 	var (
-		err error
+		err          error
+		platformType string
+		openshiftCI  bool
 	)
 	if err = initKubeClient(); err != nil {
 		fmt.Printf("Failed to init kube client: %v\n", err)
 		os.Exit(1)
 	}
 
-	if helper, err = initProviderHelper(); err != nil {
+	if os.Getenv("OPENSHIFT_CI") != "" {
+		openshiftCI = true
+		platformType, err = getPlatformType(kubeClient)
+		if err != nil {
+			fmt.Printf("Failed to determine platform type: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		platformType = mustGetEnv("CLOUD_PROVIDER")
+	}
+
+	if providersToSkip := os.Getenv("E2E_SKIP_CLOUD_PROVIDERS"); len(providersToSkip) > 0 {
+		for _, provider := range strings.Split(providersToSkip, ",") {
+			if strings.ToLower(provider) == strings.ToLower(platformType) {
+				fmt.Printf("Skipping e2e test for the provider %q!\n", provider)
+				os.Exit(0)
+			}
+		}
+	}
+
+	if helper, err = initProviderHelper(openshiftCI, platformType); err != nil {
 		fmt.Printf("Failed to init provider helper: %v\n", err)
 		os.Exit(1)
 	}
