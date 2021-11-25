@@ -32,7 +32,6 @@ SHELL = /usr/bin/env bash -o pipefail
 
 CONTAINER_ENGINE ?= podman
 
-
 BUNDLE_DIR := bundle
 BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
 BUNDLE_IMG ?= olm-bundle:latest
@@ -132,6 +131,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: olm-manifests
+# TODO: try to replace this rule with 'operator-sdk generate bundle'
 # A little helper command to generate the manifests of OLM bundle from the files in config/.
 # The idea is that config/ is the main directory for the manifests and OLM manifests are secondary
 # and is supposed to be updated afterwards.
