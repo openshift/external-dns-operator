@@ -45,10 +45,6 @@ COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
 GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
 
-# Variable to skip some e2e provider, for corner cases
-# Keep it empty or unset
-E2E_SKIP_CLOUD_PROVIDERS="gcp,azure"
-
 all: build
 
 ##@ General
@@ -88,7 +84,7 @@ test: manifests generate fmt vet ## Run tests.
 
 .PHONY: test-e2e
 test-e2e:
-	go test \
+	E2E_SKIP_CLOUD_PROVIDERS="gcp,azure" go test \
 	$(GOBUILD_VERSION_ARGS) \
 	-timeout 1h \
 	-count 1 \
