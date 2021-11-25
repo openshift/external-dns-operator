@@ -125,10 +125,8 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	$(KUSTOMIZE) build config/operand_rbac | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/operand_rbac | kubectl delete -f -
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: olm-manifests
@@ -149,7 +147,7 @@ olm-manifests: manifests
 	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
 	# as per the recommendation of 'operator-sdk bundle validate' command
 	# strip the namespaces from the bundle manifests
-	ls -I *crd.yaml | xargs sed -i '/namespace:/d' 
+	ls -I *crd.yaml | xargs sed -i '/namespace:/d'
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests

@@ -1,4 +1,4 @@
 resources:
-- operand_rbac.yaml
+- operand_namespace.yaml
 
 namespace: external-dns
