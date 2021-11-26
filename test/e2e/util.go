@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -11,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,28 +23,16 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 type providerTestHelper interface {
-	ensureHostedZone(string) (string, []string, error)
-	deleteHostedZone(string) error
+	ensureHostedZone() (string, []string, error)
+	deleteHostedZone() error
 	platform() string
-	makeCredentialsSecret(namespace string) *corev1.Secret
+	makeCredentialsSecret() *corev1.Secret
+	defaultExternalDNS(credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
 }
 
-func rootAWSCredentials(kubeClient client.Client) (string, string, error) {
-	secret := &corev1.Secret{}
-	secretName := types.NamespacedName{
-		Name:      "aws-creds",
-		Namespace: "kube-system",
-	}
-	if err := kubeClient.Get(context.TODO(), secretName, secret); err != nil {
-		return "", "", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
-	}
-	return string(secret.Data["aws_access_key_id"]), string(secret.Data["aws_secret_access_key"]), nil
-}
 
 func rootGCPCredentials(kubeClient client.Client) (string, error) {
 	secret := &corev1.Secret{}
@@ -80,70 +71,6 @@ func getGCPProjectId(kubeClient client.Client) (string, error) {
 		return "", err
 	}
 	return infraConfig.Status.PlatformStatus.GCP.ProjectID, nil
-}
-
-func defaultExternalDNS(t *testing.T, name, zoneID, rootDomain string, credsSecret *corev1.Secret, platformType string, providerOptions []string) operatorv1alpha1.ExternalDNS {
-	resource := operatorv1alpha1.ExternalDNS{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Zones: []string{zoneID},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeService,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
-						ServiceType: []corev1.ServiceType{
-							corev1.ServiceTypeLoadBalancer,
-							corev1.ServiceTypeClusterIP,
-						},
-					},
-					AnnotationFilter: map[string]string{
-						"external-dns.mydomain.org/publish": "yes",
-					},
-				},
-				HostnameAnnotationPolicy: "Ignore",
-				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", rootDomain)},
-			},
-		},
-	}
-
-	var provider operatorv1alpha1.ExternalDNSProvider
-	switch platformType {
-	case string(configv1.AWSPlatformType):
-		provider = operatorv1alpha1.ExternalDNSProvider{
-			Type: operatorv1alpha1.ProviderTypeAWS,
-			AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-				Credentials: operatorv1alpha1.SecretReference{
-					Name: credsSecret.Name,
-				},
-			},
-		}
-	case string(configv1.AzurePlatformType):
-		provider = operatorv1alpha1.ExternalDNSProvider{
-			Type: operatorv1alpha1.ProviderTypeAzure,
-			Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
-				ConfigFile: operatorv1alpha1.SecretReference{
-					Name: credsSecret.Name,
-				},
-			},
-		}
-	case string(configv1.GCPPlatformType):
-		provider = operatorv1alpha1.ExternalDNSProvider{
-			Type: operatorv1alpha1.ProviderTypeGCP,
-			GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
-				Credentials: operatorv1alpha1.SecretReference{
-					Name: credsSecret.Name,
-				},
-				Project: &providerOptions[0],
-			},
-		}
-	default:
-		t.Fatalf("Unsupported Provider")
-	}
-
-	resource.Spec.Provider = provider
-	return resource
 }
 
 func defaultService(name, namespace string) *corev1.Service {

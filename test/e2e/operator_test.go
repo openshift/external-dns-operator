@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -73,46 +74,13 @@ func initKubeClient() error {
 }
 
 func initProviderHelper(openshiftCI bool, platformType string) (providerTestHelper, error) {
-	var (
-		err error
-	)
-
 	switch platformType {
 	case string(configv1.AWSPlatformType):
-		var (
-			awsAccessKeyID     string
-			awsSecretAccessKey string
-		)
-		if openshiftCI {
-			awsAccessKeyID, awsSecretAccessKey, err = rootAWSCredentials(kubeClient)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get AWS credentials: %w", err)
-			}
-		} else {
-			awsAccessKeyID = mustGetEnv("AWS_ACCESS_KEY_ID")
-			awsSecretAccessKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
-		}
-		return newAWSHelper(awsAccessKeyID, awsSecretAccessKey)
+		return newAWSHelper(openshiftCI)
 	case string(configv1.AzurePlatformType):
-		return newAzureHelper(kubeClient)
+		return newAzureHelper()
 	case string(configv1.GCPPlatformType):
-		var gcpCredentials string
-		var gcpProjectId string
-		if openshiftCI {
-			gcpCredentials, err = rootGCPCredentials(kubeClient)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get GCP credentials: %w", err)
-			}
-			gcpProjectId, err = getGCPProjectId(kubeClient)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get GCP project id: %w", err)
-			}
-		} else {
-			gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
-			gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
-		}
-		providerOptions = append(providerOptions, gcpProjectId)
-		return newGCPHelper(gcpCredentials, gcpProjectId)
+		return newGCPHelper(openshiftCI)
 	default:
 		return nil, fmt.Errorf("unsupported provider: %q", platformType)
 	}
@@ -149,16 +117,17 @@ func TestMain(m *testing.M) {
 		}
 	}
 
+	if version.SHORTCOMMIT != "" {
+		hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+	}
+
 	if helper, err = initProviderHelper(openshiftCI, platformType); err != nil {
 		fmt.Printf("Failed to init provider helper: %v\n", err)
 		os.Exit(1)
 	}
 
-	if version.SHORTCOMMIT != "" {
-		hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
-	}
 	fmt.Printf("Ensuring hosted zone: %s\n", hostedZoneDomain)
-	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
+	hostedZoneID, nameServers, err = helper.ensureHostedZone()
 	if err != nil {
 		fmt.Printf("Failed to created hosted zone for domain %s: %v\n", hostedZoneDomain, err)
 		os.Exit(1)
@@ -167,7 +136,7 @@ func TestMain(m *testing.M) {
 	exitStatus := m.Run()
 
 	fmt.Printf("Deleting hosted zone: %s\n", hostedZoneDomain)
-	err = helper.deleteHostedZone(hostedZoneID)
+	err = helper.deleteHostedZone()
 	if err != nil {
 		fmt.Printf("Failed to delete hosted zone %s: %v\n", hostedZoneID, err)
 		os.Exit(1)
@@ -192,14 +161,14 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	}
 
 	t.Log("Creating credentials secret")
-	resourceSecret := helper.makeCredentialsSecret(testCredSecretName)
+	resourceSecret := helper.makeCredentialsSecret()
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
 		t.Fatalf("Failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
 	t.Log("Creating external dns instance")
-	extDNS := defaultExternalDNS(t, testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret, helper.platform(), providerOptions)
+	extDNS := helper.defaultExternalDNS(resourceSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}

@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -7,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 
@@ -18,8 +21,6 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // clusterConfig represents common config items for Azure DNS and Azure Private DNS
@@ -36,15 +37,13 @@ type clusterConfig struct {
 
 type azureTestHelper struct {
 	config     *clusterConfig
-	kubeClient client.Client
 	zoneClient dns.ZonesClient
-	zoneName   string
 }
 
-func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
-	azureProvider := &azureTestHelper{
-		kubeClient: kubeClient,
-	}
+// Build the necessary object for the provider test
+// for Azure Need the credentials ref clusterConfig
+func newAzureHelper() (providerTestHelper, error) {
+	azureProvider := &azureTestHelper{}
 
 	if err := azureProvider.prepareCredentials(); err != nil {
 		return nil, err
@@ -62,7 +61,7 @@ func (a *azureTestHelper) prepareCredentials() (err error) {
 		Name:      "azure-credentials",
 		Namespace: "kube-system",
 	}
-	if err = a.kubeClient.Get(context.Background(), secretName, secret); err != nil {
+	if err = kubeClient.Get(context.Background(), secretName, secret); err != nil {
 		return fmt.Errorf("failed to get credentials secret %s, error : %v", secretName.Name, err)
 	}
 
@@ -75,7 +74,6 @@ func (a *azureTestHelper) prepareCredentials() (err error) {
 		ClientSecret:   string(secret.Data["azure_client_secret"]),
 		Environment:    azure.PublicCloud,
 	}
-
 	return nil
 }
 
@@ -90,7 +88,7 @@ func (a *azureTestHelper) prepareZoneClient() error {
 }
 
 // Credentials should in as json string for azure provider.
-func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
+func (a *azureTestHelper) makeCredentialsSecret() *corev1.Secret {
 	credData := struct {
 		TenantID       string `json:"tenantId"`
 		SubscriptionID string `json:"subscriptionId"`
@@ -108,7 +106,7 @@ func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("azure-config-file-%s", randomString(16)),
-			Namespace: namespace,
+			Namespace: testCredSecretName,
 		},
 		Data: map[string][]byte{
 			"azure.json": azureCreds,
@@ -120,26 +118,56 @@ func (a *azureTestHelper) platform() string {
 	return string(configv1.AzurePlatformType)
 }
 
-func (a *azureTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
+func (a *azureTestHelper) ensureHostedZone() (string, []string, error) {
 	location := "global"
-	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, rootDomain,
+	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, hostedZoneDomain,
 		dns.Zone{Location: &location}, "", "")
 	if err != nil {
 		return "", []string{}, err
 	}
-	a.zoneName = rootDomain
 	return *z.ID, *z.ZoneProperties.NameServers, nil
 }
 
-func (a *azureTestHelper) deleteHostedZone(rootDomain string) error {
-	if a.zoneName == "" {
-		fmt.Printf("ZoneName is empty, nothing to be deleted")
-		return nil
-	}
-	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, a.zoneName, ""); err != nil {
-		return fmt.Errorf("unable to delete zone :%s, failed error: %v", a.zoneName, err)
+func (a *azureTestHelper) deleteHostedZone() error {
+	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, hostedZoneDomain, ""); err != nil {
+		return fmt.Errorf("unable to delete zone :%s, failed error: %v", hostedZoneDomain, err)
 	}
 	return nil
+}
+
+func (a *azureTestHelper) defaultExternalDNS(credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	return operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testExtDNSName,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Zones: []string{hostedZoneID},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeService,
+					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+						ServiceType: []corev1.ServiceType{
+							corev1.ServiceTypeLoadBalancer,
+							corev1.ServiceTypeClusterIP,
+						},
+					},
+					AnnotationFilter: map[string]string{
+						"external-dns.mydomain.org/publish": "yes",
+					},
+				},
+				HostnameAnnotationPolicy: "Ignore",
+				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", hostedZoneDomain)},
+			},
+			Provider: operatorv1alpha1.ExternalDNSProvider{
+				Type: operatorv1alpha1.ProviderTypeAzure,
+				Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
+					ConfigFile: operatorv1alpha1.SecretReference{
+						Name: credsSecret.Name,
+					},
+				},
+			},
+		},
+	}
 }
 
 // ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
