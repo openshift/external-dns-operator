@@ -216,9 +216,10 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 				serviceIPs[ip.String()] = struct{}{}
 			}
 		} else {
-			t.Logf("waiting for loadbalancer details for service  %s", testServiceName)
+			t.Logf("Waiting for loadbalancer details for service %s", testServiceName)
 			return false, nil
 		}
+		t.Logf("Loadbalancer's IP(s): %v", serviceIPs)
 		return true, nil
 	}); err != nil {
 		t.Fatalf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testServiceName, err)
