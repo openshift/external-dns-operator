@@ -1,5 +1,4 @@
-/*//go:build e2e
-// +build e2e*/
+// +build e2e
 
 package e2e
 
@@ -8,6 +7,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 
@@ -169,11 +170,11 @@ func (g *gcpTestHelper) deleteHostedZone() error {
 
 func prepareGCPConfigurations(openshiftCI bool) (gcpCredentials, gcpProjectId string, err error) {
 	if openshiftCI {
-		gcpCredentials, err = rootGCPCredentials(kubeClient)
+		gcpCredentials, err = rootGCPCredentials()
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get GCP credentials: %w", err)
 		}
-		gcpProjectId, err = getGCPProjectId(kubeClient)
+		gcpProjectId, err = getGCPProjectId()
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get GCP project id: %w", err)
 		}
@@ -182,4 +183,25 @@ func prepareGCPConfigurations(openshiftCI bool) (gcpCredentials, gcpProjectId st
 		gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
 	}
 	return gcpCredentials, gcpProjectId, nil
+}
+
+func rootGCPCredentials() (string, error) {
+	secret := &corev1.Secret{}
+	secretName := types.NamespacedName{
+		Name:      "gcp-credentials",
+		Namespace: "kube-system",
+	}
+	if err := kubeClient.Get(context.TODO(), secretName, secret); err != nil {
+		return "", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+	}
+	return string(secret.Data["service_account.json"]), nil
+}
+
+func getGCPProjectId() (string, error) {
+	infraConfig := &configv1.Infrastructure{}
+	err := kubeClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, infraConfig)
+	if err != nil {
+		return "", err
+	}
+	return infraConfig.Status.PlatformStatus.GCP.ProjectID, nil
 }
