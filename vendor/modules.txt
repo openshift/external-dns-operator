@@ -25,6 +25,7 @@ github.com/Azure/go-autorest/tracing
 # github.com/aws/aws-sdk-go v1.41.6
 ## explicit
 github.com/aws/aws-sdk-go/aws
+github.com/aws/aws-sdk-go/aws/arn
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/awsutil
 github.com/aws/aws-sdk-go/aws/client
@@ -61,6 +62,9 @@ github.com/aws/aws-sdk-go/private/protocol/rest
 github.com/aws/aws-sdk-go/private/protocol/restjson
 github.com/aws/aws-sdk-go/private/protocol/restxml
 github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
+github.com/aws/aws-sdk-go/service/elb
+github.com/aws/aws-sdk-go/service/elbv2
+github.com/aws/aws-sdk-go/service/resourcegroupstaggingapi
 github.com/aws/aws-sdk-go/service/route53
 github.com/aws/aws-sdk-go/service/sso
 github.com/aws/aws-sdk-go/service/sso/ssoiface
@@ -80,6 +84,8 @@ github.com/fatih/color
 github.com/form3tech-oss/jwt-go
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
+# github.com/ghodss/yaml v1.0.0
+github.com/ghodss/yaml
 # github.com/go-logr/logr v0.4.0
 ## explicit
 github.com/go-logr/logr
@@ -176,12 +182,16 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
+# github.com/openshift/api v0.0.0-20211021122928-16dd969d5550
 ## explicit
 github.com/openshift/api/config/v1
 # github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 ## explicit
 github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1
+# github.com/openshift/cluster-ingress-operator v0.0.0-20211129201418-28dc157f3dae
+## explicit
+github.com/openshift/cluster-ingress-operator/pkg/util
+github.com/openshift/cluster-ingress-operator/pkg/util/aws
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/prometheus/client_golang v1.11.0
@@ -199,6 +209,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/sirupsen/logrus v1.8.1
+## explicit
+github.com/sirupsen/logrus
 # github.com/spf13/afero v1.6.0
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -657,7 +670,7 @@ k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/retry
 k8s.io/client-go/util/workqueue
-# k8s.io/component-base v0.21.3
+# k8s.io/component-base v0.22.1
 k8s.io/component-base/config
 k8s.io/component-base/config/v1alpha1
 # k8s.io/klog/v2 v2.9.0

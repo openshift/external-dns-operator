@@ -12,8 +12,10 @@ require (
 	github.com/google/go-cmp v0.5.6
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
-	github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
+	github.com/openshift/api v0.0.0-20211021122928-16dd969d5550
 	github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
+	github.com/openshift/cluster-ingress-operator v0.0.0-20211129201418-28dc157f3dae
+	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/api v0.58.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1

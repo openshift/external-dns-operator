@@ -21,7 +21,22 @@ import (
 	"errors"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	operatorutil "github.com/openshift/cluster-ingress-operator/pkg/util"
+
+	awsutil "github.com/openshift/cluster-ingress-operator/pkg/util/aws"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"os"
+
 	configv1 "github.com/openshift/api/config/v1"
+
+	kberror "k8s.io/apimachinery/pkg/api/errors"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -37,24 +52,54 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+var kClient client.Client
+
+func initKubeClient() error {
+	kubeConfig, err := config.GetConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get kube config: %w", err)
+	}
+
+	kClient, err = client.New(kubeConfig, client.Options{})
+	if err != nil {
+		return fmt.Errorf("failed to create kube client: %w", err)
+	}
+	return nil
+}
+
 const (
 	kind    = "OpenShiftAPIServer"
 	group   = "operator.openshift.io"
 	version = "v1"
+	// kubeCloudConfigName is the name of the kube cloud config ConfigMap
+	kubeCloudConfigName = "kube-cloud-config"
+	// cloudCABundleKey is the key in the kube cloud config ConfigMap where the custom CA bundle is located
+	cloudCABundleKey                      = "ca-bundle.pem"
+	GlobalMachineSpecifiedConfigNamespace = "openshift-config-managed"
 )
 
 // webhookLog is for logging in this package.
 var webhookLog = logf.Log.WithName("validating-webhook")
-
 var IsOpenShift bool
-
 var PlatformStatus *configv1.PlatformStatus
+var PlatformSpec *configv1.InfrastructureSpec
+var DNSClusterSpec *configv1.DNSSpec
+var creds *corev1.Secret
+var zones []configv1.DNSZone
+var ZoneIDList []string
 
 func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager) error {
+
+	if err := initKubeClient(); err != nil {
+		fmt.Printf("Failed to init kube client: %v\n", err)
+		os.Exit(1)
+	}
+
 	kubeClient, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return err
 	}
+
 	IsOpenShift = IsOCP(kubeClient)
 
 	if IsOpenShift {
@@ -64,13 +109,74 @@ func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		if err = mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: "cluster"}, infraConfig); err != nil {
 			return fmt.Errorf("failed to get infrastructure 'config': %v", err)
 		}
-
 		PlatformStatus = infraConfig.Status.PlatformStatus
+		PlatformSpec = &infraConfig.Spec
+
+		dnsConfig := &configv1.DNS{}
+		if err = mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: "cluster"}, dnsConfig); err != nil {
+			return fmt.Errorf("failed to get infrastructure 'config': %v", err)
+		}
+		DNSClusterSpec = &dnsConfig.Spec
+
+		if dnsConfig.Spec.PrivateZone == nil && dnsConfig.Spec.PublicZone == nil {
+			return fmt.Errorf("using fake DNS provider because no public or private zone is defined in the cluster DNS configuration")
+		}
+
+		if dnsConfig.Spec.PrivateZone != nil {
+			zones = append(zones, *dnsConfig.Spec.PrivateZone)
+		}
+		if dnsConfig.Spec.PublicZone != nil {
+			zones = append(zones, *dnsConfig.Spec.PublicZone)
+		}
+
+		if PlatformSpec.PlatformSpec.Type == "AWS" {
+
+			creds, err = rootAWSCredentials(kClient)
+			if err != nil {
+				return fmt.Errorf("failed to get AWS credentials: %w", err)
+			}
+
+			dnsProvider, err := createDNSProvider(dnsConfig, PlatformStatus, &infraConfig.Status, creds)
+			if err != nil {
+				return fmt.Errorf("failed to create DNS provider: %v", err)
+			}
+
+			for i := range zones {
+				zone := zones[i]
+				zoneID, err := dnsProvider.getZoneID(zone)
+				if err != nil {
+					return fmt.Errorf("failed to find hosted zone : %v", err)
+				}
+				ZoneIDList = append(ZoneIDList, zoneID)
+			}
+
+		} else if PlatformSpec.PlatformSpec.Type == "GCP" {
+			for _, zone := range zones {
+				ZoneIDList = append(ZoneIDList, zone.ID)
+			}
+		} else if PlatformSpec.PlatformSpec.Type == "Azure" {
+			//TODO
+			fmt.Printf("Work in Progress")
+		}
+
 	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
+}
+
+///// aws  ////////
+func rootAWSCredentials(kClient client.Client) (secret *corev1.Secret, err error) {
+	secret = &corev1.Secret{}
+	secretName := types.NamespacedName{
+		Name:      "aws-creds",
+		Namespace: "kube-system",
+	}
+	if err := kClient.Get(context.TODO(), secretName, secret); err != nil {
+		return nil, fmt.Errorf("failed to get aws secret from kube-system")
+	}
+	return secret, nil
 }
 
 //+kubebuilder:webhook:path=/validate-externaldns-olm-openshift-io-v1alpha1-externaldns,mutating=false,failurePolicy=fail,sideEffects=None,groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=create;update,versions=v1alpha1,name=vexternaldns.kb.io,admissionReviewVersions={v1,v1beta1}
@@ -186,4 +292,114 @@ func IsOCP(kubeClient discovery.DiscoveryInterface) bool {
 		}
 	}
 	return false
+}
+
+// createDNSProvider creates a DNS manager compatible with the given cluster
+// configuration.
+func createDNSProvider(dnsConfig *configv1.DNS, platformStatus *configv1.PlatformStatus, infraStatus *configv1.InfrastructureStatus, creds *corev1.Secret) (Provider, error) {
+	// If no DNS configuration is provided, don't try to set up provider clients.
+	// TODO: the provider configuration can be refactored into the provider
+	// implementations themselves, so this part of the code won't need to
+	// know anything about the provider setup beyond picking the right implementation.
+	// Then, it would be safe to always use the appropriate provider for the platform
+	// and let the provider surface configuration errors if DNS records are actually
+	// created to exercise the provider.
+	if dnsConfig.Spec.PrivateZone == nil && dnsConfig.Spec.PublicZone == nil {
+		log.Info("using fake DNS provider because no public or private zone is defined in the cluster DNS configuration")
+		return Provider{}, nil
+	}
+
+	switch platformStatus.Type {
+	case configv1.AWSPlatformType:
+		cfg := Config{
+			Region: platformStatus.AWS.Region,
+		}
+
+		sharedCredsFile, err := awsutil.SharedCredentialsFileFromSecret(creds)
+		if err != nil {
+			return Provider{}, fmt.Errorf("failed to create shared credentials file from Secret: %v", err)
+		}
+		// since at the end of this function the aws dns provider will be initialized with aws clients, the AWS SDK no
+		// longer needs access to the file and therefore it can be removed.
+		defer os.Remove(sharedCredsFile)
+		cfg.SharedCredentialFile = sharedCredsFile
+
+		if len(platformStatus.AWS.ServiceEndpoints) > 0 {
+			cfg.ServiceEndpoints = []ServiceEndpoint{}
+			route53Found := false
+			elbFound := false
+			tagFound := false
+			for _, ep := range platformStatus.AWS.ServiceEndpoints {
+				switch {
+				case route53Found && elbFound && tagFound:
+					break
+				case ep.Name == Route53Service:
+					route53Found = true
+					scheme, err := operatorutil.URI(ep.URL)
+					if err != nil {
+						return Provider{}, fmt.Errorf("failed to validate URI %s: %v", ep.URL, err)
+					}
+					if scheme != operatorutil.SchemeHTTPS {
+						return Provider{}, fmt.Errorf("invalid scheme for URI %s; must be %s", ep.URL, operatorutil.SchemeHTTPS)
+					}
+					cfg.ServiceEndpoints = append(cfg.ServiceEndpoints, ServiceEndpoint{Name: ep.Name, URL: ep.URL})
+				case ep.Name == ELBService:
+					elbFound = true
+					scheme, err := operatorutil.URI(ep.URL)
+					if err != nil {
+						return Provider{}, fmt.Errorf("failed to validate URI %s: %v", ep.URL, err)
+					}
+					if scheme != operatorutil.SchemeHTTPS {
+						return Provider{}, fmt.Errorf("invalid scheme for URI %s; must be %s", ep.URL, operatorutil.SchemeHTTPS)
+					}
+					cfg.ServiceEndpoints = append(cfg.ServiceEndpoints, ServiceEndpoint{Name: ep.Name, URL: ep.URL})
+				case ep.Name == TaggingService:
+					tagFound = true
+					scheme, err := operatorutil.URI(ep.URL)
+					if err != nil {
+						return Provider{}, fmt.Errorf("failed to validate URI %s: %v", ep.URL, err)
+					}
+					if scheme != operatorutil.SchemeHTTPS {
+						return Provider{}, fmt.Errorf("invalid scheme for URI %s; must be %s", ep.URL, operatorutil.SchemeHTTPS)
+					}
+					cfg.ServiceEndpoints = append(cfg.ServiceEndpoints, ServiceEndpoint{Name: ep.Name, URL: ep.URL})
+				}
+			}
+		}
+
+		cfg.CustomCABundle, err = customCABundle()
+		if err != nil {
+			return Provider{}, fmt.Errorf("failed to get the custom CA bundle: %w", err)
+		}
+
+		provider, err := NewProvider(cfg)
+		if err != nil {
+			return Provider{}, fmt.Errorf("failed to create AWS DNS manager: %v", err)
+		}
+
+		return *provider, nil
+	}
+	return Provider{}, nil
+}
+
+// customCABundle will get the custom CA bundle, if present, configured in the kube cloud config.
+func customCABundle() (string, error) {
+	cm := &corev1.ConfigMap{}
+	switch err := kClient.Get(
+		context.Background(),
+		client.ObjectKey{Namespace: GlobalMachineSpecifiedConfigNamespace, Name: kubeCloudConfigName},
+		cm,
+	); {
+	case kberror.IsNotFound(err):
+		// no cloud config ConfigMap, so no custom CA bundle
+		return "", nil
+	case err != nil:
+		return "", fmt.Errorf("failed to get kube-cloud-config ConfigMap: %w", err)
+	}
+	caBundle, ok := cm.Data[cloudCABundleKey]
+	if !ok {
+		// no "ca-bundle.pem" key in the ConfigMap, so no custom CA bundle
+		return "", nil
+	}
+	return caBundle, nil
 }
