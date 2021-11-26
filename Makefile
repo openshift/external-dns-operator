@@ -84,7 +84,7 @@ test: manifests generate fmt vet ## Run tests.
 
 .PHONY: test-e2e
 test-e2e:
-	E2E_SKIP_CLOUD_PROVIDERS="gcp,azure" go test \
+	E2E_SKIP_CLOUD_PROVIDERS="gcp" go test \
 	$(GOBUILD_VERSION_ARGS) \
 	-timeout 1h \
 	-count 1 \

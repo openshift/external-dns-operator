@@ -1,4 +1,4 @@
-//+build e2e
+// +build e2e
 
 package e2e
 
@@ -115,6 +115,15 @@ func defaultExternalDNS(t *testing.T, name, zoneID, rootDomain string, credsSecr
 			Type: operatorv1alpha1.ProviderTypeAWS,
 			AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
 				Credentials: operatorv1alpha1.SecretReference{
+					Name: credsSecret.Name,
+				},
+			},
+		}
+	case string(configv1.AzurePlatformType):
+		provider = operatorv1alpha1.ExternalDNSProvider{
+			Type: operatorv1alpha1.ProviderTypeAzure,
+			Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
+				ConfigFile: operatorv1alpha1.SecretReference{
 					Name: credsSecret.Name,
 				},
 			},

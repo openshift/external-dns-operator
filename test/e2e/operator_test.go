@@ -1,4 +1,4 @@
-//+build e2e
+// +build e2e
 
 package e2e
 
@@ -46,7 +46,7 @@ var (
 	hostedZoneID     string
 	providerOptions  []string
 	helper           providerTestHelper
-	hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+	hostedZoneDomain = baseZoneDomain
 )
 
 func init() {
@@ -93,6 +93,8 @@ func initProviderHelper(openshiftCI bool, platformType string) (providerTestHelp
 			awsSecretAccessKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
 		}
 		return newAWSHelper(awsAccessKeyID, awsSecretAccessKey)
+	case string(configv1.AzurePlatformType):
+		return newAzureHelper(kubeClient)
 	case string(configv1.GCPPlatformType):
 		var gcpCredentials string
 		var gcpProjectId string
@@ -152,6 +154,9 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+	if version.SHORTCOMMIT != "" {
+		hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+	}
 	fmt.Printf("Ensuring hosted zone: %s\n", hostedZoneDomain)
 	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
 	if err != nil {
@@ -227,16 +232,23 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 
 		// get the IPs of the loadbalancer
-		lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
-		// use built in Go resolver instead of the platform's one
-		ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
-		if err != nil {
-			t.Logf("Waiting for IP of loadbalancer: %s", lbHostname)
-			// if the hostname cannot be resolved currently then retry later
+		if service.Status.LoadBalancer.Ingress[0].IP != "" {
+			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
+		} else if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
+			lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
+			// use built in Go resolver instead of the platform's one
+			ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
+			if err != nil {
+				t.Logf("Waiting for IP of loadbalancer %s", lbHostname)
+				// if the hostname cannot be resolved currently then retry later
+				return false, nil
+			}
+			for _, ip := range ips {
+				serviceIPs[ip.String()] = struct{}{}
+			}
+		} else {
+			t.Logf("waiting for loadbalancer details for service  %s", testServiceName)
 			return false, nil
-		}
-		for _, ip := range ips {
-			serviceIPs[ip.String()] = struct{}{}
 		}
 		return true, nil
 	}); err != nil {
