@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,10 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-)
-
-const (
-	controllerName = "external_dns_controller"
+	controlleroperator "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
 // Config holds all the things necessary for the controller to run.
@@ -59,14 +55,15 @@ type reconciler struct {
 // New creates the externaldns controller from mgr and cfg. The controller will be pre-configured
 // to watch for ExternalDNS objects across all namespaces.
 func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
+
 	r := &reconciler{
 		config: cfg,
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
-		log:    ctrl.Log.WithName(controllerName),
+		log:    ctrl.Log.WithName(controlleroperator.ControllerName),
 	}
 
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(controlleroperator.ControllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +105,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS namespace: %w", err)
 	}
 
+	if operatorv1alpha1.IsOpenShift && (externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure) {
+		if _, _, err := r.ensureExternalCredentialsRequest(ctx, externalDNS); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to ensure credentials request for externalDNS: %w", err)
+		}
+	}
 	haveServiceAccount, sa, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service account: %w", err)

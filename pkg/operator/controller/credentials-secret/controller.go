@@ -20,17 +20,18 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+
 	"github.com/go-logr/logr"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -38,11 +39,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	extdnscontroller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
 const (
-	controllerName                  = "credentials_secret_controller"
-	credentialsSecretIndexFieldName = "credentialsSecretName"
+	controllerName                           = "credentials_secret_controller"
+	credentialsSecretIndexFieldName          = "credentialsSecretName"
+	secretFromCloudCredentialsOperator       = "externaldns-cloud-credentials"
+	credentialsSecretIndexFieldNameInOperand = "credentialsSecretNameofOperand"
 )
 
 // Config holds all the things necessary for the controller to run.
@@ -143,6 +147,42 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		return requests
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.Background(),
+		&operatorv1alpha1.ExternalDNS{},
+		credentialsSecretIndexFieldNameInOperand,
+		client.IndexerFunc(func(o client.Object) []string {
+			ed := o.(*operatorv1alpha1.ExternalDNS)
+			name := extdnscontroller.ExternalDNSDestCredentialsSecretName("", ed.Name).Name
+			if len(name) == 0 {
+				return []string{}
+			}
+			return []string{name}
+		}),
+	); err != nil {
+		return nil, fmt.Errorf("failed to create index for credentials secret: %w", err)
+	}
+
+	credSecretToExtDNSTargetNS := func(o client.Object) []reconcile.Request {
+		externalDNSList := &operatorv1alpha1.ExternalDNSList{}
+		listOpts := client.MatchingFields{credentialsSecretIndexFieldNameInOperand: o.GetName()}
+		requests := []reconcile.Request{}
+		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
+			log.Error(err, "failed to list externalDNS for secret")
+			return requests
+		}
+		for _, ed := range externalDNSList.Items {
+			log.Info("queueing externalDNS", "name", ed.Name)
+			request := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name: ed.Name,
+				},
+			}
+			requests = append(requests, request)
+		}
+		return requests
+	}
+
 	// Watch secrets from the source namespace
 	// and if a secret was indexed as belonging to ExternalDNS
 	// we send the reconcile requests with all the ExternalDNS resources
@@ -151,6 +191,18 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		&source.Kind{Type: &corev1.Secret{}},
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
 		predicate.NewPredicateFuncs(isInNS(config.SourceNamespace)),
+	); err != nil {
+		return nil, err
+	}
+
+	// Watch secrets from the target namespace
+	// and if a secret was indexed as belonging to ExternalDNS
+	// we send the reconcile requests with all the ExternalDNS resources
+	// which referenced it
+	if err := c.Watch(
+		&source.Kind{Type: &corev1.Secret{}},
+		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
+		predicate.NewPredicateFuncs(isInNS(config.TargetNamespace)),
 	); err != nil {
 		return nil, err
 	}
@@ -201,6 +253,9 @@ func isInNS(namespace string) func(o client.Object) bool {
 
 // getExternalDNSCredentialsSecretName returns the name of the credentials secret retrieved from externalDNS resource
 func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) string {
+	if operatorv1alpha1.IsOpenShift && (externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure) {
+		return secretFromCloudCredentialsOperator
+	}
 	switch externalDNS.Spec.Provider.Type {
 	case operatorv1alpha1.ProviderTypeAWS:
 		if externalDNS.Spec.Provider.AWS != nil {
