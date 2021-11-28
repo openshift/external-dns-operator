@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 
@@ -27,8 +28,8 @@ type gcpTestHelper struct {
 	providerOptions []string
 }
 
-func newGCPHelper(isOpenShiftCI bool) (providerTestHelper, error) {
-	gcpCredentials, gcpProjectId, err := prepareGCPConfigurations(isOpenShiftCI)
+func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
+	gcpCredentials, gcpProjectId, err := prepareGCPConfigurations(isOpenShiftCI, kubeClient)
 	if err != nil {
 		return nil, err
 	}
@@ -44,46 +45,24 @@ func newGCPHelper(isOpenShiftCI bool) (providerTestHelper, error) {
 	}, nil
 }
 
-func (a *gcpTestHelper) defaultExternalDNS(credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	return operatorv1alpha1.ExternalDNS{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testExtDNSName,
-		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Zones: []string{hostedZoneID},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeService,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
-						ServiceType: []corev1.ServiceType{
-							corev1.ServiceTypeLoadBalancer,
-							corev1.ServiceTypeClusterIP,
-						},
-					},
-					AnnotationFilter: map[string]string{
-						"external-dns.mydomain.org/publish": "yes",
-					},
-				},
-				HostnameAnnotationPolicy: "Ignore",
-				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", hostedZoneDomain)},
+func (a *gcpTestHelper) externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeGCP,
+		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
+			Credentials: operatorv1alpha1.SecretReference{
+				Name: credsSecret.Name,
 			},
-			Provider: operatorv1alpha1.ExternalDNSProvider{
-				Type: operatorv1alpha1.ProviderTypeGCP,
-				GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
-					Credentials: operatorv1alpha1.SecretReference{
-						Name: credsSecret.Name,
-					},
-					Project: &a.gcpProjectId,
-				},
-			},
+			Project: &a.gcpProjectId,
 		},
 	}
+	return resource
 }
-func (g *gcpTestHelper) makeCredentialsSecret() *corev1.Secret {
+func (g *gcpTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("gcp-credentials-%s", randomString(16)),
-			Namespace: testCredSecretName,
+			Namespace: namespace,
 		},
 		Data: map[string][]byte{
 			"gcp-credentials.json": []byte(g.gcpCredentials),
@@ -95,7 +74,7 @@ func (g *gcpTestHelper) platform() string {
 	return string(configv1.GCPPlatformType)
 }
 
-func (g *gcpTestHelper) ensureHostedZone() (string, []string, error) {
+func (g *gcpTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []string, error) {
 	gcpRootDomain := hostedZoneDomain + "."
 
 	resp, err := g.dnsService.ManagedZones.List(g.gcpProjectId).Do()
@@ -124,7 +103,7 @@ func (g *gcpTestHelper) ensureHostedZone() (string, []string, error) {
 	return strconv.FormatUint(zone.Id, 10), zone.NameServers, nil
 }
 
-func (g *gcpTestHelper) deleteHostedZone() error {
+func (g *gcpTestHelper) deleteHostedZone(hostedZoneID, hostedZoneDomain string) error {
 	resp, err := g.dnsService.ResourceRecordSets.List(g.gcpProjectId, hostedZoneID).Do()
 	if err != nil {
 		return fmt.Errorf("failed to retrieve dns records for zoneID %v: %w", hostedZoneID, err)
@@ -168,13 +147,14 @@ func (g *gcpTestHelper) deleteHostedZone() error {
 	return nil
 }
 
-func prepareGCPConfigurations(openshiftCI bool) (gcpCredentials, gcpProjectId string, err error) {
+func prepareGCPConfigurations(openshiftCI bool, kubeClient client.Client) (gcpCredentials, gcpProjectId string, err error) {
 	if openshiftCI {
-		gcpCredentials, err = rootGCPCredentials()
+		data, err := rootCredentials(kubeClient, "gcp-credentials")
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get GCP credentials: %w", err)
 		}
-		gcpProjectId, err = getGCPProjectId()
+		gcpCredentials = string(data["service_account.json"])
+		gcpProjectId, err = getGCPProjectId(kubeClient)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to get GCP project id: %w", err)
 		}
@@ -185,19 +165,7 @@ func prepareGCPConfigurations(openshiftCI bool) (gcpCredentials, gcpProjectId st
 	return gcpCredentials, gcpProjectId, nil
 }
 
-func rootGCPCredentials() (string, error) {
-	secret := &corev1.Secret{}
-	secretName := types.NamespacedName{
-		Name:      "gcp-credentials",
-		Namespace: "kube-system",
-	}
-	if err := kubeClient.Get(context.TODO(), secretName, secret); err != nil {
-		return "", fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
-	}
-	return string(secret.Data["service_account.json"]), nil
-}
-
-func getGCPProjectId() (string, error) {
+func getGCPProjectId(kubeClient client.Client) (string, error) {
 	infraConfig := &configv1.Infrastructure{}
 	err := kubeClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, infraConfig)
 	if err != nil {

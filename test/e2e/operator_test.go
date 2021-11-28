@@ -75,11 +75,11 @@ func initKubeClient() error {
 func initProviderHelper(openshiftCI bool, platformType string) (providerTestHelper, error) {
 	switch platformType {
 	case string(configv1.AWSPlatformType):
-		return newAWSHelper(openshiftCI)
+		return newAWSHelper(openshiftCI, kubeClient)
 	case string(configv1.AzurePlatformType):
-		return newAzureHelper()
+		return newAzureHelper(kubeClient)
 	case string(configv1.GCPPlatformType):
-		return newGCPHelper(openshiftCI)
+		return newGCPHelper(openshiftCI, kubeClient)
 	default:
 		return nil, fmt.Errorf("unsupported provider: %q", platformType)
 	}
@@ -126,7 +126,7 @@ func TestMain(m *testing.M) {
 	}
 
 	fmt.Printf("Ensuring hosted zone: %s\n", hostedZoneDomain)
-	hostedZoneID, nameServers, err = helper.ensureHostedZone()
+	hostedZoneID, nameServers, err = helper.ensureHostedZone(hostedZoneDomain)
 	if err != nil {
 		fmt.Printf("Failed to created hosted zone for domain %s: %v\n", hostedZoneDomain, err)
 		os.Exit(1)
@@ -135,7 +135,7 @@ func TestMain(m *testing.M) {
 	exitStatus := m.Run()
 
 	fmt.Printf("Deleting hosted zone: %s\n", hostedZoneDomain)
-	err = helper.deleteHostedZone()
+	err = helper.deleteHostedZone(hostedZoneID, hostedZoneDomain)
 	if err != nil {
 		fmt.Printf("Failed to delete hosted zone %s: %v\n", hostedZoneID, err)
 		os.Exit(1)
@@ -160,14 +160,14 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	}
 
 	t.Log("Creating credentials secret")
-	resourceSecret := helper.makeCredentialsSecret()
+	resourceSecret := helper.makeCredentialsSecret(testCredSecretName)
 	err = kubeClient.Create(context.TODO(), resourceSecret)
 	if err != nil {
 		t.Fatalf("Failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
 	}
 
 	t.Log("Creating external dns instance")
-	extDNS := helper.defaultExternalDNS(resourceSecret)
+	extDNS := helper.externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}

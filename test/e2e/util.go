@@ -25,11 +25,11 @@ import (
 )
 
 type providerTestHelper interface {
-	ensureHostedZone() (string, []string, error)
-	deleteHostedZone() error
+	ensureHostedZone(string) (string, []string, error)
+	deleteHostedZone(string, string) error
 	platform() string
-	makeCredentialsSecret() *corev1.Secret
-	defaultExternalDNS(credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
+	makeCredentialsSecret(namespace string) *corev1.Secret
+	externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -129,4 +129,43 @@ func conditionsMatchExpected(expected, actual map[string]string) bool {
 		}
 	}
 	return reflect.DeepEqual(expected, filtered)
+}
+
+func defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string) operatorv1alpha1.ExternalDNS {
+	return operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testExtDNSName,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Zones: []string{hostedZoneID},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeService,
+					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+						ServiceType: []corev1.ServiceType{
+							corev1.ServiceTypeLoadBalancer,
+							corev1.ServiceTypeClusterIP,
+						},
+					},
+					AnnotationFilter: map[string]string{
+						"external-dns.mydomain.org/publish": "yes",
+					},
+				},
+				HostnameAnnotationPolicy: "Ignore",
+				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", hostedZoneDomain)},
+			},
+		},
+	}
+}
+
+func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
+	secret := &corev1.Secret{}
+	secretName := types.NamespacedName{
+		Name:      name,
+		Namespace: "kube-system",
+	}
+	if err := kubeClient.Get(context.TODO(), secretName, secret); err != nil {
+		return nil, fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
+	}
+	return secret.Data, nil
 }
