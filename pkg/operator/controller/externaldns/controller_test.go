@@ -68,7 +68,6 @@ func TestReconcile(t *testing.T) {
 		expectedResult  reconcile.Result
 		expectedEvents  []testEvent
 		errExpected     bool
-		ocpPlatform     bool
 	}{
 		{
 			name:            "Bootstrap",
@@ -126,9 +125,8 @@ func TestReconcile(t *testing.T) {
 		{
 			name:            "Bootstrap when OCP",
 			existingObjects: []runtime.Object{testExtDNSInstance(), testSecret()},
-			inputConfig:     testConfig(),
+			inputConfig:     testConfigOpenShift(),
 			inputRequest:    testRequest(),
-			ocpPlatform:     true,
 			expectedResult:  reconcile.Result{},
 			expectedEvents: []testEvent{
 				{
@@ -203,8 +201,6 @@ func TestReconcile(t *testing.T) {
 				config: tc.inputConfig,
 				log:    zap.New(zap.UseDevMode(true)),
 			}
-
-			operatorv1alpha1.IsOpenShift = tc.ocpPlatform
 
 			// get watch interfaces from all the type managed by the operator
 			watches := []watch.Interface{}
@@ -325,6 +321,14 @@ func testConfig() Config {
 	return Config{
 		Namespace: test.OperandNamespace,
 		Image:     test.OperandImage,
+	}
+}
+
+func testConfigOpenShift() Config {
+	return Config{
+		Namespace:   test.OperandNamespace,
+		Image:       test.OperandImage,
+		IsOpenShift: true,
 	}
 }
 

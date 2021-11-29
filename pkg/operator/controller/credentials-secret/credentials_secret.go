@@ -46,7 +46,7 @@ func (r *reconciler) ensureCredentialsSecret(ctx context.Context, sourceName typ
 
 	destName := controller.ExternalDNSDestCredentialsSecretName(r.config.TargetNamespace, extDNS.Name)
 	// desired is created from source
-	desired := desiredCredentialsSecret(source, destName, extDNS)
+	desired := desiredCredentialsSecret(source, destName, extDNS, r.config.IsOpenShift)
 
 	if err := controllerutil.SetControllerReference(extDNS, desired, r.scheme); err != nil {
 		return false, nil, fmt.Errorf("failed to set the controller reference for credentials secret: %w", err)
@@ -97,37 +97,34 @@ func (r *reconciler) createCredentialsSecret(ctx context.Context, secret *corev1
 }
 
 // desiredCredentialsSecret returns the desired destination secret.
-func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1alpha1.ExternalDNS) *corev1.Secret {
-
+func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) *corev1.Secret {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      destName.Name,
 			Namespace: destName.Namespace,
 		},
+		Data: map[string][]byte{},
 	}
 
-	if extDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP && operatorv1alpha1.IsOpenShift {
-		data := map[string][]byte{
-			"gcp-credentials.json": sourceSecret.Data["service_account.json"],
+	if isOpenShift {
+		switch extDNS.Spec.Provider.Type {
+		case operatorv1alpha1.ProviderTypeGCP:
+			secret.Data["gcp-credentials.json"] = sourceSecret.Data["service_account.json"]
+		case operatorv1alpha1.ProviderTypeAzure:
+			azure_map := map[string]string{
+				"aadClientId":     string(sourceSecret.Data["azure_client_id"]),
+				"aadClientSecret": string(sourceSecret.Data["azure_client_secret"]),
+				"resourceGroup":   string(sourceSecret.Data["azure_resourcegroup"]),
+				"subscriptionId":  string(sourceSecret.Data["azure_subscription_id"]),
+				"tenantId":        string(sourceSecret.Data["azure_tenant_id"]),
+			}
+			azureMarshalledJson, _ := json.Marshal(azure_map)
+			secret.Data["azure.json"] = azureMarshalledJson
+		case operatorv1alpha1.ProviderTypeAWS:
+			secret.Data = sourceSecret.Data
 		}
-		secret.Data = data
-	} else if extDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure && operatorv1alpha1.IsOpenShift {
-
-		azure_map := map[string]string{
-			"aadClientId":     string(sourceSecret.Data["azure_client_id"]),
-			"aadClientSecret": string(sourceSecret.Data["azure_client_secret"]),
-			"resourceGroup":   string(sourceSecret.Data["azure_resourcegroup"]),
-			"subscriptionId":  string(sourceSecret.Data["azure_subscription_id"]),
-			"tenantId":        string(sourceSecret.Data["azure_tenant_id"]),
-		}
-		azureMarshalledJson, _ := json.Marshal(azure_map)
-		data := map[string][]byte{
-			"azure.json": azureMarshalledJson,
-		}
-		secret.Data = data
 	} else {
-		data := sourceSecret.Data
-		secret.Data = data
+		secret.Data = sourceSecret.Data
 	}
 
 	return secret

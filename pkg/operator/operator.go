@@ -98,16 +98,23 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	}
 
 	if opCfg.EnableWebhook {
-		if err = (&apiv1alpha1.ExternalDNS{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&apiv1alpha1.ExternalDNS{}).SetupWebhookWithManager(mgr, opCfg.IsOpenShift); err != nil {
 			return nil, fmt.Errorf("unable to setup webhook for ExternalDNS: %w", err)
 		}
 	}
 	//+kubebuilder:scaffold:builder
 
+	if err = opCfg.FillPlatformDetails(context.TODO(), mgr.GetClient()); err != nil {
+		return nil, fmt.Errorf("failed to fill the platform details: %w", err)
+	}
+
 	// Create and register the externaldns controller with the operator manager.
 	if _, err := externaldnsctrl.New(mgr, externaldnsctrl.Config{
-		Namespace: opCfg.OperandNamespace,
-		Image:     opCfg.ExternalDNSImage,
+		Namespace:         opCfg.OperandNamespace,
+		Image:             opCfg.ExternalDNSImage,
+		OperatorNamespace: opCfg.OperatorNamespace,
+		IsOpenShift:       opCfg.IsOpenShift,
+		PlatformStatus:    opCfg.PlatformStatus,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}
@@ -116,6 +123,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	if _, err := credsecretctrl.New(mgr, credsecretctrl.Config{
 		SourceNamespace: operatorctrl.ExternalDNSCredentialsSourceNamespace(opCfg),
 		TargetNamespace: opCfg.OperandNamespace,
+		IsOpenShift:     opCfg.IsOpenShift,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create credentials secret controller: %w", err)
 	}
