@@ -66,6 +66,15 @@ func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	}
 	return resource
 }
+
+func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNS(name, zoneID, zoneDomain)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+	}
+	return resource
+}
+
 func (a *awsTestHelper) platform() string {
 	return string(configv1.AWSPlatformType)
 }

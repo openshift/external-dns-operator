@@ -142,6 +142,14 @@ func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, cred
 	return resource
 }
 
+func (a *azureTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNS(name, zoneID, zoneDomain)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAzure,
+	}
+	return resource
+}
+
 // ref: https://github.com/kubernetes-sigs/external-dns/blob/master/provider/azure/azure.go
 // getAccessToken retrieves Azure API access token.
 func getAccessToken(cfg *clusterConfig) (*adal.ServicePrincipalToken, error) {

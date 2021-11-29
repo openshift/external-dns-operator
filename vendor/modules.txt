@@ -179,6 +179,7 @@ github.com/onsi/gomega/types
 # github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
 ## explicit
 github.com/openshift/api/config/v1
+github.com/openshift/api/route/v1
 # github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 ## explicit
 github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1
