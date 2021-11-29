@@ -29,7 +29,7 @@ type providerTestHelper interface {
 	deleteHostedZone(string, string) error
 	platform() string
 	makeCredentialsSecret(namespace string) *corev1.Secret
-	externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
+	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -131,13 +131,13 @@ func conditionsMatchExpected(expected, actual map[string]string) bool {
 	return reflect.DeepEqual(expected, filtered)
 }
 
-func defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string) operatorv1alpha1.ExternalDNS {
+func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
 	return operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: testExtDNSName,
+			Name: name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Zones: []string{hostedZoneID},
+			Zones: []string{zoneID},
 			Source: operatorv1alpha1.ExternalDNSSource{
 				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
 					Type: operatorv1alpha1.SourceTypeService,
@@ -152,7 +152,7 @@ func defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string) o
 					},
 				},
 				HostnameAnnotationPolicy: "Ignore",
-				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", hostedZoneDomain)},
+				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
 	}

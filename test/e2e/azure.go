@@ -43,7 +43,7 @@ type azureTestHelper struct {
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 	azureProvider := &azureTestHelper{}
 
-	if err := azureProvider.prepareCredentials(kubeClient); err != nil {
+	if err := azureProvider.prepareConfigurations(kubeClient); err != nil {
 		return nil, err
 	}
 
@@ -53,7 +53,7 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 	return azureProvider, nil
 }
 
-func (a *azureTestHelper) prepareCredentials(kubeClient client.Client) (err error) {
+func (a *azureTestHelper) prepareConfigurations(kubeClient client.Client) (err error) {
 	data, err := rootCredentials(kubeClient, "azure-credentials")
 	if err != nil {
 		return fmt.Errorf("failed to get credentials secret, error : %v", err)
@@ -112,9 +112,9 @@ func (a *azureTestHelper) platform() string {
 	return string(configv1.AzurePlatformType)
 }
 
-func (a *azureTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []string, error) {
+func (a *azureTestHelper) ensureHostedZone(zoneDomain string) (string, []string, error) {
 	location := "global"
-	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, hostedZoneDomain,
+	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, zoneDomain,
 		dns.Zone{Location: &location}, "", "")
 	if err != nil {
 		return "", []string{}, err
@@ -122,15 +122,15 @@ func (a *azureTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []s
 	return *z.ID, *z.ZoneProperties.NameServers, nil
 }
 
-func (a *azureTestHelper) deleteHostedZone(ZoneId, hostedZoneDomain string) error {
-	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, hostedZoneDomain, ""); err != nil {
-		return fmt.Errorf("unable to delete zone :%s, failed error: %v", hostedZoneDomain, err)
+func (a *azureTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
+	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, zoneDomain, ""); err != nil {
+		return fmt.Errorf("unable to delete zone :%s, failed error: %v", zoneDomain, err)
 	}
 	return nil
 }
 
-func (a *azureTestHelper) externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain)
+func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAzure,
 		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{

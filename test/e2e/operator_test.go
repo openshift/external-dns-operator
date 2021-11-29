@@ -167,7 +167,7 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	}
 
 	t.Log("Creating external dns instance")
-	extDNS := helper.externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret)
+	extDNS := helper.buildExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}

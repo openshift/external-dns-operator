@@ -29,24 +29,22 @@ type gcpTestHelper struct {
 }
 
 func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
-	gcpCredentials, gcpProjectId, err := prepareGCPConfigurations(isOpenShiftCI, kubeClient)
+	provier := &gcpTestHelper{}
+	err := provier.prepareConfigurations(isOpenShiftCI, kubeClient)
 	if err != nil {
 		return nil, err
 	}
-	dnsService, err := dns.NewService(context.Background(), option.WithCredentialsJSON([]byte(gcpCredentials)))
+
+	provier.dnsService, err = dns.NewService(context.Background(), option.WithCredentialsJSON([]byte(provier.gcpCredentials)))
 	if err != nil {
 		return nil, fmt.Errorf("could not authenticate with the given credentials: %w", err)
 	}
 
-	return &gcpTestHelper{
-		dnsService:     dnsService,
-		gcpCredentials: gcpCredentials,
-		gcpProjectId:   gcpProjectId,
-	}, nil
+	return provier, nil
 }
 
-func (a *gcpTestHelper) externalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := defaultExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain)
+func (a *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeGCP,
 		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
@@ -74,8 +72,8 @@ func (g *gcpTestHelper) platform() string {
 	return string(configv1.GCPPlatformType)
 }
 
-func (g *gcpTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []string, error) {
-	gcpRootDomain := hostedZoneDomain + "."
+func (g *gcpTestHelper) ensureHostedZone(zoneDomain string) (string, []string, error) {
+	gcpRootDomain := zoneDomain + "."
 
 	resp, err := g.dnsService.ManagedZones.List(g.gcpProjectId).Do()
 	if err != nil {
@@ -93,7 +91,7 @@ func (g *gcpTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []str
 	zone, err := g.dnsService.ManagedZones.Create(g.gcpProjectId, &dns.ManagedZone{
 		// must be 1-63 characters long, must begin with a letter,
 		// end with a letter or digit, and only contain lowercase letters, digits or dashes
-		Name:        "a" + strings.ToLower(strings.ReplaceAll(hostedZoneDomain, ".", "-")),
+		Name:        "a" + strings.ToLower(strings.ReplaceAll(zoneDomain, ".", "-")),
 		DnsName:     gcpRootDomain,
 		Description: "ExternalDNS Operator test managed zone.",
 	}).Do()
@@ -103,10 +101,10 @@ func (g *gcpTestHelper) ensureHostedZone(hostedZoneDomain string) (string, []str
 	return strconv.FormatUint(zone.Id, 10), zone.NameServers, nil
 }
 
-func (g *gcpTestHelper) deleteHostedZone(hostedZoneID, hostedZoneDomain string) error {
-	resp, err := g.dnsService.ResourceRecordSets.List(g.gcpProjectId, hostedZoneID).Do()
+func (g *gcpTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
+	resp, err := g.dnsService.ResourceRecordSets.List(g.gcpProjectId, zoneID).Do()
 	if err != nil {
-		return fmt.Errorf("failed to retrieve dns records for zoneID %v: %w", hostedZoneID, err)
+		return fmt.Errorf("failed to retrieve dns records for zoneID %v: %w", zoneID, err)
 	}
 
 	recordChanges := &dns.Change{}
@@ -124,45 +122,45 @@ func (g *gcpTestHelper) deleteHostedZone(hostedZoneID, hostedZoneDomain string) 
 			break
 		} else {
 			token := resp.NextPageToken
-			resp, err = g.dnsService.ResourceRecordSets.List(g.gcpProjectId, hostedZoneID).PageToken(token).Do()
+			resp, err = g.dnsService.ResourceRecordSets.List(g.gcpProjectId, zoneID).PageToken(token).Do()
 			if err != nil {
-				return fmt.Errorf("failed to retrieve dns records for zoneID %v and pageToken %v: %w", hostedZoneID, token, err)
+				return fmt.Errorf("failed to retrieve dns records for zoneID %v and pageToken %v: %w", zoneID, token, err)
 			}
 		}
 	}
 
 	// atomically delete the records from the managed zone
 	if len(recordChanges.Deletions) != 0 {
-		if _, err := g.dnsService.Changes.Create(g.gcpProjectId, hostedZoneID, recordChanges).Do(); err != nil {
+		if _, err := g.dnsService.Changes.Create(g.gcpProjectId, zoneID, recordChanges).Do(); err != nil {
 			return fmt.Errorf("failed to execute the change operation for records deletion: %w", err)
 		}
 	}
 
 	// delete the managed zone itself
-	err = g.dnsService.ManagedZones.Delete(g.gcpProjectId, hostedZoneID).Do()
+	err = g.dnsService.ManagedZones.Delete(g.gcpProjectId, zoneID).Do()
 	if err != nil {
-		return fmt.Errorf("failed to delete zone with id %v: %w", hostedZoneID, err)
+		return fmt.Errorf("failed to delete zone with id %v: %w", zoneID, err)
 	}
 
 	return nil
 }
 
-func prepareGCPConfigurations(openshiftCI bool, kubeClient client.Client) (gcpCredentials, gcpProjectId string, err error) {
+func (a *gcpTestHelper) prepareConfigurations(openshiftCI bool, kubeClient client.Client) error {
 	if openshiftCI {
 		data, err := rootCredentials(kubeClient, "gcp-credentials")
 		if err != nil {
-			return "", "", fmt.Errorf("failed to get GCP credentials: %w", err)
+			return fmt.Errorf("failed to get GCP credentials: %w", err)
 		}
-		gcpCredentials = string(data["service_account.json"])
-		gcpProjectId, err = getGCPProjectId(kubeClient)
+		a.gcpCredentials = string(data["service_account.json"])
+		a.gcpProjectId, err = getGCPProjectId(kubeClient)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to get GCP project id: %w", err)
+			return fmt.Errorf("failed to get GCP project id: %w", err)
 		}
 	} else {
-		gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
-		gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
+		a.gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
+		a.gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
 	}
-	return gcpCredentials, gcpProjectId, nil
+	return nil
 }
 
 func getGCPProjectId(kubeClient client.Client) (string, error) {
