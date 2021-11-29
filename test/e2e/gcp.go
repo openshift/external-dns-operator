@@ -59,6 +59,17 @@ func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
+func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNS(name, zoneID, zoneDomain)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeGCP,
+		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
+			Project: &g.gcpProjectId,
+		},
+	}
+	return resource
+}
+
 func (g *gcpTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
