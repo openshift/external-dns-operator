@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	corev1 "k8s.io/api/core/v1"
@@ -23,16 +27,18 @@ type awsTestHelper struct {
 	secretKey string
 }
 
-func newAWSHelper(awsAccessKeyID, awsSecretAccessKey string) (providerTestHelper, error) {
+func newAWSHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
+	provider := &awsTestHelper{}
+	if err := provider.prepareConfigurations(isOpenShiftCI, kubeClient); err != nil {
+		return nil, err
+	}
+
 	awsSession := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, ""),
+		Credentials: credentials.NewStaticCredentials(provider.keyID, provider.secretKey, ""),
 	}))
-	r53Client := route53.New(awsSession)
-	return &awsTestHelper{
-		keyID:     awsAccessKeyID,
-		secretKey: awsSecretAccessKey,
-		r53Client: r53Client,
-	}, nil
+
+	provider.r53Client = route53.New(awsSession)
+	return provider, nil
 }
 
 func (a *awsTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
@@ -48,47 +54,52 @@ func (a *awsTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	}
 }
 
+func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1alpha1.SecretReference{
+				Name: credsSecret.Name,
+			},
+		},
+	}
+	return resource
+}
 func (a *awsTestHelper) platform() string {
 	return string(configv1.AWSPlatformType)
 }
 
-func (a *awsTestHelper) ensureHostedZone(rootDomain string) (string, []string, error) {
+func (a *awsTestHelper) ensureHostedZone(zoneDomain string) (string, []string, error) {
 	zones, err := a.r53Client.ListHostedZones(&route53.ListHostedZonesInput{})
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to list hosted zones: %w", err)
 	}
 
-	var (
-		nameServers  []string
-		hostedZoneID string
-	)
 	// if hosted zone exists then return its id and nameservers
 	for _, zone := range zones.HostedZones {
-		if aws.StringValue(zone.Name) == rootDomain {
+		if aws.StringValue(zone.Name) == zoneDomain {
 			hostedZone, err := a.r53Client.GetHostedZone(&route53.GetHostedZoneInput{Id: zone.Id})
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to get hosted zone %s: %v", aws.StringValue(zone.Id), err)
 			}
-			nameServers = aws.StringValueSlice(hostedZone.DelegationSet.NameServers)
-			hostedZoneID = aws.StringValue(zone.Id)
-			return hostedZoneID, nameServers, nil
+			return aws.StringValue(zone.Id), aws.StringValueSlice(hostedZone.DelegationSet.NameServers), nil
 		}
 	}
 
 	// create hosted zone and return its id and nameservers
 	zone, err := a.r53Client.CreateHostedZone(&route53.CreateHostedZoneInput{
-		Name:            aws.String(rootDomain),
+		Name:            aws.String(zoneDomain),
 		CallerReference: aws.String(time.Now().Format(time.RFC3339)),
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get create hosted zone: %w", err)
 	}
-	nameServers = aws.StringValueSlice(zone.DelegationSet.NameServers)
-	hostedZoneID = aws.StringValue(zone.HostedZone.Id)
-	return hostedZoneID, nameServers, nil
+	return aws.StringValue(zone.HostedZone.Id), aws.StringValueSlice(zone.DelegationSet.NameServers), nil
 }
 
-func (a *awsTestHelper) deleteHostedZone(zoneID string) error {
+// AWS sdk expect to zone ID to delete the xone, where as Azure expect Domain Name
+func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 	input := route53.ListResourceRecordSetsInput{
 		HostedZoneId: &zoneID,
 	}
@@ -139,6 +150,21 @@ func (a *awsTestHelper) deleteHostedZone(zoneID string) error {
 	}
 	if _, err := a.r53Client.DeleteHostedZone(&zoneInput); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (a *awsTestHelper) prepareConfigurations(isOpenShiftCI bool, kubeClient client.Client) error {
+	if isOpenShiftCI {
+		data, err := rootCredentials(kubeClient, "aws-creds")
+		if err != nil {
+			return fmt.Errorf("failed to get AWS credentials: %w", err)
+		}
+		a.keyID = string(data["aws_access_key_id"])
+		a.secretKey = string(data["aws_secret_access_key"])
+	} else {
+		a.keyID = mustGetEnv("AWS_ACCESS_KEY_ID")
+		a.secretKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
 	}
 	return nil
 }
