@@ -28,22 +28,24 @@ type gcpTestHelper struct {
 	providerOptions []string
 }
 
+var _ providerTestHelper = &gcpTestHelper{}
+
 func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
-	provier := &gcpTestHelper{}
-	err := provier.prepareConfigurations(isOpenShiftCI, kubeClient)
+	provider := &gcpTestHelper{}
+	err := provider.prepareConfigurations(isOpenShiftCI, kubeClient)
 	if err != nil {
 		return nil, err
 	}
 
-	provier.dnsService, err = dns.NewService(context.Background(), option.WithCredentialsJSON([]byte(provier.gcpCredentials)))
+	provider.dnsService, err = dns.NewService(context.Background(), option.WithCredentialsJSON([]byte(provider.gcpCredentials)))
 	if err != nil {
 		return nil, fmt.Errorf("could not authenticate with the given credentials: %w", err)
 	}
 
-	return provier, nil
+	return provider, nil
 }
 
-func (a *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := defaultExternalDNS(name, zoneID, zoneDomain)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeGCP,
@@ -51,11 +53,12 @@ func (a *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 			Credentials: operatorv1alpha1.SecretReference{
 				Name: credsSecret.Name,
 			},
-			Project: &a.gcpProjectId,
+			Project: &g.gcpProjectId,
 		},
 	}
 	return resource
 }
+
 func (g *gcpTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

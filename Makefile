@@ -45,6 +45,8 @@ COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
 GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
 
+E2E_TIMEOUT ?= 1h
+
 all: build
 
 ##@ General
@@ -86,7 +88,7 @@ test: manifests generate fmt vet ## Run tests.
 test-e2e:
 	go test \
 	$(GOBUILD_VERSION_ARGS) \
-	-timeout 1h \
+	-timeout $(E2E_TIMEOUT) \
 	-count 1 \
 	-v \
 	-tags e2e \

@@ -225,12 +225,13 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %q: %w", request.NamespacedName, err)
 	}
 
+	srcSecretNameOnly, fromCR := getExternalDNSCredentialsSecretNameWithTrace(extDNS, r.config.IsOpenShift)
 	srcSecretName := types.NamespacedName{
 		Namespace: r.config.SourceNamespace,
-		Name:      getExternalDNSCredentialsSecretName(extDNS, r.config.IsOpenShift),
+		Name:      srcSecretNameOnly,
 	}
 
-	if _, _, err := r.ensureCredentialsSecret(ctx, srcSecretName, extDNS); err != nil {
+	if _, _, err := r.ensureCredentialsSecret(ctx, srcSecretName, extDNS, fromCR); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure credentials secret for externalDNS %q: %w", extDNS.Name, err)
 	}
 
@@ -252,11 +253,28 @@ func isInNS(namespace string) func(o client.Object) bool {
 	}
 }
 
-// getExternalDNSCredentialsSecretName returns the name of the credentials secret retrieved from externalDNS resource
+// getExternalDNSCredentialsSecretName returns the name of the credentials secret which should be used as source
 func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) string {
-	if isOpenShift && operatorutils.ManagedCredentialsProvider(externalDNS) {
-		return extdnscontroller.SecretFromCloudCredentialsOperator
+	name, _ := getExternalDNSCredentialsSecretNameWithTrace(externalDNS, isOpenShift)
+	return name
+}
+
+// getExternalDNSCredentialsSecretNameWithTrace returns the name of the credentials secret which should be used as source
+// second value is true if the secret came from the ExternalDNS' provider, false otherwise
+func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) (string, bool) {
+	if name := getExternalDNSCredentialsSecretNameFromProvider(externalDNS); name != "" {
+		return name, true
 	}
+
+	if isOpenShift && operatorutils.ManagedCredentialsProvider(externalDNS) {
+		return extdnscontroller.SecretFromCloudCredentialsOperator, false
+	}
+
+	return "", false
+}
+
+// getExternalDNSCredentialsSecretNameFromProvider returns the name of the credentials secret retrieved from externalDNS resource
+func getExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1alpha1.ExternalDNS) string {
 	switch externalDNS.Spec.Provider.Type {
 	case operatorv1alpha1.ProviderTypeAWS:
 		if externalDNS.Spec.Provider.AWS != nil {

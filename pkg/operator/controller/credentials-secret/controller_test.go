@@ -65,40 +65,6 @@ func TestReconcile(t *testing.T) {
 		errExpected     bool
 	}{
 		{
-			name:            "Bootstrap when platform is OCP and test AWS External DNS Instance when OCPRoute Source and when AWSCredentials are not provided",
-			existingObjects: []runtime.Object{testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided(), testSrcSecretWhenSourceOCP()},
-			inputConfig:     testConfigOpenShift(),
-			inputRequest:    testRequest(),
-			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
-				{
-					eventType: watch.Added,
-					objType:   "secret",
-					NamespacedName: types.NamespacedName{
-						Namespace: testOperandNamespace,
-						Name:      testTargetSecretName,
-					},
-				},
-			},
-		},
-		{
-			name:            "Bootstrap when platform is OCP and test AWS External DNS Instance when OCPRoute Source and when AWSCredentials are provided mistakenly",
-			existingObjects: []runtime.Object{testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsProvidedMistakenly(), testSrcSecretWhenSourceOCP()},
-			inputConfig:     testConfigOpenShift(),
-			inputRequest:    testRequest(),
-			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
-				{
-					eventType: watch.Added,
-					objType:   "secret",
-					NamespacedName: types.NamespacedName{
-						Namespace: testOperandNamespace,
-						Name:      testTargetSecretName,
-					},
-				},
-			},
-		},
-		{
 			name:            "Bootstrap",
 			existingObjects: []runtime.Object{testAWSExtDNSInstance(), testSrcSecret()},
 			inputConfig:     testConfig(),
@@ -138,6 +104,42 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
+		},
+		{
+			name: "Bootstrap when platform is OCP and it provided the credentials secret",
+			// externaldns without credentials specified + secret provided by OCP
+			existingObjects: []runtime.Object{testAWSExtDNSInstanceRouteSource(), testSrcSecretWhenPlatformOCP()},
+			inputConfig:     testConfigOpenShift(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "secret",
+					NamespacedName: types.NamespacedName{
+						Namespace: testOperandNamespace,
+						Name:      testTargetSecretName,
+					},
+				},
+			},
+		},
+		{
+			name: "Bootstrap when platform is OCP and the credentials are provided explicitly",
+			// externaldns with credentials, platform secret is not there but we don't care as there is one given in CR
+			existingObjects: []runtime.Object{testAWSExtDNSInstanceRouteSourceWithSecret(), testSrcSecret()},
+			inputConfig:     testConfigOpenShift(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			expectedEvents: []testEvent{
+				{
+					eventType: watch.Added,
+					objType:   "secret",
+					NamespacedName: types.NamespacedName{
+						Namespace: testOperandNamespace,
+						Name:      testTargetSecretName,
+					},
+				},
+			},
 		},
 		{
 			name:            "Deleted ExternalDNS",
@@ -258,30 +260,48 @@ func TestGetExternalDNSCredentialsSecretName(t *testing.T) {
 		},
 		{
 			name:             "AWS OpenShift",
-			inputExtDNS:      testAWSExtDNSInstance(),
+			inputExtDNS:      testAWSExtDNSInstanceNoSecret(),
 			inputIsOpenShift: true,
 			expected:         extdnscontroller.SecretFromCloudCredentialsOperator,
 		},
 		{
 			name:             "Azure OpenShift",
-			inputExtDNS:      testAzureExtDNSInstance(),
+			inputExtDNS:      testAzureExtDNSInstanceNoSecret(),
 			inputIsOpenShift: true,
 			expected:         extdnscontroller.SecretFromCloudCredentialsOperator,
 		},
 		{
 			name:             "GCP OpenShift",
-			inputExtDNS:      testGCPExtDNSInstance(),
+			inputExtDNS:      testGCPExtDNSInstanceNoSecret(),
 			inputIsOpenShift: true,
 			expected:         extdnscontroller.SecretFromCloudCredentialsOperator,
 		},
 		{
-			name:             "BlueCat OpenShift",
+			name:             "AWS OpenShift with explicit credentials",
+			inputExtDNS:      testAWSExtDNSInstance(),
+			inputIsOpenShift: true,
+			expected:         testSrcSecretName,
+		},
+		{
+			name:             "Azure OpenShift with explicit credentials",
+			inputExtDNS:      testAzureExtDNSInstance(),
+			inputIsOpenShift: true,
+			expected:         testSrcSecretName,
+		},
+		{
+			name:             "GCP OpenShift with explicit credentials",
+			inputExtDNS:      testGCPExtDNSInstance(),
+			inputIsOpenShift: true,
+			expected:         testSrcSecretName,
+		},
+		{
+			name:             "BlueCat OpenShift with explicit credentials",
 			inputExtDNS:      testBlueCatExtDNSInstance(),
 			inputIsOpenShift: true,
 			expected:         testSrcSecretName,
 		},
 		{
-			name:             "Infoblox OpenShift",
+			name:             "Infoblox OpenShift with explicit credentials",
 			inputExtDNS:      testInfobloxExtDNSInstance(),
 			inputIsOpenShift: true,
 			expected:         testSrcSecretName,
@@ -466,7 +486,15 @@ func testAWSExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
-func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsProvidedMistakenly() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstanceRouteSource() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstanceforOCPRouteSource()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+	}
+	return extDNS
+}
+
+func testAWSExtDNSInstanceRouteSourceWithSecret() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAWS,
@@ -475,15 +503,6 @@ func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsProvidedMistakenly
 				Name: testSrcSecretName,
 			},
 		},
-	}
-	return extDNS
-}
-
-func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided() *operatorv1alpha1.ExternalDNS {
-	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS:  &operatorv1alpha1.ExternalDNSAWSProviderOptions{},
 	}
 	return extDNS
 }
@@ -506,6 +525,14 @@ func testAzureExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 				Name: testSrcSecretName,
 			},
 		},
+	}
+	return extDNS
+}
+
+func testAzureExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstance()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAzure,
 	}
 	return extDNS
 }
@@ -538,6 +565,8 @@ func testInfobloxExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
+// GCP
+
 func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstance()
 	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
@@ -547,6 +576,14 @@ func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 				Name: testSrcSecretName,
 			},
 		},
+	}
+	return extDNS
+}
+
+func testGCPExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
+	extDNS := testExtDNSInstance()
+	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeGCP,
 	}
 	return extDNS
 }
@@ -564,7 +601,7 @@ func testSrcSecret() *corev1.Secret {
 	}
 }
 
-func testSrcSecretWhenSourceOCP() *corev1.Secret {
+func testSrcSecretWhenPlatformOCP() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testSrcSecretNameWhenOCP,
