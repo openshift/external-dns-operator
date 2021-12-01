@@ -225,6 +225,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %q: %w", request.NamespacedName, err)
 	}
 
+	// get the source secret name and whether it came from ExternalDNS CR or not
 	srcSecretNameOnly, fromCR := getExternalDNSCredentialsSecretNameWithTrace(extDNS, r.config.IsOpenShift)
 	srcSecretName := types.NamespacedName{
 		Namespace: r.config.SourceNamespace,

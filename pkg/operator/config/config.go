@@ -39,7 +39,6 @@ const (
 	DefaultOperandNamespace        = "external-dns"
 	DefaultEnableWebhook           = true
 	DefaultEnablePlatformDetection = true
-	DefaultIsOpenShift             = false
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -73,28 +72,14 @@ type Config struct {
 	// EnableWebhook is the flag indicating if the webhook server should be started.
 	EnableWebhook bool
 
-	// EnablePlatformDetection is the flag indicating if the operator needs to detect on which platform it runs
+	// EnablePlatformDetection is the flag indicating if the operator needs to detect on which platform it runs.
 	EnablePlatformDetection bool
 
-	// IsOpenShift is the flag indicating that the operator runs in OpenShift cluster
+	// IsOpenShift is the flag indicating that the operator runs in OpenShift cluster.
 	IsOpenShift bool
 
-	// PlatformStatus is the details about the undelying platform
+	// PlatformStatus is the details about the underlying platform.
 	PlatformStatus *configv1.PlatformStatus
-}
-
-// New returns an operator config using default values.
-func New() *Config {
-	return &Config{
-		ExternalDNSImage:        DefaultExternalDNSImage,
-		MetricsBindAddress:      DefaultMetricsAddr,
-		OperatorNamespace:       DefaultOperatorNamespace,
-		OperandNamespace:        DefaultOperandNamespace,
-		CertDir:                 DefaultCertDir,
-		EnableWebhook:           DefaultEnableWebhook,
-		EnablePlatformDetection: DefaultEnablePlatformDetection,
-		IsOpenShift:             DefaultIsOpenShift,
-	}
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields
