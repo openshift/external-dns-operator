@@ -23,7 +23,7 @@ import (
 
 const (
 	// TODO (alebedev): CPaaS onboarding is ongoing to replace this with Red Hat built image
-	DefaultExternalDNSImage  = "k8s.gcr.io/external-dns/external-dns:v0.8.0"
+	DefaultExternalDNSImage  = "quay.io/snagarju/external-dns:latest"
 	DefaultMetricsAddr       = "127.0.0.1:8080"
 	DefaultOperatorNamespace = "external-dns-operator"
 	DefaultOperandNamespace  = "external-dns"

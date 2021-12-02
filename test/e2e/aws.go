@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -100,6 +101,19 @@ func (a *awsTestHelper) ensureHostedZone(zoneDomain string) (string, []string, e
 
 // AWS sdk expect to zone ID to delete the xone, where as Azure expect Domain Name
 func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
+	listInput := &route53.ListHostedZonesInput{
+	}
+	outputList, err := a.r53Client.ListHostedZones(listInput)
+	if err != nil{
+		return err
+	}
+	zoneIDs := []string{}
+	for _, zone := range outputList.HostedZones{
+		if strings.Contains(*zone.Name, zoneDomain){
+			zoneIDs = append(zoneIDs, *zone.Id)
+		}
+	}
+	for _, zoneID = range zoneIDs{
 	input := route53.ListResourceRecordSetsInput{
 		HostedZoneId: &zoneID,
 	}
@@ -151,20 +165,21 @@ func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 	if _, err := a.r53Client.DeleteHostedZone(&zoneInput); err != nil {
 		return err
 	}
+	}
 	return nil
 }
 
 func (a *awsTestHelper) prepareConfigurations(isOpenShiftCI bool, kubeClient client.Client) error {
-	if isOpenShiftCI {
+	//if isOpenShiftCI {
 		data, err := rootCredentials(kubeClient, "aws-creds")
 		if err != nil {
 			return fmt.Errorf("failed to get AWS credentials: %w", err)
 		}
 		a.keyID = string(data["aws_access_key_id"])
 		a.secretKey = string(data["aws_secret_access_key"])
-	} else {
-		a.keyID = mustGetEnv("AWS_ACCESS_KEY_ID")
-		a.secretKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
-	}
+	//} else {
+	//	a.keyID = mustGetEnv("AWS_ACCESS_KEY_ID")
+	//	a.secretKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
+	//}
 	return nil
 }

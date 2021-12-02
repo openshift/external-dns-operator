@@ -1,0 +1,28 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-aws-ocp-ingress
+spec:
+  # DNS provider
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        # secret should be in the operator namespace
+        name: aws-access-key
+  # IDs of the hosted zones
+  zones:
+    - "Z0749445Q4H009YPTWPK"
+  source:
+    type: OpenShiftRoute
+    hostnameAnnotation: Allow
+    openshiftRouteOptions:
+      routerName: e2e-test
+    annotationFilter:
+      external-dns.mydomain.org/publish: "yes"
+    # if hostname annotation is ignored
+    # you can set a template for FQDN which will be created
+    # note that this template will add the name of the service to FQDN
+    # note also that the template has to match the hosted zone's domain name
+    fqdnTemplate:
+      - "{{.Name}}.example-test.info"

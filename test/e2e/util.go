@@ -158,6 +158,40 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 	}
 }
 
+
+
+func defaultExternalDNSOpenShiftRoute(name, routerName,zoneID, zoneDomain string,credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Zones: []string{zoneID},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeRoute,
+					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+						RouterName: routerName,
+					},
+				},
+				HostnameAnnotationPolicy: "Allow",
+				//FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
+			},
+		},
+	}
+
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAWS,
+		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1alpha1.SecretReference{
+				Name: credsSecret.Name,
+			},
+		},
+	}
+	return resource
+}
+
+
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
 	secretName := types.NamespacedName{
