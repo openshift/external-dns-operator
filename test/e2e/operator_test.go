@@ -99,6 +99,7 @@ func TestMain(m *testing.M) {
 		platformType string
 		openshiftCI  bool
 	)
+
 	if err = initKubeClient(); err != nil {
 		fmt.Printf("Failed to init kube client: %v\n", err)
 		os.Exit(1)
@@ -347,16 +348,18 @@ func TestExternalDNSRecordLifecycleWithIngress(t *testing.T) {
 			continue
 		}
 		t.Logf("NameServer %s: %s ", nameSrv , address)
-		customResolver := customResolver(nameSrv)
+
+		//customResolver := customResolver(address[0])
 
 		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
 		if err := wait.PollImmediate(dnsPollingInterval, 15, func() (done bool, err error) {
 			rec := fmt.Sprintf("app.%s",baseZoneDomain)
-			hostname, err := customResolver.LookupCNAME(context.TODO(), rec)
+			hostname, err := customResolver(nameSrv).LookupCNAME(context.TODO(), rec)
 			if err != nil {
 				t.Logf("Waiting for dns record: %s, err %v", rec, err)
 				return false, nil
 			}
+			t.Logf("hostname -------------->: %s",hostname)
 			if hostname == "router-external-dns.external-dns.example-andrey.info"{
 				return true, nil
 			}
