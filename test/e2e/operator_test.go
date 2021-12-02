@@ -8,6 +8,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -122,7 +123,7 @@ func TestMain(m *testing.M) {
 	}
 
 	if version.SHORTCOMMIT != "" {
-		hostedZoneDomain = version.SHORTCOMMIT + "." + baseZoneDomain
+		hostedZoneDomain = strconv.FormatInt(time.Now().Unix(), 10) + "." + version.SHORTCOMMIT + "." + baseZoneDomain
 	}
 
 	if helper, err = initProviderHelper(openshiftCI, platformType); err != nil {
