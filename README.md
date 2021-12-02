@@ -166,7 +166,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    export AWS_ACCESS_KEY_ID=my-aws-access-key
    export AWS_SECRET_ACCESS_KEY=my-aws-access-secret
    ```
-   Check out [initProviderHelper()](./test/e2e/operator_test.go) for other providers.
+   For the other providers: check out [e2e directory](./test/e2e/).
 
 3. Run the test suite
    ```sh

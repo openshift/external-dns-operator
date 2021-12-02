@@ -17,17 +17,33 @@ limitations under the License.
 package config
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+
+	configv1 "github.com/openshift/api/config/v1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	// TODO (alebedev): CPaaS onboarding is ongoing to replace this with Red Hat built image
-	DefaultExternalDNSImage  = "quay.io/snagarju/external-dns:latest"
-	DefaultMetricsAddr       = "127.0.0.1:8080"
-	DefaultOperatorNamespace = "external-dns-operator"
-	DefaultOperandNamespace  = "external-dns"
-	DefaultEnableWebhook     = true
+	DefaultExternalDNSImage        = "quay.io/snagarju/external-dns:latest"
+	DefaultMetricsAddr             = "127.0.0.1:8080"
+	DefaultOperatorNamespace       = "external-dns-operator"
+	DefaultOperandNamespace        = "external-dns"
+	DefaultEnableWebhook           = true
+	DefaultEnablePlatformDetection = true
+
+	openshiftKind              = "OpenShiftAPIServer"
+	openshiftResourceGroup     = "operator.openshift.io"
+	openshiftResourceVersion   = "v1"
+	openshiftClusterConfigName = "cluster"
 )
 
 var (
@@ -55,16 +71,56 @@ type Config struct {
 
 	// EnableWebhook is the flag indicating if the webhook server should be started.
 	EnableWebhook bool
+
+	// EnablePlatformDetection is the flag indicating if the operator needs to detect on which platform it runs.
+	EnablePlatformDetection bool
+
+	// IsOpenShift is the flag indicating that the operator runs in OpenShift cluster.
+	IsOpenShift bool
+
+	// PlatformStatus is the details about the underlying platform.
+	PlatformStatus *configv1.PlatformStatus
 }
 
-// New returns an operator config using default values.
-func New() *Config {
-	return &Config{
-		ExternalDNSImage:   DefaultExternalDNSImage,
-		MetricsBindAddress: DefaultMetricsAddr,
-		OperatorNamespace:  DefaultOperatorNamespace,
-		OperandNamespace:   DefaultOperandNamespace,
-		CertDir:            DefaultCertDir,
-		EnableWebhook:      DefaultEnableWebhook,
+// DetectPlatform detects the underlying platform and fills corresponding config fields
+func (c *Config) DetectPlatform(kubeConfig *rest.Config) error {
+	if c.EnablePlatformDetection {
+		kubeClient, err := kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			return err
+		}
+
+		c.IsOpenShift = isOCP(kubeClient)
 	}
+	return nil
+}
+
+// FillPlatformDetails fills the config with the platform details
+func (c *Config) FillPlatformDetails(ctx context.Context, ctrlClient ctrlclient.Client) error {
+	if c.IsOpenShift {
+		infraConfig := &configv1.Infrastructure{}
+		if err := ctrlClient.Get(ctx, types.NamespacedName{Name: openshiftClusterConfigName}, infraConfig); err != nil {
+			return fmt.Errorf("failed to get infrastructure config: %w", err)
+		}
+		c.PlatformStatus = infraConfig.Status.PlatformStatus
+	}
+	return nil
+}
+
+// isOCP returns true if the platform is OCP
+func isOCP(kubeClient discovery.DiscoveryInterface) bool {
+	// Since, CRD for OpenShift API Server was introduced in OCP v4.x we can verify if the current cluster is on OCP v4.x by
+	// ensuring that resource exists against Group(operator.openshift.io), Version(v1) and Kind(OpenShiftAPIServer)
+	// In case it doesn't exist we assume that external dns is running on non OCP 4.x environment
+	resources, err := kubeClient.ServerResourcesForGroupVersion(openshiftResourceGroup + "/" + openshiftResourceVersion)
+	if err != nil {
+		return false
+	}
+
+	for _, apiResource := range resources.APIResources {
+		if apiResource.Kind == openshiftKind {
+			return true
+		}
+	}
+	return false
 }

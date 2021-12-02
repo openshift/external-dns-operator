@@ -44,6 +44,7 @@ func main() {
 	flag.StringVar(&opCfg.ExternalDNSImage, "externaldns-image", operatorconfig.DefaultExternalDNSImage, "The container image used for running ExternalDNS.")
 	flag.StringVar(&opCfg.CertDir, "cert-dir", operatorconfig.DefaultCertDir, "The directory for keys and certificates for serving the webhook.")
 	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
+	flag.BoolVar(&opCfg.EnablePlatformDetection, "enable-platform-detection", operatorconfig.DefaultEnablePlatformDetection, "Enable the detection of the underlying platform. Defaults to true.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -57,7 +58,13 @@ func main() {
 	ctrl.Log.Info("using operand namespace", "namespace", opCfg.OperandNamespace)
 	ctrl.Log.Info("using ExternalDNS image", "image", opCfg.ExternalDNSImage)
 
-	op, err := operator.New(ctrl.GetConfigOrDie(), &opCfg)
+	kubeConfig := ctrl.GetConfigOrDie()
+	if err := opCfg.DetectPlatform(kubeConfig); err != nil {
+		setupLog.Error(err, "failed to detect the platform")
+		os.Exit(1)
+	}
+
+	op, err := operator.New(kubeConfig, &opCfg)
 	if err != nil {
 		setupLog.Error(err, "failed to create externaldns operator")
 		os.Exit(1)

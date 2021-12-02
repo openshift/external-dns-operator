@@ -31,6 +31,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
@@ -73,7 +75,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
-	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS)
+	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -120,7 +122,7 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool, platformStatus *configv1.PlatformStatus) (*appsv1.Deployment, error) {
 
 	replicas := int32(1)
 
@@ -178,7 +180,16 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 	volumes := vbld.build()
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 
-	cbld := newExternalDNSContainerBuilder(image, provider, source, secretName, volumes, externalDNS)
+	cbld := &externalDNSContainerBuilder{
+		image:          image,
+		provider:       provider,
+		source:         source,
+		secretName:     secretName,
+		volumes:        volumes,
+		externalDNS:    externalDNS,
+		isOpenShift:    isOpenShift,
+		platformStatus: platformStatus,
+	}
 	if len(externalDNS.Spec.Zones) == 0 {
 		container, err := cbld.build("")
 		if err != nil {

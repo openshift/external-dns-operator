@@ -28,6 +28,8 @@ type awsTestHelper struct {
 	secretKey string
 }
 
+var _ providerTestHelper = &awsTestHelper{}
+
 func newAWSHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &awsTestHelper{}
 	if err := provider.prepareConfigurations(isOpenShiftCI, kubeClient); err != nil {
