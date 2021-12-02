@@ -179,6 +179,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		t.Fatalf("Failed to create test route %s/%s: %v", testNamespace, testRouteName, err)
 	}
 	defer kubeClient.Delete(context.TODO(), route)
+	t.Logf("Created Route Host is %v", testRouteHost)
 
 	// get the router canonical name
 	var targetRoute routev1.Route
@@ -201,16 +202,22 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		t.Fatalf("Failed to retrieve the created route %s/%s: %v", testNamespace, testRouteName, err)
 	}
 
+	t.Logf("Target route ingress is %v", targetRoute.Status.Ingress)
+
 	targetRouterCName := targetRoute.Status.Ingress[0].RouterCanonicalHostname
 	if targetRouterCName == "" {
 		t.Fatalf("Created route's canonical name is empty %v", err)
 	}
+	t.Logf("Target route CName is %v", targetRouterCName)
+
 	// get the route IPs by looking up the route canonical name
 	routerExpectedIPs := make(map[string]struct{})
 	routerIPs, err := customResolver("").LookupIP(context.TODO(), "ip", targetRouterCName)
 	if err != nil {
 		t.Fatalf("Failed to retrieve the IPs from the created route canonical name %s: %v", targetRouterCName, err)
 	}
+
+	t.Logf("Target route resolved IPs  %v", routerIPs)
 
 	// create lookup for assertion
 	for _, ip := range routerIPs {
@@ -226,6 +233,8 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		// verify dns records has been created for the route host.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 			actualIPs, err := customResolver.LookupHost(context.TODO(), testRouteHost)
+			t.Logf("Target route host actual IPs  %v", actualIPs)
+
 			if err != nil {
 				t.Logf("Waiting for dns record: %s", testRouteHost)
 				return false, nil
