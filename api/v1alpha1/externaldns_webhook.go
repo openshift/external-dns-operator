@@ -17,19 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"errors"
 	"fmt"
-
-	configv1 "github.com/openshift/api/config/v1"
-
-	"k8s.io/apimachinery/pkg/types"
-
 	"regexp"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
 
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,40 +29,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-const (
-	kind    = "OpenShiftAPIServer"
-	group   = "operator.openshift.io"
-	version = "v1"
-)
-
 // webhookLog is for logging in this package.
 var webhookLog = logf.Log.WithName("validating-webhook")
 
-var IsOpenShift bool
+var isOpenShift bool
 
-var PlatformStatus *configv1.PlatformStatus
-
-func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	kubeClient, err := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		return err
-	}
-	IsOpenShift = IsOCP(kubeClient)
-
-	if IsOpenShift {
-
-		var err error
-		infraConfig := &configv1.Infrastructure{}
-		if err = mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: "cluster"}, infraConfig); err != nil {
-			return fmt.Errorf("failed to get infrastructure 'config': %v", err)
-		}
-
-		PlatformStatus = infraConfig.Status.PlatformStatus
-	}
-
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
+func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) error {
+	isOpenShift = openshift
+	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
 //+kubebuilder:webhook:path=/validate-externaldns-olm-openshift-io-v1alpha1-externaldns,mutating=false,failurePolicy=fail,sideEffects=None,groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=create;update,versions=v1alpha1,name=vexternaldns.kb.io,admissionReviewVersions={v1,v1beta1}
@@ -141,7 +107,7 @@ func (r *ExternalDNS) validateHostnameAnnotationPolicy() error {
 }
 
 func (r *ExternalDNS) validateProviderCredentials() error {
-	if IsOpenShift && (r.Spec.Provider.Type == ProviderTypeAWS || r.Spec.Provider.Type == ProviderTypeGCP || r.Spec.Provider.Type == ProviderTypeAzure) {
+	if isOpenShift && (r.Spec.Provider.Type == ProviderTypeAWS || r.Spec.Provider.Type == ProviderTypeGCP || r.Spec.Provider.Type == ProviderTypeAzure) {
 		return nil
 	}
 	provider := r.Spec.Provider
@@ -168,22 +134,4 @@ func (r *ExternalDNS) validateProviderCredentials() error {
 		}
 	}
 	return nil
-}
-
-// Returns true if platform is OCP
-func IsOCP(kubeClient discovery.DiscoveryInterface) bool {
-	// Since, CRD for OpenShift API Server was introduced in OCP v4.x we can verify if the current cluster is on OCP v4.x by
-	// ensuring that resource exists against Group(operator.openshift.io), Version(v1) and Kind(OpenShiftAPIServer)
-	// In case it doesn't exist we assume that external dns is running on non OCP 4.x environment
-	resources, err := kubeClient.ServerResourcesForGroupVersion(group + "/" + version)
-	if err != nil {
-		return false
-	}
-
-	for _, apiResource := range resources.APIResources {
-		if apiResource.Kind == kind {
-			return true
-		}
-	}
-	return false
 }

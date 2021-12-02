@@ -34,13 +34,13 @@ func makeExternalDNS(name string, domains []ExternalDNSDomain) *ExternalDNS {
 var _ = Describe("ExternalDNS admission webhook when platform is OCP", func() {
 	BeforeEach(func() {
 		// Add any setup steps that needs to be executed before each test
-		IsOpenShift = true
+		isOpenShift = true
 
 	})
 
 	AfterEach(func() {
 		// Add any teardown steps that needs to be executed after each test
-		IsOpenShift = false
+		isOpenShift = false
 
 	})
 

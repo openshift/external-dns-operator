@@ -33,6 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	"github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
@@ -59,6 +61,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		name                    string
 		inputSecretName         string
 		inputExternalDNS        *operatorv1alpha1.ExternalDNS
+		inputIsOpenShift        bool
+		inputPlatformStatus     *configv1.PlatformStatus
 		expectedTemplatePodSpec corev1.PodSpec
 	}{
 		{
@@ -395,6 +399,52 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                "Platform project GCP",
+			inputExternalDNS:    testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeService),
+			inputIsOpenShift:    true,
+			inputPlatformStatus: testPlatformStatusGCP("external-dns-gcp-project"),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=google",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+							"--google-project=external-dns-gcp-project",
 						},
 					},
 				},
@@ -1684,7 +1734,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS)
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2877,4 +2927,13 @@ func testAWSExternalDNSDomainFilter(zones []string, source operatorv1alpha1.Exte
 		},
 	}
 	return extdns
+}
+
+func testPlatformStatusGCP(projectID string) *configv1.PlatformStatus {
+	return &configv1.PlatformStatus{
+		Type: configv1.GCPPlatformType,
+		GCP: &configv1.GCPPlatformStatus{
+			ProjectID: projectID,
+		},
+	}
 }

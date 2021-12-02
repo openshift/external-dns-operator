@@ -97,7 +97,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&ExternalDNS{}).SetupWebhookWithManager(mgr)
+	err = (&ExternalDNS{}).SetupWebhookWithManager(mgr, false)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

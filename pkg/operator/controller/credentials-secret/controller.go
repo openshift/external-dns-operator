@@ -40,12 +40,12 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	extdnscontroller "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 const (
 	controllerName                           = "credentials_secret_controller"
 	credentialsSecretIndexFieldName          = "credentialsSecretName"
-	secretFromCloudCredentialsOperator       = "externaldns-cloud-credentials"
 	credentialsSecretIndexFieldNameInOperand = "credentialsSecretNameofOperand"
 )
 
@@ -53,6 +53,7 @@ const (
 type Config struct {
 	SourceNamespace string
 	TargetNamespace string
+	IsOpenShift     bool
 }
 
 type reconciler struct {
@@ -88,20 +89,20 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		&handler.EnqueueRequestForObject{},
 		predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
-				return hasSecret(e.Object)
+				return hasSecret(e.Object, config.IsOpenShift)
 			},
 			DeleteFunc: func(e event.DeleteEvent) bool {
-				return hasSecret(e.Object)
+				return hasSecret(e.Object, config.IsOpenShift)
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				oldED := e.ObjectOld.(*operatorv1alpha1.ExternalDNS)
 				newED := e.ObjectNew.(*operatorv1alpha1.ExternalDNS)
-				oldName := getExternalDNSCredentialsSecretName(oldED)
-				newName := getExternalDNSCredentialsSecretName(newED)
+				oldName := getExternalDNSCredentialsSecretName(oldED, config.IsOpenShift)
+				newName := getExternalDNSCredentialsSecretName(newED, config.IsOpenShift)
 				return oldName != newName || oldED.DeletionTimestamp != newED.DeletionTimestamp
 			},
 			GenericFunc: func(e event.GenericEvent) bool {
-				return hasSecret(e.Object)
+				return hasSecret(e.Object, config.IsOpenShift)
 			},
 		},
 	); err != nil {
@@ -116,7 +117,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		credentialsSecretIndexFieldName,
 		client.IndexerFunc(func(o client.Object) []string {
 			ed := o.(*operatorv1alpha1.ExternalDNS)
-			name := getExternalDNSCredentialsSecretName(ed)
+			name := getExternalDNSCredentialsSecretName(ed, config.IsOpenShift)
 			if len(name) == 0 {
 				return []string{}
 			}
@@ -224,12 +225,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %q: %w", request.NamespacedName, err)
 	}
 
+	// get the source secret name and whether it came from ExternalDNS CR or not
+	srcSecretNameOnly, fromCR := getExternalDNSCredentialsSecretNameWithTrace(extDNS, r.config.IsOpenShift)
 	srcSecretName := types.NamespacedName{
 		Namespace: r.config.SourceNamespace,
-		Name:      getExternalDNSCredentialsSecretName(extDNS),
+		Name:      srcSecretNameOnly,
 	}
 
-	if _, _, err := r.ensureCredentialsSecret(ctx, srcSecretName, extDNS); err != nil {
+	if _, _, err := r.ensureCredentialsSecret(ctx, srcSecretName, extDNS, fromCR); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure credentials secret for externalDNS %q: %w", extDNS.Name, err)
 	}
 
@@ -239,9 +242,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 // hasSecret returns true if ExternalDNS references a secret
-func hasSecret(o client.Object) bool {
+func hasSecret(o client.Object, isOpenShift bool) bool {
 	ed := o.(*operatorv1alpha1.ExternalDNS)
-	return len(getExternalDNSCredentialsSecretName(ed)) != 0
+	return len(getExternalDNSCredentialsSecretName(ed, isOpenShift)) != 0
 }
 
 // isInNS returns a predicate which checks the belonging to the given namespace
@@ -251,11 +254,28 @@ func isInNS(namespace string) func(o client.Object) bool {
 	}
 }
 
-// getExternalDNSCredentialsSecretName returns the name of the credentials secret retrieved from externalDNS resource
-func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS) string {
-	if operatorv1alpha1.IsOpenShift && (externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure) {
-		return secretFromCloudCredentialsOperator
+// getExternalDNSCredentialsSecretName returns the name of the credentials secret which should be used as source
+func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) string {
+	name, _ := getExternalDNSCredentialsSecretNameWithTrace(externalDNS, isOpenShift)
+	return name
+}
+
+// getExternalDNSCredentialsSecretNameWithTrace returns the name of the credentials secret which should be used as source
+// second value is true if the secret came from the ExternalDNS' provider, false otherwise
+func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) (string, bool) {
+	if name := getExternalDNSCredentialsSecretNameFromProvider(externalDNS); name != "" {
+		return name, true
 	}
+
+	if isOpenShift && operatorutils.ManagedCredentialsProvider(externalDNS) {
+		return extdnscontroller.SecretFromCloudCredentialsOperator, false
+	}
+
+	return "", false
+}
+
+// getExternalDNSCredentialsSecretNameFromProvider returns the name of the credentials secret retrieved from externalDNS resource
+func getExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1alpha1.ExternalDNS) string {
 	switch externalDNS.Spec.Provider.Type {
 	case operatorv1alpha1.ProviderTypeAWS:
 		if externalDNS.Spec.Provider.AWS != nil {

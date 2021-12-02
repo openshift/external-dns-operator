@@ -25,6 +25,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
@@ -75,26 +77,15 @@ const (
 
 // externalDNSContainerBuilder builds the definition of the containers for ExternalDNS POD
 type externalDNSContainerBuilder struct {
-	image       string
-	provider    string
-	source      string
-	volumes     []corev1.Volume
-	secretName  string
-	externalDNS *operatorv1alpha1.ExternalDNS
-	counter     int
-}
-
-// newExternalDNSContainerBuilder returns an instance of container builder
-func newExternalDNSContainerBuilder(image, provider, source, secretName string, volumes []corev1.Volume, externalDNS *operatorv1alpha1.ExternalDNS) *externalDNSContainerBuilder {
-	return &externalDNSContainerBuilder{
-		image:       image,
-		provider:    provider,
-		source:      source,
-		secretName:  secretName,
-		volumes:     volumes,
-		externalDNS: externalDNS,
-		counter:     0,
-	}
+	image          string
+	provider       string
+	source         string
+	volumes        []corev1.Volume
+	secretName     string
+	externalDNS    *operatorv1alpha1.ExternalDNS
+	isOpenShift    bool
+	platformStatus *configv1.PlatformStatus
+	counter        int
 }
 
 // build returns the definition of a single container for the given DNS zone with unique metrics port
@@ -334,9 +325,8 @@ func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container)
 	// https://github.com/kubernetes-sigs/external-dns/issues/262
 	container.Args = addTXTPrefixFlag(container.Args)
 
-	// don't add empty args if GCP provider is not given
-
-	if !operatorv1alpha1.IsOpenShift {
+	if !b.isOpenShift {
+		// don't add empty args if GCP provider is not given
 		if b.externalDNS.Spec.Provider.GCP == nil {
 			return
 		}
@@ -345,8 +335,11 @@ func (b *externalDNSContainerBuilder) fillGCPFields(container *corev1.Container)
 			container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", *b.externalDNS.Spec.Provider.GCP.Project))
 		}
 	} else {
-		container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", operatorv1alpha1.PlatformStatus.GCP.ProjectID))
+		if b.platformStatus != nil && b.platformStatus.GCP != nil && len(b.platformStatus.GCP.ProjectID) > 0 {
+			container.Args = append(container.Args, fmt.Sprintf("--google-project=%s", b.platformStatus.GCP.ProjectID))
+		}
 	}
+
 	for _, v := range b.volumes {
 		// credentials volume
 		if v.Name == gcpCredentialsVolumeName {

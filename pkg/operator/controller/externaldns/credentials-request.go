@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
@@ -48,7 +47,11 @@ func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, exter
 		return false, nil, err
 	}
 
-	desired, err := desiredCredentialsRequest(name, externalDNS)
+	secretName := types.NamespacedName{
+		Name:      controller.SecretFromCloudCredentialsOperator,
+		Namespace: r.config.OperatorNamespace,
+	}
+	desired, err := desiredCredentialsRequest(name, secretName, externalDNS)
 	if err != nil {
 		return false, nil, err
 	}
@@ -212,7 +215,7 @@ func createProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.
 }
 
 // desiredCredentialsRequestName returns the desired credentials request definition for externalDNS
-func desiredCredentialsRequest(name types.NamespacedName, externalDNS *operatorv1alpha1.ExternalDNS) (*cco.CredentialsRequest, error) {
+func desiredCredentialsRequest(name, secretName types.NamespacedName, externalDNS *operatorv1alpha1.ExternalDNS) (*cco.CredentialsRequest, error) {
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CredentialsRequest",
@@ -225,8 +228,8 @@ func desiredCredentialsRequest(name types.NamespacedName, externalDNS *operatorv
 		Spec: cco.CredentialsRequestSpec{
 			ServiceAccountNames: []string{controller.ServiceAccountName},
 			SecretRef: k8sv1.ObjectReference{
-				Name:      controller.SecretFromCloudCredentialsOperator,
-				Namespace: operatorconfig.DefaultOperatorNamespace,
+				Name:      secretName.Name,
+				Namespace: secretName.Namespace,
 			},
 		},
 	}

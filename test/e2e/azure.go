@@ -38,6 +38,8 @@ type azureTestHelper struct {
 	zoneClient dns.ZonesClient
 }
 
+var _ providerTestHelper = &azureTestHelper{}
+
 // Build the necessary object for the provider test
 // for Azure Need the credentials ref clusterConfig
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {

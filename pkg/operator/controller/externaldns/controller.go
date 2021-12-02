@@ -32,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	configv1 "github.com/openshift/api/config/v1"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controlleroperator "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 // Config holds all the things necessary for the controller to run.
@@ -42,6 +45,12 @@ type Config struct {
 	Namespace string
 	// Image is the ExternalDNS image to use.
 	Image string
+	// OperatorNamespace is the namespace in which this operator is deployed.
+	OperatorNamespace string
+	// IsOpenShift is the flag which instructs the operator that it runs in OpenShift
+	IsOpenShift bool
+	// PlatformStatus is the details about the underlying platform
+	PlatformStatus *configv1.PlatformStatus
 }
 
 // reconciler reconciles an ExternalDNS object.
@@ -105,11 +114,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS namespace: %w", err)
 	}
 
-	if operatorv1alpha1.IsOpenShift && (externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP || externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure) {
+	if r.config.IsOpenShift && operatorutils.ManagedCredentialsProvider(externalDNS) {
 		if _, _, err := r.ensureExternalCredentialsRequest(ctx, externalDNS); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to ensure credentials request for externalDNS: %w", err)
 		}
 	}
+
 	haveServiceAccount, sa, err := r.ensureExternalDNSServiceAccount(ctx, r.config.Namespace, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
