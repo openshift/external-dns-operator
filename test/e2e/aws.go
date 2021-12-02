@@ -103,82 +103,81 @@ func (a *awsTestHelper) ensureHostedZone(zoneDomain string) (string, []string, e
 
 // AWS sdk expect to zone ID to delete the xone, where as Azure expect Domain Name
 func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
-	listInput := &route53.ListHostedZonesInput{
-	}
+	listInput := &route53.ListHostedZonesInput{}
 	outputList, err := a.r53Client.ListHostedZones(listInput)
-	if err != nil{
-		return err
-	}
-	zoneIDs := []string{}
-	for _, zone := range outputList.HostedZones{
-		if strings.Contains(*zone.Name, zoneDomain){
-			zoneIDs = append(zoneIDs, *zone.Id)
-		}
-	}
-	for _, zoneID = range zoneIDs{
-	input := route53.ListResourceRecordSetsInput{
-		HostedZoneId: &zoneID,
-	}
-	output, err := a.r53Client.ListResourceRecordSets(&input)
 	if err != nil {
 		return err
 	}
-	var recordChanges []*route53.Change
+	zoneIDs := []string{}
+	for _, zone := range outputList.HostedZones {
+		if strings.Contains(*zone.Name, zoneDomain) {
+			zoneIDs = append(zoneIDs, *zone.Id)
+		}
+	}
+	for _, zoneID = range zoneIDs {
+		input := route53.ListResourceRecordSetsInput{
+			HostedZoneId: &zoneID,
+		}
+		output, err := a.r53Client.ListResourceRecordSets(&input)
+		if err != nil {
+			return err
+		}
+		var recordChanges []*route53.Change
 
-	// create change set deleting all DNS records which are not of NS and SOA types in hosted zone
-	for len(output.ResourceRecordSets) != 0 {
-		for _, recordset := range output.ResourceRecordSets {
-			if *recordset.Type == "SOA" || *recordset.Type == "NS" {
-				continue
-			} else {
-				recordDelete := &route53.Change{
-					Action:            aws.String("DELETE"),
-					ResourceRecordSet: recordset,
+		// create change set deleting all DNS records which are not of NS and SOA types in hosted zone
+		for len(output.ResourceRecordSets) != 0 {
+			for _, recordset := range output.ResourceRecordSets {
+				if *recordset.Type == "SOA" || *recordset.Type == "NS" {
+					continue
+				} else {
+					recordDelete := &route53.Change{
+						Action:            aws.String("DELETE"),
+						ResourceRecordSet: recordset,
+					}
+					recordChanges = append(recordChanges, recordDelete)
 				}
-				recordChanges = append(recordChanges, recordDelete)
+			}
+			if !(*output.IsTruncated) {
+				break
+			} else {
+				input.StartRecordName = output.NextRecordName
+				output, err = a.r53Client.ListResourceRecordSets(&input)
+				if err != nil {
+					return err
+				}
 			}
 		}
-		if !(*output.IsTruncated) {
-			break
-		} else {
-			input.StartRecordName = output.NextRecordName
-			output, err = a.r53Client.ListResourceRecordSets(&input)
-			if err != nil {
+
+		if len(recordChanges) != 0 {
+			changeRecordsInput := route53.ChangeResourceRecordSetsInput{
+				HostedZoneId: &zoneID,
+				ChangeBatch: &route53.ChangeBatch{
+					Changes: recordChanges,
+				},
+			}
+			if _, err := a.r53Client.ChangeResourceRecordSets(&changeRecordsInput); err != nil {
 				return err
 			}
 		}
-	}
 
-	if len(recordChanges) != 0 {
-		changeRecordsInput := route53.ChangeResourceRecordSetsInput{
-			HostedZoneId: &zoneID,
-			ChangeBatch: &route53.ChangeBatch{
-				Changes: recordChanges,
-			},
+		zoneInput := route53.DeleteHostedZoneInput{
+			Id: &zoneID,
 		}
-		if _, err := a.r53Client.ChangeResourceRecordSets(&changeRecordsInput); err != nil {
+		if _, err := a.r53Client.DeleteHostedZone(&zoneInput); err != nil {
 			return err
 		}
-	}
-
-	zoneInput := route53.DeleteHostedZoneInput{
-		Id: &zoneID,
-	}
-	if _, err := a.r53Client.DeleteHostedZone(&zoneInput); err != nil {
-		return err
-	}
 	}
 	return nil
 }
 
 func (a *awsTestHelper) prepareConfigurations(isOpenShiftCI bool, kubeClient client.Client) error {
 	//if isOpenShiftCI {
-		data, err := rootCredentials(kubeClient, "aws-creds")
-		if err != nil {
-			return fmt.Errorf("failed to get AWS credentials: %w", err)
-		}
-		a.keyID = string(data["aws_access_key_id"])
-		a.secretKey = string(data["aws_secret_access_key"])
+	data, err := rootCredentials(kubeClient, "aws-creds")
+	if err != nil {
+		return fmt.Errorf("failed to get AWS credentials: %w", err)
+	}
+	a.keyID = string(data["aws_access_key_id"])
+	a.secretKey = string(data["aws_secret_access_key"])
 	//} else {
 	//	a.keyID = mustGetEnv("AWS_ACCESS_KEY_ID")
 	//	a.secretKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")

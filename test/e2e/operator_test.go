@@ -1,4 +1,3 @@
-//go:build e2e
 // +build e2e
 
 package e2e
@@ -262,7 +261,6 @@ func TestMain(m *testing.M) {
 //	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
 //}
 
-
 func TestExternalDNSRecordLifecycleWithIngress(t *testing.T) {
 	testIngressNamespace := "test-extdns-ingress"
 	t.Log("Ensuring test namespace")
@@ -323,7 +321,7 @@ func TestExternalDNSRecordLifecycleWithIngress(t *testing.T) {
 				Path: path,
 				To: routev1.RouteTargetReference{
 					Kind: "Service",
-					Name: testServiceName,  // create service foo and assign the name
+					Name: testServiceName, // create service foo and assign the name
 				},
 			},
 		}
@@ -331,7 +329,6 @@ func TestExternalDNSRecordLifecycleWithIngress(t *testing.T) {
 	// use unique names for each test route to simplify debugging.
 	route1Name := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns-route"}
 	route1 := makeRoute(route1Name, "app."+baseZoneDomain, "/foo")
-
 
 	// The first route should be admitted
 	if err := kubeClient.Create(context.TODO(), route1); err != nil && !errors.IsAlreadyExists(err) {
@@ -343,24 +340,24 @@ func TestExternalDNSRecordLifecycleWithIngress(t *testing.T) {
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 		// create a DNS resolver which uses the nameservers of the test hosted zone
-		address, err :=net.LookupHost(nameSrv)
-		if err != nil{
+		address, err := net.LookupHost(nameSrv)
+		if err != nil {
 			continue
 		}
-		t.Logf("NameServer %s: %s ", nameSrv , address)
+		t.Logf("NameServer %s: %s ", nameSrv, address)
 
 		//customResolver := customResolver(address[0])
 
 		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
 		if err := wait.PollImmediate(dnsPollingInterval, 15, func() (done bool, err error) {
-			rec := fmt.Sprintf("app.%s",baseZoneDomain)
+			rec := fmt.Sprintf("app.%s", baseZoneDomain)
 			hostname, err := customResolver(nameSrv).LookupCNAME(context.TODO(), rec)
 			if err != nil {
 				t.Logf("Waiting for dns record: %s, err %v", rec, err)
 				return false, nil
 			}
-			t.Logf("hostname -------------->: %s",hostname)
-			if hostname == "router-external-dns.external-dns.example-andrey.info"{
+			t.Logf("hostname -------------->: %s", hostname)
+			if hostname == "router-external-dns.external-dns.example-andrey.info" {
 				return true, nil
 			}
 			return false, nil
@@ -390,9 +387,6 @@ func customResolver(nameserver string) *net.Resolver {
 	}
 }
 
-
-
-
 func assertIngressControllerDeleted(t *testing.T, cl client.Client, ing *operatorv1.IngressController) {
 	t.Helper()
 	if err := deleteIngressController(t, cl, ing, 2*time.Minute); err != nil {
@@ -401,7 +395,6 @@ func assertIngressControllerDeleted(t *testing.T, cl client.Client, ing *operato
 		t.Logf("deleted ingresscontroller %s", ing.Name)
 	}
 }
-
 
 func operatorConditionMap(conditions ...operatorv1.OperatorCondition) map[string]string {
 	conds := map[string]string{}
@@ -423,7 +416,6 @@ func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout t
 		return conditionsMatchExpected(expected, current), nil
 	})
 }
-
 
 func deleteIngressController(t *testing.T, cl client.Client, ic *operatorv1.IngressController, timeout time.Duration) error {
 	t.Helper()
@@ -447,7 +439,6 @@ func deleteIngressController(t *testing.T, cl client.Client, ic *operatorv1.Ingr
 	}
 	return nil
 }
-
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
 	repl := int32(1)

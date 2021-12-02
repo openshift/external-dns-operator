@@ -158,9 +158,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 	}
 }
 
-
-
-func defaultExternalDNSOpenShiftRoute(name, routerName,zoneID, zoneDomain string,credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func defaultExternalDNSOpenShiftRoute(name, routerName, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -190,7 +188,6 @@ func defaultExternalDNSOpenShiftRoute(name, routerName,zoneID, zoneDomain string
 	}
 	return resource
 }
-
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
