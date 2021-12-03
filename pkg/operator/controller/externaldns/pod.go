@@ -78,7 +78,7 @@ const (
 // externalDNSContainerBuilder builds the definition of the containers for ExternalDNS POD
 type externalDNSContainerBuilder struct {
 	image          string
-	provider       string
+	Provider       string
 	source         string
 	volumes        []corev1.Volume
 	secretName     string
@@ -123,7 +123,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
-		fmt.Sprintf("--provider=%s", b.provider),
+		fmt.Sprintf("--provider=%s", b.Provider),
 		fmt.Sprintf("--source=%s", b.source),
 		"--policy=sync",
 		"--registry=txt",
@@ -251,10 +251,12 @@ func combineRegexps(patterns []string) string {
 
 // fillProviderSpecificFields fills the fields specific to the provider of given ExternalDNS
 func (b *externalDNSContainerBuilder) fillProviderSpecificFields(container *corev1.Container) {
-	switch b.provider {
+	switch b.Provider {
 	case externalDNSProviderTypeAWS:
 		b.fillAWSFields(container)
 	case externalDNSProviderTypeAzure:
+		b.fillAzureFields(container)
+	case externalDNSProviderTypeAzurePrivate:
 		b.fillAzureFields(container)
 	case externalDNSProviderTypeGCP:
 		b.fillGCPFields(container)
