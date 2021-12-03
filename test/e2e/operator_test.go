@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
+	"github.com/miekg/dns"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/version"
 )
@@ -211,41 +212,23 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	}
 	t.Logf("Target route CName is %v", targetRouterCName)
 
-	// get the route IPs by looking up the route canonical name
-	routerExpectedIPs := make(map[string]struct{})
-	routerIPs, err := customResolver("").LookupIP(context.TODO(), "ip", targetRouterCName)
-	if err != nil {
-		t.Fatalf("Failed to retrieve the IPs from the created route canonical name %s: %v", targetRouterCName, err)
-	}
-
-	t.Logf("Target route resolved IPs  %v", routerIPs)
-
-	// create lookup for assertion
-	for _, ip := range routerIPs {
-		routerExpectedIPs[ip.String()] = struct{}{}
-	}
-
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
-		// create a DNS resolver which uses the nameservers of the test hosted zone
-		customResolver := customResolver(nameSrv)
 
 		// verify dns records has been created for the route host.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			actualIPs, err := customResolver.LookupHost(context.TODO(), testRouteHost)
-			t.Logf("Target route host actual IPs  %v", actualIPs)
-
+			cnames, err := lookupCNAMEMiekg(testRouteHost, nameSrv)
 			if err != nil {
-				t.Logf("Waiting for dns record: %s", testRouteHost)
+				t.Logf("could not find cname for route host %v within name server %v: %v", testRouteHost, nameSrv, err)
 				return false, nil
 			}
-			for _, ip := range actualIPs {
-				if _, ok := routerExpectedIPs[ip]; !ok {
-					return false, nil
+			for _, cname := range cnames {
+				if strings.Contains(cname, targetRouterCName) {
+					return true, nil
 				}
 			}
-			return true, nil
+			return false, nil
 		}); err != nil {
 			t.Logf("Failed to verify that DNS has been correctly set.")
 		} else {
@@ -369,4 +352,23 @@ func customResolver(nameserver string) *net.Resolver {
 			return d.DialContext(ctx, network, address)
 		},
 	}
+}
+
+func lookupCNAMEMiekg(host, server string) ([]string, error) {
+	c := dns.Client{}
+	m := dns.Msg{}
+	m.SetQuestion(host+".", dns.TypeCNAME)
+	r, _, err := c.Exchange(&m, server+":53")
+	if err != nil {
+		return nil, err
+	}
+	if len(r.Answer) == 0 {
+		return nil, fmt.Errorf("could not find host %v in name server %v ", host, server)
+	}
+	var cnames []string
+	for _, ans := range r.Answer {
+		rec := ans.(*dns.CNAME)
+		cnames = append(cnames, rec.Target)
+	}
+	return cnames, nil
 }
