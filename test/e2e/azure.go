@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -131,8 +132,9 @@ func (a *azureTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 	return nil
 }
 
-func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := defaultExternalDNS(name, zoneID, zoneDomain)
+func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, sourceType, routerName string,
+	credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAzure,
 		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
