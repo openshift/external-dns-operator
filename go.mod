@@ -10,6 +10,7 @@ require (
 	github.com/aws/aws-sdk-go v1.41.6
 	github.com/go-logr/logr v0.4.0
 	github.com/google/go-cmp v0.5.6
+	github.com/miekg/dns v1.0.14
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
 	github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
