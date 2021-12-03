@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/miekg/dns"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/version"
 )
@@ -186,7 +185,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	// get the router canonical name
 	var targetRoute routev1.Route
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-		t.Log("Getting canonical host name of create route")
+		t.Log("Waiting for the route to be acknowledged by the router")
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: testNamespace,
 			Name:      testRouteName,
@@ -208,9 +207,9 @@ func TestExternalDNSWithRoute(t *testing.T) {
 
 	targetRouterCName := targetRoute.Status.Ingress[0].RouterCanonicalHostname
 	if targetRouterCName == "" {
-		t.Fatalf("Created route's canonical name is empty %v", err)
+		t.Fatalf("Router's canonical name is empty %v", err)
 	}
-	t.Logf("Target route CName is %v", targetRouterCName)
+	t.Logf("Target router's CName is %v", targetRouterCName)
 
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
@@ -220,11 +219,11 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 			cnames, err := lookupCNAMEMiekg(testRouteHost, nameSrv)
 			if err != nil {
-				t.Logf("could not find cname for route host %v within name server %v: %v", testRouteHost, nameSrv, err)
+				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
 			for _, cname := range cnames {
-				if strings.Contains(cname, targetRouterCName) {
+				if equalFQDN(cname, targetRouterCName) {
 					return true, nil
 				}
 			}
@@ -352,23 +351,4 @@ func customResolver(nameserver string) *net.Resolver {
 			return d.DialContext(ctx, network, address)
 		},
 	}
-}
-
-func lookupCNAMEMiekg(host, server string) ([]string, error) {
-	c := dns.Client{}
-	m := dns.Msg{}
-	m.SetQuestion(host+".", dns.TypeCNAME)
-	r, _, err := c.Exchange(&m, server+":53")
-	if err != nil {
-		return nil, err
-	}
-	if len(r.Answer) == 0 {
-		return nil, fmt.Errorf("could not find host %v in name server %v ", host, server)
-	}
-	var cnames []string
-	for _, ans := range r.Answer {
-		rec := ans.(*dns.CNAME)
-		cnames = append(cnames, rec.Target)
-	}
-	return cnames, nil
 }

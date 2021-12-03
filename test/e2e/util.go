@@ -5,9 +5,11 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/miekg/dns"
 	"math/rand"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -210,4 +212,32 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 		return nil, fmt.Errorf("failed to get credentials secret %s: %w", secretName.Name, err)
 	}
 	return secret.Data, nil
+}
+
+func lookupCNAMEMiekg(host, server string) ([]string, error) {
+	c := dns.Client{}
+	m := dns.Msg{}
+	m.SetQuestion(host+".", dns.TypeCNAME)
+	r, _, err := c.Exchange(&m, server+":53")
+	if err != nil {
+		return nil, err
+	}
+	var cnames []string
+	for _, ans := range r.Answer {
+		rec := ans.(*dns.CNAME)
+		cnames = append(cnames, rec.Target)
+	}
+	return cnames, nil
+}
+
+func equalFQDN(name1, name2 string) bool {
+	index1 := strings.LastIndex(name1, ".")
+	index2 := strings.LastIndex(name2, ".")
+	if index1 != len(name1)-1 {
+		name1 += "."
+	}
+	if index2 != len(name2)-1 {
+		name2 += "."
+	}
+	return name1 == name2
 }
