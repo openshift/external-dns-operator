@@ -153,7 +153,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName string)
 	case "Service":
 		resource.Spec.Source = getServiceTypeSource(zoneDomain)
 	case "OpenShiftRoute":
-		resource.Spec.Source = getOCRouteTypeSource(routerName)
+		resource.Spec.Source = getOpenshiftRouteTypeSource(routerName)
 	default:
 		//TODO : we should return error and fail the test on Source type
 		fmt.Errorf("source type not support : %s", sourceType)
@@ -181,7 +181,7 @@ func getServiceTypeSource(zoneDomain string) operatorv1alpha1.ExternalDNSSource 
 	}
 }
 
-func getOCRouteTypeSource(routerName string) operatorv1alpha1.ExternalDNSSource {
+func getOpenshiftRouteTypeSource(routerName string) operatorv1alpha1.ExternalDNSSource {
 	return operatorv1alpha1.ExternalDNSSource{
 		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
 			Type: operatorv1alpha1.SourceTypeRoute,
@@ -191,35 +191,6 @@ func getOCRouteTypeSource(routerName string) operatorv1alpha1.ExternalDNSSource 
 		},
 		HostnameAnnotationPolicy: "Allow",
 	}
-}
-func defaultExternalDNSOpenShiftRoute(name, routerName, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := operatorv1alpha1.ExternalDNS{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Zones: []string{zoneID},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeRoute,
-					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
-						RouterName: routerName,
-					},
-				},
-				HostnameAnnotationPolicy: "Allow",
-			},
-		},
-	}
-
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
-				Name: credsSecret.Name,
-			},
-		},
-	}
-	return resource
 }
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {

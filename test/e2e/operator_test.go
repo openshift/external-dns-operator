@@ -209,11 +209,11 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 		t.Fail()
 		return
 	}
-
-	name := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns"}
+	openshiftRouterName := "external-dns"
+	name := types.NamespacedName{Namespace: testIngressNamespace, Name: openshiftRouterName}
 	t.Logf("Create custome ingress controller %s/%s", name.Namespace, name.Name)
 	ing := newHostNetworkController(name, name.Name+"."+hostedZoneDomain)
-	if err = kubeClient.Create(context.TODO(), ing); err != nil {
+	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
 		t.Logf("failed to create ingresscontroller: %v", err)
 		t.Fail()
 		return
@@ -228,7 +228,8 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
 	t.Logf("Creating external dns instance : %s", externalDnsServiceName)
-	extDNS := defaultExternalDNSOpenShiftRoute(externalDnsServiceName, "external-dns", hostedZoneID, hostedZoneDomain, resourceSecret)
+	extDNS := helper.buildExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain,
+		"OpenShiftRoute", openshiftRouterName, resourceSecret)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
