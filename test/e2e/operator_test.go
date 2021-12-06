@@ -11,7 +11,6 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -177,7 +176,9 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Service(t *testing.T) {
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("Failed to ensure namespace %s: %v", testNamespace, err)
+		t.Logf("Failed to ensure namespace %s: %v", testNamespace, err)
+		t.Fail()
+		return
 	}
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-service", testExtDNSName)
@@ -185,7 +186,9 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Service(t *testing.T) {
 	extDNS := helper.buildExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain,
 		"Service", "", resourceSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
-		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
+		t.Logf("Failed to create external DNS %q: %v", testExtDNSName, err)
+		t.Fail()
+		return
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
@@ -193,14 +196,16 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Service(t *testing.T) {
 	t.Log("Creating source service")
 	service := defaultService(testServiceName, testNamespace)
 	if err := kubeClient.Create(context.Background(), service); err != nil {
-		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testServiceName, err)
+		t.Logf("Failed to create test service %s/%s: %v", testNamespace, testServiceName, err)
+		t.Fail()
+		return
 	}
-
 	defer kubeClient.Delete(context.TODO(), service)
 	verifySourceServiceDNSRecords(t, testNamespace, testServiceName)
 }
 
 func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
+	t.Skip("Once ExternalDNS build & push the image this cam be removed.")
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
@@ -221,7 +226,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	defer assertIngressControllerDeleted(t, kubeClient, ing)
 
 	if err = waitForIngressControllerCondition(t, kubeClient, 5*time.Minute, name); err != nil {
-		t.Errorf("failed to observe expected conditions: %v", err)
+		t.Logf("failed to observe expected conditions: %v", err)
 		t.Fail()
 		return
 	}
@@ -231,7 +236,9 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	extDNS := helper.buildExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain,
 		"OpenShiftRoute", openshiftRouterName, resourceSecret)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
+		t.Logf("Failed to create external DNS %q: %v", testExtDNSName, err)
+		t.Fail()
+		return
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
@@ -277,8 +284,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 		return
 	}
 	t.Logf("canonicalName  : %s for the route :%s ", route1Name.Name, canonicalName)
-	rec := fmt.Sprintf("app.%s", hostedZoneDomain)
-	verifyOpenShiftRouteSource(t, canonicalName, rec)
+	verifyOpenShiftRouteSource(t, canonicalName, fmt.Sprintf("app.%s", hostedZoneDomain))
 }
 
 func verifySourceServiceDNSRecords(t *testing.T, testNamespace, testServiceName string) {
@@ -322,7 +328,9 @@ func verifySourceServiceDNSRecords(t *testing.T, testNamespace, testServiceName 
 		t.Logf("Loadbalancer's IP(s): %v", serviceIPs)
 		return true, nil
 	}); err != nil {
-		t.Fatalf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testServiceName, err)
+		t.Logf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testServiceName, err)
+		t.Fail()
+		return
 	}
 
 	// try all nameservers and fail only if all failed

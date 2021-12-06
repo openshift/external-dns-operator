@@ -8,5 +8,5 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
 - name: controller
-  newName: quay.io/snagarju/external-dns-operator
+  newName: controller
   newTag: latest
