@@ -217,7 +217,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Default_Route(t *testing.T) {
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-default-route", testExtDNSName)
 	t.Logf("Creating external dns instance :%s", externalDnsServiceName)
 	extDNS := helper.buildExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain,
-		"Service", "", resourceSecret)
+		"OpenShiftRoute", "", resourceSecret)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Logf("Failed to create external DNS %q: %v", externalDnsServiceName, err)
 		t.Fail()
