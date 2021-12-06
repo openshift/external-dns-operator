@@ -1,4 +1,3 @@
-//go:build e2e
 // +build e2e
 
 package e2e
@@ -280,7 +279,7 @@ func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout t
 			t.Logf("failed to get ingresscontroller %s: %v", name.Name, err)
 			return false, nil
 		}
-		fmt.Printf("Custome ingress controller %+v",*ic)
+		fmt.Printf("Custome ingress controller %+v", *ic)
 		expected := operatorConditionMap(conditions...)
 		current := operatorConditionMap(ic.Status.Conditions...)
 		return conditionsMatchExpected(expected, current), nil

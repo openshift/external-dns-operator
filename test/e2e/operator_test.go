@@ -515,4 +515,3 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 	}
 	return canonicalName, nil
 }
-
