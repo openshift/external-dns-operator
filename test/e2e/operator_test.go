@@ -316,7 +316,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	}
 	defer assertIngressControllerDeleted(t, kubeClient, ing)
 
-	if err = waitForIngressControllerCondition(t, kubeClient, 5*time.Minute, name); err != nil {
+	if err = waitForIngressControllerCondition(t, kubeClient, 15*time.Minute, name); err != nil {
 		t.Logf("failed to observe expected conditions: %v", err)
 		t.Fail()
 		return

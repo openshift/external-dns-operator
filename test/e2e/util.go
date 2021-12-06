@@ -273,13 +273,13 @@ func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout t
 		{Type: operatorv1.LoadBalancerManagedIngressConditionType, Status: operatorv1.ConditionFalse},
 		{Type: operatorv1.DNSManagedIngressConditionType, Status: operatorv1.ConditionFalse},
 	}
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	return wait.PollImmediate(15*time.Second, timeout, func() (bool, error) {
 		ic := &operatorv1.IngressController{}
 		if err := cl.Get(context.TODO(), name, ic); err != nil {
 			t.Logf("failed to get ingresscontroller %s: %v", name.Name, err)
 			return false, nil
 		}
-		fmt.Printf("Custome ingress controller %+v", *ic)
+		t.Logf("\n Custome ingress controller :  %+v", *ic)
 		expected := operatorConditionMap(conditions...)
 		current := operatorConditionMap(ic.Status.Conditions...)
 		return conditionsMatchExpected(expected, current), nil
