@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -9,6 +10,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +29,8 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	routev1 "github.com/openshift/api/route/v1"
 )
 
 const dialTimeout = 10 * time.Second
@@ -64,6 +68,24 @@ func defaultService(name, namespace string) *corev1.Service {
 
 func clusterIPService(name, namespace string) *corev1.Service {
 	return testService(name, namespace, corev1.ServiceTypeClusterIP)
+}
+
+func testRoute(name, namespace, host, svcName string) *routev1.Route {
+	return &routev1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+			Annotations: map[string]string{
+				"external-dns.mydomain.org/publish": "yes",
+			},
+		},
+		Spec: routev1.RouteSpec{
+			Host: host,
+			To: routev1.RouteTargetReference{
+				Name: svcName,
+			},
+		},
+	}
 }
 
 func testService(name, namespace string, svcType corev1.ServiceType) *corev1.Service {
@@ -153,7 +175,11 @@ func defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName string)
 	case "Service":
 		resource.Spec.Source = getServiceTypeSource(zoneDomain)
 	case "OpenShiftRoute":
-		resource.Spec.Source = getOpenshiftRouteTypeSource(routerName)
+		resource.Spec.Source = getOpenshiftRouteTypeSource(routerName, zoneDomain)
+		// TODO : test with default as routername for default router
+		if routerName == "" || routerName == "default" {
+			resource.Spec.Source.OpenShiftRoute = nil
+		}
 	default:
 		//TODO : we should return error and fail the test on Source type
 		fmt.Errorf("source type not support : %s", sourceType)
@@ -181,15 +207,19 @@ func getServiceTypeSource(zoneDomain string) operatorv1alpha1.ExternalDNSSource 
 	}
 }
 
-func getOpenshiftRouteTypeSource(routerName string) operatorv1alpha1.ExternalDNSSource {
+func getOpenshiftRouteTypeSource(routerName, zoneDomain string) operatorv1alpha1.ExternalDNSSource {
 	return operatorv1alpha1.ExternalDNSSource{
 		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
 			Type: operatorv1alpha1.SourceTypeRoute,
+			AnnotationFilter: map[string]string{
+				"external-dns.mydomain.org/publish": "yes",
+			},
 			OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
 				RouterName: routerName,
 			},
 		},
 		HostnameAnnotationPolicy: "Allow",
+		FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 	}
 }
 
@@ -250,6 +280,7 @@ func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout t
 			t.Logf("failed to get ingresscontroller %s: %v", name.Name, err)
 			return false, nil
 		}
+		fmt.Printf("Custome ingress controller %+v",*ic)
 		expected := operatorConditionMap(conditions...)
 		current := operatorConditionMap(ic.Status.Conditions...)
 		return conditionsMatchExpected(expected, current), nil
@@ -313,4 +344,16 @@ func lookupCNAME(host, server string) ([]string, error) {
 		cname = append(cname, rec.Target)
 	}
 	return cname, nil
+}
+
+func equalFQDN(name1, name2 string) bool {
+	index1 := strings.LastIndex(name1, ".")
+	index2 := strings.LastIndex(name2, ".")
+	if index1 != len(name1)-1 {
+		name1 += "."
+	}
+	if index2 != len(name2)-1 {
+		name2 += "."
+	}
+	return name1 == name2
 }

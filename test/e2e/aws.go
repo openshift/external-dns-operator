@@ -27,7 +27,6 @@ type awsTestHelper struct {
 	secretKey string
 }
 
-var _ providerTestHelper = &awsTestHelper{}
 
 func newAWSHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &awsTestHelper{}
@@ -69,6 +68,7 @@ func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain, sourceType, r
 	}
 	return resource
 }
+
 func (a *awsTestHelper) platform() string {
 	return string(configv1.AWSPlatformType)
 }

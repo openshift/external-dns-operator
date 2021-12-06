@@ -28,8 +28,6 @@ type gcpTestHelper struct {
 	providerOptions []string
 }
 
-var _ providerTestHelper = &gcpTestHelper{}
-
 func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &gcpTestHelper{}
 	err := provider.prepareConfigurations(isOpenShiftCI, kubeClient)

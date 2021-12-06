@@ -204,6 +204,97 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Service(t *testing.T) {
 	verifySourceServiceDNSRecords(t, testNamespace, testServiceName)
 }
 
+func TestExternalDNSRecordLifecycleWithSourceAs_Default_Route(t *testing.T) {
+	testRouteNamespace := "test-extdns-openshift-route-default"
+	t.Log("Ensuring test namespace")
+	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testRouteNamespace}})
+	if err != nil && !errors.IsAlreadyExists(err) {
+		t.Logf("Failed to ensure namespace %s: %v", testRouteNamespace, err)
+		t.Fail()
+		return
+	}
+
+	externalDnsServiceName := fmt.Sprintf("%s-source-as-default-route", testExtDNSName)
+	t.Logf("Creating external dns instance :%s", externalDnsServiceName)
+	extDNS := helper.buildExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain,
+		"Service", "", resourceSecret)
+	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil {
+		t.Logf("Failed to create external DNS %q: %v", externalDnsServiceName, err)
+		t.Fail()
+		return
+	}
+	defer kubeClient.Delete(context.TODO(), &extDNS)
+
+	// create a route with the annotation targeted by the ExternalDNS resource
+	t.Log("Creating source route")
+	testRouteName := "test-route"
+	testRouteHost := "myroute." + hostedZoneDomain
+	route := testRoute(testRouteName, testRouteNamespace, testRouteHost, testServiceName)
+	if err := kubeClient.Create(context.Background(), route); err != nil {
+		t.Logf("Failed to create test route %s/%s: %v", testRouteNamespace, testRouteName, err)
+		t.Fail()
+		return
+	}
+	defer kubeClient.Delete(context.TODO(), route)
+	t.Logf("Created Route Host is %v", testRouteHost)
+
+	// get the router canonical name
+	var targetRoute routev1.Route
+	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		t.Log("Waiting for the route to be acknowledged by the router")
+		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+			Namespace: testRouteNamespace,
+			Name:      testRouteName,
+		}, &targetRoute)
+		if err != nil {
+			return false, err
+		}
+
+		// if the status ingress slice is not populated by the ingress controller, try later
+		if len(targetRoute.Status.Ingress) < 1 {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		t.Logf("Failed to retrieve the created route %s/%s: %v", testRouteNamespace, testRouteName, err)
+		t.Fail()
+		return
+	}
+
+	t.Logf("Target route ingress is %v", targetRoute.Status.Ingress)
+
+	targetRouterCName := targetRoute.Status.Ingress[0].RouterCanonicalHostname
+	if targetRouterCName == "" {
+		t.Fatalf("Router's canonical name is empty %v", err)
+	}
+	t.Logf("Target router's CName is %v", targetRouterCName)
+
+	// try all nameservers and fail only if all failed
+	for _, nameSrv := range nameServers {
+		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
+
+		// verify dns records has been created for the route host.
+		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			cnames, err := lookupCNAME(testRouteHost, nameSrv)
+			if err != nil {
+				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
+				return false, nil
+			}
+			for _, cname := range cnames {
+				if equalFQDN(cname, targetRouterCName) {
+					return true, nil
+				}
+			}
+			return false, nil
+		}); err != nil {
+			t.Logf("Failed to verify that DNS has been correctly set.")
+		} else {
+			return
+		}
+	}
+	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
+}
+
 func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	//t.Skip("Once ExternalDNS build & push the image this cam be removed.")
 	testIngressNamespace := "test-extdns-openshift-route"
@@ -424,3 +515,4 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 	}
 	return canonicalName, nil
 }
+
