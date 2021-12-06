@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/services/privatedns/mgmt/2018-09-01/privatedns"
+	"os"
 	"strings"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -34,11 +36,12 @@ type clusterConfig struct {
 }
 
 type azureTestHelper struct {
-	config     *clusterConfig
-	zoneClient dns.ZonesClient
+	config                   *clusterConfig
+	zoneClient               dns.ZonesClient
+	pvtZoneClient            privatedns.PrivateZonesClient
+	virtualNetworkLinkClient privatedns.VirtualNetworkLinksClient
+	isPrivateZone            bool
 }
-
-var _ providerTestHelper = &azureTestHelper{}
 
 // Build the necessary object for the provider test
 // for Azure Need the credentials ref clusterConfig
@@ -47,6 +50,16 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 
 	if err := azureProvider.prepareConfigurations(kubeClient); err != nil {
 		return nil, err
+	}
+
+	if getPrivateZoneFlag() {
+		if err := azureProvider.preparePrivateDNSZoneClient(); err != nil {
+			return nil, err
+		}
+		if err := azureProvider.prepareVirtualNetworkLinkClient(); err != nil {
+			return nil, fmt.Errorf("could not init virtual network client: %v", err)
+		}
+		return azureProvider, nil
 	}
 
 	if err := azureProvider.prepareZoneClient(); err != nil {
@@ -83,6 +96,33 @@ func (a *azureTestHelper) prepareZoneClient() error {
 	return nil
 }
 
+func (a *azureTestHelper) preparePrivateDNSZoneClient() error {
+	if !getPrivateZoneFlag() {
+		return nil
+	}
+	a.isPrivateZone = true
+	token, err := getAccessToken(a.config)
+	if err != nil {
+		return err
+	}
+	a.pvtZoneClient = privatedns.NewPrivateZonesClientWithBaseURI(a.config.Environment.ResourceManagerEndpoint, a.config.SubscriptionID)
+	a.pvtZoneClient.Authorizer = autorest.NewBearerAuthorizer(token)
+	return nil
+}
+
+func (a *azureTestHelper) prepareVirtualNetworkLinkClient() error {
+	if !getPrivateZoneFlag() {
+		return nil
+	}
+	token, err := getAccessToken(a.config)
+	if err != nil {
+		return err
+	}
+	a.virtualNetworkLinkClient = privatedns.NewVirtualNetworkLinksClientWithBaseURI(a.config.Environment.ResourceManagerEndpoint, a.config.SubscriptionID)
+	a.virtualNetworkLinkClient.Authorizer = autorest.NewBearerAuthorizer(token)
+	return nil
+}
+
 // Credentials should in as json string for azure provider.
 func (a *azureTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	credData := struct {
@@ -115,6 +155,13 @@ func (a *azureTestHelper) platform() string {
 }
 
 func (a *azureTestHelper) ensureHostedZone(zoneDomain string) (string, []string, error) {
+	if a.isPrivateZone {
+		return a.createOrUpdatePrivateZone(zoneDomain)
+	}
+	return a.createOrUpdateZone(zoneDomain)
+}
+
+func (a *azureTestHelper) createOrUpdateZone(zoneDomain string) (string, []string, error) {
 	location := "global"
 	z, err := a.zoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, zoneDomain,
 		dns.Zone{Location: &location}, "", "")
@@ -123,10 +170,50 @@ func (a *azureTestHelper) ensureHostedZone(zoneDomain string) (string, []string,
 	}
 	return *z.ID, *z.ZoneProperties.NameServers, nil
 }
+func (a *azureTestHelper) createOrUpdatePrivateZone(zoneDomain string) (string, []string, error) {
+	location := "global"
+	virtualNetworkLinkName := zoneDomain + "-link"
+
+	result, err := a.pvtZoneClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, zoneDomain,
+		privatedns.PrivateZone{Location: &location}, "", "")
+	if err != nil {
+		return "", []string{}, err
+	}
+	privateZone, err := result.Result(a.pvtZoneClient)
+	if err != nil {
+		return "", []string{}, err
+	}
+	// create a virtual network link to the created private zone
+	a.virtualNetworkLinkClient.CreateOrUpdate(context.TODO(), a.config.ResourceGroup, zoneDomain, virtualNetworkLinkName, privatedns.VirtualNetworkLink{Location: &location}, "", "")
+	return *privateZone.ID, []string{}, err
+}
 
 func (a *azureTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
+	if a.isPrivateZone {
+		return a.deleteHostedPrivateZone(zoneID, zoneDomain)
+	}
 	if _, err := a.zoneClient.Delete(context.TODO(), a.config.ResourceGroup, zoneDomain, ""); err != nil {
 		return fmt.Errorf("unable to delete zone :%s, failed error: %v", zoneDomain, err)
+	}
+	return nil
+}
+
+func (a *azureTestHelper) deleteHostedPrivateZone(zoneID, zoneDomain string) error {
+	result, err := a.pvtZoneClient.Delete(context.TODO(), a.config.ResourceGroup, zoneDomain, "")
+	if err != nil {
+		return fmt.Errorf("unable to delete zone :%s, failed error: %v", zoneDomain, err)
+	}
+	if _, err = result.Result(a.pvtZoneClient); err != nil {
+		return err
+	}
+	// delete the virtual network link with the private zone
+	virtualNetworkLinkName := zoneDomain + "-link"
+	res, err := a.virtualNetworkLinkClient.Delete(context.TODO(), a.config.ResourceGroup, zoneDomain, virtualNetworkLinkName, "")
+	if err != nil {
+		return fmt.Errorf("unable to delete virtual network link %s: %v", virtualNetworkLinkName, err)
+	}
+	if _, err = res.Result(a.virtualNetworkLinkClient); err != nil {
+		return err
 	}
 	return nil
 }
@@ -140,6 +227,9 @@ func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, cred
 				Name: credsSecret.Name,
 			},
 		},
+	}
+	if a.isPrivateZone {
+		resource.Spec.Provider.Type = ""
 	}
 	return resource
 }
@@ -175,4 +265,8 @@ func getAccessToken(cfg *clusterConfig) (*adal.ServicePrincipalToken, error) {
 		return token, nil
 	}
 	return nil, fmt.Errorf("no credentials provided for Azure API")
+}
+
+func getPrivateZoneFlag() bool {
+	return os.Getenv("AZURE_PRIVATE_DNS") != ""
 }

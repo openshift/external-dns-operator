@@ -307,6 +307,32 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		t.Fatalf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testServiceName, err)
 	}
 
+	// test for azure private zone
+	a, ok := helper.(*azureTestHelper)
+	if ok && a.isPrivateZone {
+		customResolver := customResolver("")
+		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
+		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			rec := fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain)
+			ips, err := customResolver.LookupHost(context.TODO(), rec)
+			if err != nil {
+				t.Logf("Waiting for dns record: %s", rec)
+				return false, nil
+			}
+			for _, ip := range ips {
+				if _, ok := serviceIPs[ip]; !ok {
+					return false, nil
+				}
+			}
+			return true, nil
+		}); err != nil {
+			t.Logf("Failed to verify that DNS has been correctly set.")
+		} else {
+			return
+		}
+		t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
+	}
+
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
