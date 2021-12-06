@@ -205,7 +205,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_Service(t *testing.T) {
 }
 
 func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
-	t.Skip("Once ExternalDNS build & push the image this cam be removed.")
+	//t.Skip("Once ExternalDNS build & push the image this cam be removed.")
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
@@ -405,7 +405,7 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 		if err != nil {
 			return false, err
 		}
-
+		fmt.Printf("route1 : %+v", route1)
 		if len(route1.Status.Ingress) < 1 {
 			return false, nil
 		}
