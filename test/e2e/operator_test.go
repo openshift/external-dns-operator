@@ -11,6 +11,9 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+
+	"sigs.k8s.io/yaml"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -496,7 +499,11 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 		if err != nil {
 			return false, err
 		}
-		fmt.Printf("route1 : %+v", route1)
+		data, err := yaml.Marshal(&route1)
+		if err != nil {
+			return false, nil
+		}
+		fmt.Printf("route1 : %v", string(data))
 		if len(route1.Status.Ingress) < 1 {
 			return false, nil
 		}

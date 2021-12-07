@@ -15,6 +15,7 @@ import (
 
 	miekg "github.com/miekg/dns"
 	operatorv1 "github.com/openshift/api/operator/v1"
+	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -279,7 +280,11 @@ func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout t
 			t.Logf("failed to get ingresscontroller %s: %v", name.Name, err)
 			return false, nil
 		}
-		t.Logf("\n Custome ingress controller :  %+v", *ic)
+		data, err := yaml.Marshal(ic)
+		if err != nil {
+			return false, nil
+		}
+		t.Logf("\n Custome ingress controller :  %v", string(data))
 		expected := operatorConditionMap(conditions...)
 		current := operatorConditionMap(ic.Status.Conditions...)
 		return conditionsMatchExpected(expected, current), nil
