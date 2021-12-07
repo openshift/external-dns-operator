@@ -1,6 +1,6 @@
 # cloud.google.com/go v0.94.1
 cloud.google.com/go/compute/metadata
-# github.com/Azure/azure-sdk-for-go v46.4.0+incompatible
+# github.com/Azure/azure-sdk-for-go v48.0.0+incompatible
 ## explicit
 github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns
 github.com/Azure/azure-sdk-for-go/version
@@ -182,6 +182,7 @@ github.com/onsi/gomega/types
 # github.com/openshift/api v0.0.0-20211019100638-b2cbe79f2e4b
 ## explicit
 github.com/openshift/api/config/v1
+github.com/openshift/api/operator/v1
 github.com/openshift/api/route/v1
 # github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 ## explicit

@@ -27,8 +27,6 @@ type awsTestHelper struct {
 	secretKey string
 }
 
-var _ providerTestHelper = &awsTestHelper{}
-
 func newAWSHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &awsTestHelper{}
 	if err := provider.prepareConfigurations(isOpenShiftCI, kubeClient); err != nil {
@@ -56,8 +54,9 @@ func (a *awsTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	}
 }
 
-func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := defaultExternalDNS(name, zoneID, zoneDomain)
+func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain, sourceType, routerName string,
+	credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAWS,
 		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
@@ -65,14 +64,6 @@ func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 				Name: credsSecret.Name,
 			},
 		},
-	}
-	return resource
-}
-
-func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
-	resource := routeExternalDNS(name, zoneID, zoneDomain)
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
 	}
 	return resource
 }
