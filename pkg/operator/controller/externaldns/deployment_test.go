@@ -356,6 +356,104 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:             "No Zones Azure",
+			inputSecretName:  "azuresecret",
+			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeService),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "azure-config-file",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "azuresecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "azure.json",
+										Path: "azure.json",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=azure",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+							"--azure-config-file=/etc/kubernetes/azure.json",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "azure-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7980",
+							"--txt-owner-id=external-dns-test",
+							"--provider=azure-private-dns",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+							"--azure-config-file=/etc/kubernetes/azure.json",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "azure-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+				},
+			},
+		},
+
+		{
 			name:             "Nominal GCP",
 			inputSecretName:  "gcpsecret",
 			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeService),
@@ -1219,68 +1317,6 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Private Zone Azure",
-			inputSecretName:  "azuresecret",
-			inputExternalDNS: testAzureExternalDNSPrivateZones([]string{test.AzurePrivateDNSZone}, operatorv1alpha1.SourceTypeRoute),
-			expectedTemplatePodSpec: corev1.PodSpec{
-				ServiceAccountName: test.OperandName,
-				NodeSelector: map[string]string{
-					osLabel:             linuxOS,
-					masterNodeRoleLabel: "",
-				},
-				Tolerations: []corev1.Toleration{
-					{
-						Key:      masterNodeRoleLabel,
-						Operator: corev1.TolerationOpExists,
-						Effect:   corev1.TaintEffectNoSchedule,
-					},
-				},
-				Volumes: []corev1.Volume{
-					{
-						Name: "azure-config-file",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
-								Items: []corev1.KeyToPath{
-									{
-										Key:  "azure.json",
-										Path: "azure.json",
-									},
-								},
-							},
-						},
-					},
-				},
-				Containers: []corev1.Container{
-					{
-						Name:  "external-dns-n64ch5cch658h64bq",
-						Image: "quay.io/test/external-dns:latest",
-						Args: []string{
-							"--metrics-address=127.0.0.1:7979",
-							"--txt-owner-id=external-dns-test",
-							"--zone-id-filter=/subscriptions/xxxx/resourceGroups/test-az-2f9kj-rg/providers/Microsoft.Network/privateDnsZones/test-az.example.com",
-							"--provider=azure-private-dns",
-							"--source=openshift-route",
-							"--policy=sync",
-							"--registry=txt",
-							"--log-level=debug",
-							"--namespace=testns",
-							"--ignore-hostname-annotation",
-							"--azure-config-file=/etc/kubernetes/azure.json",
-							"--txt-prefix=external-dns-",
-						},
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      "azure-config-file",
-								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
 			name:             "No credentials Azure",
 			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1317,6 +1353,92 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "No zones Azure",
+			inputSecretName:  "azuresecret",
+			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "azure-config-file",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "azuresecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "azure.json",
+										Path: "azure.json",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--provider=azure",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--azure-config-file=/etc/kubernetes/azure.json",
+							"--txt-prefix=external-dns-",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "azure-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+					{
+						Name:  "external-dns-n56fh6dh59ch5fcq",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7980",
+							"--txt-owner-id=external-dns-test",
+							"--provider=azure-private-dns",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--namespace=testns",
+							"--ignore-hostname-annotation",
+							"--azure-config-file=/etc/kubernetes/azure.json",
+							"--txt-prefix=external-dns-",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "azure-config-file",
+								ReadOnly:  true,
+								MountPath: "/etc/kubernetes",
+							},
+						},
+					},
+				},
+			},
+		},
+
 		{
 			name:             "Nominal GCP",
 			inputSecretName:  "gcpsecret",
@@ -2996,6 +3118,10 @@ func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string, sour
 
 func testAzureExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
 	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAzure, nil, "")
+}
+
+func testAzureExternalDNSNoZones(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAzure, source, allSvcTypes, nil, "")
 }
 
 func testAzureExternalDNSPrivateZones(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {

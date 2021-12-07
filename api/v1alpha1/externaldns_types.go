@@ -90,6 +90,12 @@ type ExternalDNSSpec struct {
 	// will cause all DNS records in the previous
 	// zone(s) to be left behind.
 	//
+	// An empty list of zones means that the ExternalDNS will
+	// publish to all zones (i.e public and private), unless the
+	// operator runs on a platform on which the operator can
+	// lookup a default set of zones e.g on OpenShift with its cluster
+	// DNS config
+	//
 	// +kubebuilder:validation:MaxItems=10
 	// +optional
 	Zones []string `json:"zones,omitempty"`

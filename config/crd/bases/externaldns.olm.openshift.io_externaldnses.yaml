@@ -410,7 +410,11 @@ spec:
               zones:
                 description: "Zones describes which DNS Zone IDs ExternalDNS should
                   publish records to. \n Updating this field after creation will cause
-                  all DNS records in the previous zone(s) to be left behind."
+                  all DNS records in the previous zone(s) to be left behind. \n An
+                  empty list of zones means that the ExternalDNS will publish to all
+                  zones (i.e public and private), unless the operator runs on a platform
+                  on which the operator can lookup a default set of zones e.g on OpenShift
+                  with its cluster DNS config"
                 items:
                   type: string
                 maxItems: 10

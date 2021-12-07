@@ -37,6 +37,7 @@ const (
 	defaultMetricsStartPort = 7979
 	defaultConfigMountPath  = "/etc/kubernetes"
 	defaultTXTRecordPrefix  = "external-dns-"
+	providerArg             = "--provider="
 	//
 	// AWS
 	//
@@ -78,7 +79,7 @@ const (
 // externalDNSContainerBuilder builds the definition of the containers for ExternalDNS POD
 type externalDNSContainerBuilder struct {
 	image          string
-	Provider       string
+	provider       string
 	source         string
 	volumes        []corev1.Volume
 	secretName     string
@@ -103,7 +104,7 @@ func (b *externalDNSContainerBuilder) buildSeq(seq int, zone string) (*corev1.Co
 	if err != nil {
 		return nil, err
 	}
-	b.fillProviderSpecificFields(container)
+	b.fillProviderSpecificFields(zone, container)
 	return container, nil
 }
 
@@ -123,7 +124,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
-		fmt.Sprintf("--provider=%s", b.Provider),
+		fmt.Sprintf("--provider=%s", b.provider),
 		fmt.Sprintf("--source=%s", b.source),
 		"--policy=sync",
 		"--registry=txt",
@@ -250,14 +251,14 @@ func combineRegexps(patterns []string) string {
 }
 
 // fillProviderSpecificFields fills the fields specific to the provider of given ExternalDNS
-func (b *externalDNSContainerBuilder) fillProviderSpecificFields(container *corev1.Container) {
-	switch b.Provider {
+func (b *externalDNSContainerBuilder) fillProviderSpecificFields(zone string, container *corev1.Container) {
+	switch b.provider {
 	case externalDNSProviderTypeAWS:
 		b.fillAWSFields(container)
 	case externalDNSProviderTypeAzure:
-		b.fillAzureFields(container)
+		b.fillAzureFields(zone, container)
 	case externalDNSProviderTypeAzurePrivate:
-		b.fillAzureFields(container)
+		b.fillAzureFields(zone, container)
 	case externalDNSProviderTypeGCP:
 		b.fillGCPFields(container)
 	case externalDNSProviderTypeBlueCat:
@@ -304,10 +305,21 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 }
 
 // fillAzureFields fills the given container with the data specific to Azure provider
-func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Container) {
+func (b *externalDNSContainerBuilder) fillAzureFields(zone string, container *corev1.Container) {
 	// https://github.com/kubernetes-sigs/external-dns/issues/2082
 	container.Args = addTXTPrefixFlag(container.Args)
 
+	// check the zone field for the keyword 'privatednszones', this ensures that the
+	// provider 'azure-private-dns' is passed to the container
+	// to set the operand provider correctly
+	if strings.Contains(strings.ToLower(zone), azurePrivateDNSZonesResourceSubStr) {
+		for i, x := range container.Args {
+			if strings.Contains(x, providerArg) {
+				container.Args[i] = providerArg + externalDNSProviderTypeAzurePrivate
+				break
+			}
+		}
+	}
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume

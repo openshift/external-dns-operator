@@ -18,7 +18,6 @@ package externaldnscontroller
 
 import (
 	"context"
-	"strings"
 
 	"fmt"
 	"sort"
@@ -50,7 +49,7 @@ const (
 	masterNodeRoleLabel                 = "node-role.kubernetes.io/master"
 	osLabel                             = "kubernetes.io/os"
 	linuxOS                             = "linux"
-	privateDNSZones                     = "privatednszones"
+	azurePrivateDNSZonesResourceSubStr  = "privatednszones"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
@@ -185,7 +184,7 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 
 	cbld := &externalDNSContainerBuilder{
 		image:          image,
-		Provider:       provider,
+		provider:       provider,
 		source:         source,
 		secretName:     secretName,
 		volumes:        volumes,
@@ -193,22 +192,25 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 		isOpenShift:    isOpenShift,
 		platformStatus: platformStatus,
 	}
+
 	if len(externalDNS.Spec.Zones) == 0 {
-		container, err := cbld.build("")
-		if err != nil {
-			return nil, fmt.Errorf("failed to build container: %w", err)
+		// an empty list means publish to all zones
+		// this is a special case for Azure
+		// both public and private zones will need to be published to
+		providerList := []string{provider}
+		if cbld.provider == externalDNSProviderTypeAzure {
+			providerList = append(providerList, externalDNSProviderTypeAzurePrivate)
 		}
-		depl.Spec.Template.Spec.Containers = []corev1.Container{*container}
+		for _, p := range providerList {
+			cbld.provider = p
+			container, err := cbld.build("")
+			if err != nil {
+				return nil, fmt.Errorf("failed to build container: %w", err)
+			}
+			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
+		}
 	} else {
 		for _, zone := range externalDNS.Spec.Zones {
-			// check each zone for the keyword 'privatednszones', if the provider is Azure
-			// this ensures that the provider 'azure-private-dns' is passed to the container
-			// to set the operand provider correctly
-			if cbld.Provider == externalDNSProviderTypeAzure {
-				if strings.Contains(strings.ToLower(zone), privateDNSZones) {
-					cbld.Provider = externalDNSProviderTypeAzurePrivate
-				}
-			}
 			container, err := cbld.build(zone)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build container for zone %s: %w", zone, err)
