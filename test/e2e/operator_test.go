@@ -488,15 +488,13 @@ func verifyOpenShiftRouteSource(t *testing.T, canonicalName, host string) {
 	}
 }
 
-func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, error) {
+func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (canonicalName string, err error) {
 	route1 := routev1.Route{}
-	canonicalName := ""
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+	if err = wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		if err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: route1Name.Namespace,
 			Name:      route1Name.Name,
-		}, &route1)
-		if err != nil {
+		}, &route1); err != nil {
 			return false, err
 		}
 		data, err := yaml.Marshal(&route1)
@@ -504,7 +502,7 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 			return false, nil
 		}
 		fmt.Printf("route1 : %v", string(data))
-		if len(route1.Status.Ingress) < 1 {
+		if len(route1.Status.Ingress) != 2 {
 			return false, nil
 		}
 
@@ -514,11 +512,11 @@ func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, erro
 			}
 		}
 		if canonicalName == "" {
-			return false, fmt.Errorf("No RouterCanonicalHostname found")
+			return false, nil
 		}
 		return true, nil
 	}); err != nil {
-		return "", err
+		return
 	}
-	return canonicalName, nil
+	return
 }

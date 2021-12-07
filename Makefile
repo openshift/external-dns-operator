@@ -46,7 +46,6 @@ SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
 GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
 
 E2E_TIMEOUT ?= 1h
-E2E_SKIP_CLOUD_PROVIDERS="gcp,aws"
 
 all: build
 
@@ -87,7 +86,7 @@ test: manifests generate fmt vet ## Run tests.
 
 .PHONY: test-e2e
 test-e2e:
-	go test \
+	E2E_SKIP_CLOUD_PROVIDERS="gcp, aws" go test \
 	$(GOBUILD_VERSION_ARGS) \
 	-timeout $(E2E_TIMEOUT) \
 	-count 1 \
