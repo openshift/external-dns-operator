@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"net"
 	"os"
 	"reflect"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	miekg "github.com/miekg/dns"
+
 	operatorv1 "github.com/openshift/api/operator/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -32,15 +32,13 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 )
 
-const dialTimeout = 10 * time.Second
-
 type providerTestHelper interface {
 	ensureHostedZone(string) (string, []string, error)
 	deleteHostedZone(string, string) error
 	platform() string
 	makeCredentialsSecret(namespace string) *corev1.Secret
-	buildExternalDNS(name, zoneID, zoneDomain, sourceType, routerName string,
-		credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
+	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
+	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -160,65 +158,54 @@ func conditionsMatchExpected(expected, actual map[string]string) bool {
 	return reflect.DeepEqual(expected, filtered)
 }
 
-func defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName string) operatorv1alpha1.ExternalDNS {
-	resource := operatorv1alpha1.ExternalDNS{
+func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
+	return operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: operatorv1alpha1.ExternalDNSSpec{
 			Zones: []string{zoneID},
-		},
-	}
-
-	switch sourceType {
-	case "Service":
-		resource.Spec.Source = getServiceTypeSource(zoneDomain)
-	case "OpenShiftRoute":
-		resource.Spec.Source = getOpenshiftRouteTypeSource(routerName, zoneDomain)
-		// TODO : test with default as routername for default router
-		if routerName == "" || routerName == "default" {
-			resource.Spec.Source.OpenShiftRoute = nil
-		}
-	default:
-		//TODO : we should return error and fail the test on Source type
-		fmt.Errorf("source type not support : %s", sourceType)
-	}
-
-	return resource
-}
-
-func getServiceTypeSource(zoneDomain string) operatorv1alpha1.ExternalDNSSource {
-	return operatorv1alpha1.ExternalDNSSource{
-		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-			Type: operatorv1alpha1.SourceTypeService,
-			Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
-				ServiceType: []corev1.ServiceType{
-					corev1.ServiceTypeLoadBalancer,
-					corev1.ServiceTypeClusterIP,
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeService,
+					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+						ServiceType: []corev1.ServiceType{
+							corev1.ServiceTypeLoadBalancer,
+							corev1.ServiceTypeClusterIP,
+						},
+					},
+					AnnotationFilter: map[string]string{
+						"external-dns.mydomain.org/publish": "yes",
+					},
 				},
-			},
-			AnnotationFilter: map[string]string{
-				"external-dns.mydomain.org/publish": "yes",
+				HostnameAnnotationPolicy: "Ignore",
+				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
-		HostnameAnnotationPolicy: "Ignore",
-		FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 	}
 }
 
-func getOpenshiftRouteTypeSource(routerName, zoneDomain string) operatorv1alpha1.ExternalDNSSource {
-	return operatorv1alpha1.ExternalDNSSource{
-		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-			Type: operatorv1alpha1.SourceTypeRoute,
-			AnnotationFilter: map[string]string{
-				"external-dns.mydomain.org/publish": "yes",
-			},
-			OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
-				RouterName: routerName,
+func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+	return operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Zones: []string{zoneID},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type: operatorv1alpha1.SourceTypeRoute,
+					AnnotationFilter: map[string]string{
+						"external-dns.mydomain.org/publish": "yes",
+					},
+					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+						RouterName: routerName,
+					},
+				},
+				HostnameAnnotationPolicy: "Ignore",
+				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
-		HostnameAnnotationPolicy: "Allow",
-		FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 	}
 }
 
@@ -234,19 +221,35 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 	return secret.Data, nil
 }
 
-func customResolver(nameserver string) *net.Resolver {
-	return &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := net.Dialer{
-				Timeout: dialTimeout,
-			}
-			if len(nameserver) > 0 {
-				return d.DialContext(ctx, network, fmt.Sprintf("%s:53", nameserver))
-			}
-			return d.DialContext(ctx, network, address)
-		},
+func lookupCNAME(host, server string) ([]string, error) {
+	c := miekg.Client{}
+	m := miekg.Msg{}
+	m.SetQuestion(host+".", miekg.TypeCNAME)
+	r, _, err := c.Exchange(&m, server+":53")
+	if err != nil {
+		return nil, err
 	}
+	if len(r.Answer) == 0 {
+		return nil, fmt.Errorf("No results for the host :%s in nameServer : %s ", host, server)
+	}
+	var cnames []string
+	for _, ans := range r.Answer {
+		rec := ans.(*miekg.CNAME)
+		cnames = append(cnames, rec.Target)
+	}
+	return cnames, nil
+}
+
+func equalFQDN(name1, name2 string) bool {
+	index1 := strings.LastIndex(name1, ".")
+	index2 := strings.LastIndex(name2, ".")
+	if index1 != len(name1)-1 {
+		name1 += "."
+	}
+	if index2 != len(name2)-1 {
+		name2 += "."
+	}
+	return name1 == name2
 }
 
 func assertIngressControllerDeleted(t *testing.T, cl client.Client, ing *operatorv1.IngressController) {
@@ -256,33 +259,6 @@ func assertIngressControllerDeleted(t *testing.T, cl client.Client, ing *operato
 	} else {
 		t.Logf("deleted ingresscontroller %s", ing.Name)
 	}
-}
-
-func operatorConditionMap(conditions ...operatorv1.OperatorCondition) map[string]string {
-	conds := map[string]string{}
-	for _, cond := range conditions {
-		conds[cond.Type] = string(cond.Status)
-	}
-	return conds
-}
-
-func waitForIngressControllerCondition(t *testing.T, cl client.Client, timeout time.Duration, name types.NamespacedName) error {
-	conditions := []operatorv1.OperatorCondition{
-		{Type: "Admitted", Status: operatorv1.ConditionTrue},
-		{Type: operatorv1.IngressControllerAvailableConditionType, Status: operatorv1.ConditionTrue},
-		{Type: operatorv1.LoadBalancerManagedIngressConditionType, Status: operatorv1.ConditionFalse},
-		{Type: operatorv1.DNSManagedIngressConditionType, Status: operatorv1.ConditionFalse},
-	}
-	return wait.PollImmediate(15*time.Second, timeout, func() (bool, error) {
-		ic := &operatorv1.IngressController{}
-		if err := cl.Get(context.TODO(), name, ic); err != nil {
-			t.Logf("failed to get ingresscontroller %s: %v", name.Name, err)
-			return false, nil
-		}
-		expected := operatorConditionMap(conditions...)
-		current := operatorConditionMap(ic.Status.Conditions...)
-		return conditionsMatchExpected(expected, current), nil
-	})
 }
 
 func deleteIngressController(t *testing.T, cl client.Client, ic *operatorv1.IngressController, timeout time.Duration) error {
@@ -323,35 +299,4 @@ func newHostNetworkController(name types.NamespacedName, domain string) *operato
 			},
 		},
 	}
-}
-
-func lookupCNAME(host, server string) ([]string, error) {
-	c := miekg.Client{}
-	m := miekg.Msg{}
-	m.SetQuestion(host+".", miekg.TypeCNAME)
-	r, _, err := c.Exchange(&m, server+":53")
-	if err != nil {
-		return nil, err
-	}
-	if len(r.Answer) == 0 {
-		return nil, fmt.Errorf("No results for the host :%s in nameServer : %s ", host, server)
-	}
-	var cname []string
-	for _, ans := range r.Answer {
-		rec := ans.(*miekg.CNAME)
-		cname = append(cname, rec.Target)
-	}
-	return cname, nil
-}
-
-func equalFQDN(name1, name2 string) bool {
-	index1 := strings.LastIndex(name1, ".")
-	index2 := strings.LastIndex(name2, ".")
-	if index1 != len(name1)-1 {
-		name1 += "."
-	}
-	if index2 != len(name2)-1 {
-		name2 += "."
-	}
-	return name1 == name2
 }

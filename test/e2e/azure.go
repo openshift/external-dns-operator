@@ -38,6 +38,8 @@ type azureTestHelper struct {
 	zoneClient dns.ZonesClient
 }
 
+var _ providerTestHelper = &azureTestHelper{}
+
 // Build the necessary object for the provider test
 // for Azure Need the credentials ref clusterConfig
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
@@ -129,9 +131,8 @@ func (a *azureTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 	return nil
 }
 
-func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, sourceType, routerName string,
-	credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
-	resource := defaultExternalDNS(name, zoneID, zoneDomain, sourceType, routerName)
+func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := defaultExternalDNS(name, zoneID, zoneDomain)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAzure,
 		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
@@ -139,6 +140,14 @@ func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, sour
 				Name: credsSecret.Name,
 			},
 		},
+	}
+	return resource
+}
+
+func (a *azureTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAzure,
 	}
 	return resource
 }
