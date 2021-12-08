@@ -17,9 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
@@ -433,14 +432,11 @@ type ExternalDNSSourceUnion struct {
 	// +required
 	Type ExternalDNSSourceType `json:"type"`
 
-	// AnnotationFilter describes an annotation filter
-	// used to filter which source instance resources
-	// ExternalDNS publishes records for.
-	// The annotation filter uses label selector semantics
-	// against source resource annotations.
+	// LabelFilter specifies a label selector used to filter which source instance resources ExternalDNS publishes
+	// records for. The filter uses label selector semantics against source resource labels.
 	//
 	// +optional
-	AnnotationFilter map[string]string `json:"annotationFilter,omitempty"`
+	LabelFilter *metav1.LabelSelector `json:"labelFilter,omitempty"`
 
 	// Service describes source configuration options specific
 	// to the service source resource.

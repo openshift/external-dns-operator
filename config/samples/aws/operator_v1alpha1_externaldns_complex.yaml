@@ -34,9 +34,9 @@ spec:
       - LoadBalancer
       - ClusterIP
       - NodePort
-    annotationFilter:
-      external-dns.mydomain.org/publish: "yes"
-    # Allow the hostname annotation on the sources.
+    labelFilter:
+      matchLabels:
+        external-dns.mydomain.org/publish: "yes" # Allow the hostname annotation on the sources.
     # Note that it's possible to have many hostnames in the annotation.
     hostnameAnnotation: "Allow"
     # FQDNTemplate will be used for the sources NOT annotated with hostname.

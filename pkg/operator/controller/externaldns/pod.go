@@ -18,12 +18,12 @@ package externaldnscontroller
 
 import (
 	"fmt"
-
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -135,12 +135,8 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--zone-id-filter=%s", zone))
 	}
 
-	if len(b.externalDNS.Spec.Source.AnnotationFilter) > 0 {
-		annotationFilter := ""
-		for key, value := range b.externalDNS.Spec.Source.AnnotationFilter {
-			annotationFilter += fmt.Sprintf("%s=%s,", key, value)
-		}
-		args = append(args, fmt.Sprintf("--annotation-filter=%s", annotationFilter[0:len(annotationFilter)-1]))
+	if b.externalDNS.Spec.Source.LabelFilter != nil {
+		args = append(args, fmt.Sprintf("--label-filter=%s", metav1.FormatLabelSelector(b.externalDNS.Spec.Source.LabelFilter)))
 	}
 
 	if b.externalDNS.Spec.Source.Service != nil && len(b.externalDNS.Spec.Source.Service.ServiceType) > 0 {

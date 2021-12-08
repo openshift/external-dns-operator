@@ -38,6 +38,7 @@ import (
 	"github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 var (
@@ -964,7 +965,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter",
-			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes,app in (web,external)"), operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -991,7 +992,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--policy=sync",
 							"--registry=txt",
 							"--log-level=debug",
-							"--annotation-filter=testannotation=yes",
+							"--label-filter=app in (external,web),testannotation=yes",
 							"--service-type-filter=NodePort",
 							"--service-type-filter=LoadBalancer",
 							"--service-type-filter=ClusterIP",
@@ -1797,7 +1798,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter",
-			inputExternalDNS: testAWSExternalDNSAnnotationFilter(map[string]string{"testannotation": "yes"}, operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes"), operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1824,7 +1825,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--policy=sync",
 							"--registry=txt",
 							"--log-level=debug",
-							"--annotation-filter=testannotation=yes",
+							"--label-filter=testannotation=yes",
 							"--ignore-hostname-annotation",
 							"--txt-prefix=external-dns-",
 						},
@@ -2967,7 +2968,7 @@ func testContainerWithArgs(args []string) corev1.Container {
 func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 	source operatorv1alpha1.ExternalDNSSourceType,
 	svcType []corev1.ServiceType,
-	annotationFilter map[string]string,
+	labelFilter *metav1.LabelSelector,
 	hostnamePolicy operatorv1alpha1.HostnameAnnotationPolicy,
 	fqdnTemplate []string,
 	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
@@ -2977,7 +2978,7 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 			Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
 				ServiceType: svcType,
 			},
-			AnnotationFilter: annotationFilter,
+			LabelFilter: labelFilter,
 		},
 		HostnameAnnotationPolicy: hostnamePolicy,
 		FQDNTemplate:             fqdnTemplate,
@@ -2989,7 +2990,7 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 			OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
 				RouterName: routerName,
 			},
-			AnnotationFilter: annotationFilter,
+			LabelFilter: labelFilter,
 		},
 		HostnameAnnotationPolicy: hostnamePolicy,
 	}
@@ -3056,9 +3057,9 @@ func testAWSExternalDNSManyFQDN() *operatorv1alpha1.ExternalDNS {
 	return extdns
 }
 
-func testAWSExternalDNSAnnotationFilter(annotationFilter map[string]string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+func testAWSExternalDNSLabelFilter(selector *metav1.LabelSelector, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
 	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, nil, "")
-	extdns.Spec.Source.AnnotationFilter = annotationFilter
+	extdns.Spec.Source.LabelFilter = selector
 	return extdns
 }
 

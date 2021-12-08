@@ -17,6 +17,8 @@ limitations under the License.
 package utils
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
@@ -27,4 +29,12 @@ func ManagedCredentialsProvider(e *operatorv1alpha1.ExternalDNS) bool {
 		return true
 	}
 	return false
+}
+
+func MustParseLabelSelector(input string) *metav1.LabelSelector {
+	selector, err := metav1.ParseToLabelSelector(input)
+	if err != nil {
+		panic(err)
+	}
+	return selector
 }
