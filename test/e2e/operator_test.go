@@ -371,7 +371,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("failed to create ingresscontroller: %v", err)
 	}
-	defer assertIngressControllerDeleted(t, kubeClient, ing)
+	defer kubeClient.Delete(context.TODO(), ing)
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
 	t.Logf("Creating external dns instance : %s", externalDnsServiceName)

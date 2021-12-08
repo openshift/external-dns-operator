@@ -15,8 +15,6 @@ import (
 	miekg "github.com/miekg/dns"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -250,38 +248,6 @@ func equalFQDN(name1, name2 string) bool {
 		name2 += "."
 	}
 	return name1 == name2
-}
-
-func assertIngressControllerDeleted(t *testing.T, cl client.Client, ing *operatorv1.IngressController) {
-	t.Helper()
-	if err := deleteIngressController(t, cl, ing, 2*time.Minute); err != nil {
-		t.Fatalf("WARNING: cloud resources may have been leaked! failed to delete ingresscontroller %s: %v", ing.Name, err)
-	} else {
-		t.Logf("deleted ingresscontroller %s", ing.Name)
-	}
-}
-
-func deleteIngressController(t *testing.T, cl client.Client, ic *operatorv1.IngressController, timeout time.Duration) error {
-	t.Helper()
-	name := types.NamespacedName{Namespace: ic.Namespace, Name: ic.Name}
-	if err := cl.Delete(context.TODO(), ic); err != nil {
-		return fmt.Errorf("failed to delete ingresscontroller: %v", err)
-	}
-
-	err := wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
-		if err := cl.Get(context.TODO(), name, ic); err != nil {
-			if errors.IsNotFound(err) {
-				return true, nil
-			}
-			t.Logf("failed to delete ingress controller %s/%s: %v", ic.Namespace, ic.Name, err)
-			return false, nil
-		}
-		return false, nil
-	})
-	if err != nil {
-		return fmt.Errorf("timed out waiting for ingresscontroller to be deleted: %v", err)
-	}
-	return nil
 }
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
