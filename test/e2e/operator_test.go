@@ -217,15 +217,13 @@ func TestExternalDNSWithRoute(t *testing.T) {
 
 		// verify dns records has been created for the route host.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			cnames, err := lookupCNAMEMiekg(testRouteHost, nameSrv)
+			cname, err := lookupCNAMEMiekg(testRouteHost, nameSrv)
 			if err != nil {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
-			for _, cname := range cnames {
-				if equalFQDN(cname, targetRouterCName) {
-					return true, nil
-				}
+			if equalFQDN(cname, targetRouterCName) {
+				return true, nil
 			}
 			return false, nil
 		}); err != nil {
