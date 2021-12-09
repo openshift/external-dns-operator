@@ -219,23 +219,34 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 	return secret.Data, nil
 }
 
-func lookupCNAME(host, server string) ([]string, error) {
+// lookupCNAMEMiekg retrieves the first canonical name of the given host.
+// This function is different from net.LookupCNAME.
+// net.LookupCNAME assumes the nameserver used is the recursive resolver (https://github.com/golang/go/blob/master/src/net/dnsclient_unix.go#L637).
+// Therefore CNAME is tried to be resolved to its last canonical name, the quote from doc:
+// "A canonical name is the final name after following zero or more CNAME records."
+// This may be a problem if the default nameserver (from host /etc/resolv.conf, default lookup order is files,dns)
+// is replaced (custom net.Resolver with overridden Dial function) with not recursive resolver
+// and the other CNAMEs down to the last one are not known to this replaced nameserver.
+// This may result in "no such host" error.
+func lookupCNAME(host, server string) (string, error) {
 	c := miekg.Client{}
 	m := miekg.Msg{}
-	m.SetQuestion(host+".", miekg.TypeCNAME)
+	if host[len(host)-1] != '.' {
+		host += "."
+	}
+	m.SetQuestion(host, miekg.TypeCNAME)
 	r, _, err := c.Exchange(&m, server+":53")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if len(r.Answer) == 0 {
-		return nil, fmt.Errorf("No results for the host :%s in nameServer : %s ", host, server)
+		return "", fmt.Errorf("No results for the host :%s in nameServer : %s ", host, server)
 	}
-	var cnames []string
-	for _, ans := range r.Answer {
-		rec := ans.(*miekg.CNAME)
-		cnames = append(cnames, rec.Target)
+	cname, ok := r.Answer[0].(*miekg.CNAME)
+	if !ok {
+		return "", fmt.Errorf("not a CNAME record")
 	}
-	return cnames, nil
+	return cname.Target, nil
 }
 
 func equalFQDN(name1, name2 string) bool {

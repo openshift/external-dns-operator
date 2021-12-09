@@ -13,6 +13,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -221,15 +222,13 @@ func TestExternalDNSWithRoute(t *testing.T) {
 
 		// verify dns records has been created for the route host.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			cnames, err := lookupCNAME(testRouteHost, nameSrv)
+			cname, err := lookupCNAME(testRouteHost, nameSrv)
 			if err != nil {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
-			for _, cname := range cnames {
-				if equalFQDN(cname, targetRouterCName) {
-					return true, nil
-				}
+			if equalFQDN(cname, targetRouterCName) {
+				return true, nil
 			}
 			return false, nil
 		}); err != nil {
@@ -415,7 +414,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	defer kubeClient.Delete(context.TODO(), route)
 	canonicalName := ""
 	t.Logf("Getting canonicalName for the route :%s ", routeName.Name)
-	if canonicalName, err = fetchRouterCanonicalHostname(routeName); err != nil {
+	if canonicalName, err = fetchRouterCanonicalHostname(t, routeName); err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
 	t.Logf("canonicalName  : %s for the route :%s ", routeName.Name, canonicalName)
@@ -429,16 +428,14 @@ func verifyOpenShiftRouteSource(t *testing.T, canonicalName, host string) {
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for cname record in nameserver: %s", nameSrv)
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			cnames, err := lookupCNAME(host, nameSrv)
+			cname, err := lookupCNAME(host, nameSrv)
 			if err != nil {
 				t.Logf("cname lookup failed for nameserver : %s , error : %v", nameSrv, err)
 				return false, nil
 			}
-			for _, cname := range cnames {
-				if strings.Contains(cname, canonicalName) {
-					recordExist = true
-					return true, nil
-				}
+			if strings.Contains(cname, canonicalName) {
+				recordExist = true
+				return true, nil
 			}
 			return false, nil
 		}); err != nil {
@@ -453,27 +450,29 @@ func verifyOpenShiftRouteSource(t *testing.T, canonicalName, host string) {
 	}
 }
 
-func fetchRouterCanonicalHostname(route1Name types.NamespacedName) (string, error) {
-	route1 := routev1.Route{}
+func fetchRouterCanonicalHostname(t *testing.T, route1Name types.NamespacedName) (string, error) {
+	customeRoute := routev1.Route{}
 	canonicalName := ""
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: route1Name.Namespace,
 			Name:      route1Name.Name,
-		}, &route1)
+		}, &customeRoute)
 		if err != nil {
 			return false, err
 		}
-		if len(route1.Status.Ingress) < 1 {
+		if len(customeRoute.Status.Ingress) < 1 {
+			t.Logf("No ingress found in route, retrying..")
 			return false, nil
 		}
 
-		for _, ingress := range route1.Status.Ingress {
+		for _, ingress := range customeRoute.Status.Ingress {
 			if strings.Contains(ingress.RouterCanonicalHostname, hostedZoneDomain) {
 				canonicalName = ingress.RouterCanonicalHostname
 			}
 		}
 		if canonicalName == "" {
+			t.Logf("unable to fetch the canonicalHostname, retrying..")
 			return false, nil
 		}
 		return true, nil

@@ -39,7 +39,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
     * Run the following command:
       ```bash
       # for AWS
-      $ kubectl apply -k config/samples/aws`
+      $ kubectl apply -k config/samples/aws
       ```
        *Note*: For other providers, see `config/samples/`.
 
