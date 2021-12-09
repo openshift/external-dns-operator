@@ -376,7 +376,7 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	defer kubeClient.Delete(context.TODO(), ing)
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
-	t.Logf("Creating external dns instance : %s", externalDnsServiceName)
+	t.Logf("Creating external dns instance: %s", externalDnsServiceName)
 	extDNS := helper.buildOpenShiftExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain, openshiftRouterName)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
@@ -389,14 +389,14 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 
 	// The first route should be admitted
 	if err = kubeClient.Create(context.TODO(), route); err != nil {
-		t.Fatalf("failed to create route: %v", err)
+		t.Fatalf("Failed to create route: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), route)
 	canonicalName, err := fetchRouterCanonicalHostname(t, routeName)
 	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
-	t.Logf("canonicalName  : %s for the route :%s ", routeName.Name, canonicalName)
+	t.Logf("CanonicalName: %s for the route: %s ", routeName.Name, canonicalName)
 	verifyCNAMERecordForOpenshiftRoute(t, canonicalName, host)
 }
 
@@ -409,7 +409,7 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 			cname, err := lookupCNAME(host, nameSrv)
 			if err != nil {
-				t.Logf("cname lookup failed for nameserver : %s , error : %v", nameSrv, err)
+				t.Logf("Cname lookup failed for nameserver: %s , error: %v", nameSrv, err)
 				return false, nil
 			}
 			if strings.Contains(cname, canonicalName) {
@@ -429,13 +429,13 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 	}
 }
 
-func fetchRouterCanonicalHostname(t *testing.T, route1Name types.NamespacedName) (string, error) {
+func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName) (string, error) {
 	route := routev1.Route{}
 	canonicalName := ""
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
-			Namespace: route1Name.Namespace,
-			Name:      route1Name.Name,
+			Namespace: routeName.Namespace,
+			Name:      routeName.Name,
 		}, &route)
 		if err != nil {
 			return false, err
@@ -451,11 +451,8 @@ func fetchRouterCanonicalHostname(t *testing.T, route1Name types.NamespacedName)
 				return true, nil
 			}
 		}
-		if canonicalName == "" {
-			t.Logf("unable to fetch the canonicalHostname, retrying..")
-			return false, nil
-		}
-		return true, nil
+		t.Logf("Unable to fetch the canonicalHostname, retrying..")
+		return false, nil
 	}); err != nil {
 		return "", err
 	}
