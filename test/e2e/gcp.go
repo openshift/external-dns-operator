@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -8,24 +9,22 @@ import (
 	"strconv"
 	"strings"
 
+	configv1 "github.com/openshift/api/config/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"google.golang.org/api/dns/v1"
+	"google.golang.org/api/option"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-
-	"google.golang.org/api/option"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	configv1 "github.com/openshift/api/config/v1"
-	dns "google.golang.org/api/dns/v1"
 )
 
 type gcpTestHelper struct {
-	dnsService      *dns.Service
-	gcpCredentials  string
-	gcpProjectId    string
-	providerOptions []string
+	dnsService     *dns.Service
+	gcpCredentials string
+	gcpProjectId   string
 }
 
 var _ providerTestHelper = &gcpTestHelper{}
