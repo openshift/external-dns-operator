@@ -38,16 +38,18 @@ import (
 )
 
 const (
-	externalDNSProviderTypeAWS      = "aws"
-	externalDNSProviderTypeGCP      = "google"
-	externalDNSProviderTypeAzure    = "azure"
-	externalDNSProviderTypeBlueCat  = "bluecat"
-	externalDNSProviderTypeInfoblox = "infoblox"
-	appNameLabel                    = "app.kubernetes.io/name"
-	appInstanceLabel                = "app.kubernetes.io/instance"
-	masterNodeRoleLabel             = "node-role.kubernetes.io/master"
-	osLabel                         = "kubernetes.io/os"
-	linuxOS                         = "linux"
+	externalDNSProviderTypeAWS          = "aws"
+	externalDNSProviderTypeGCP          = "google"
+	externalDNSProviderTypeAzure        = "azure"
+	externalDNSProviderTypeAzurePrivate = "azure-private-dns"
+	externalDNSProviderTypeBlueCat      = "bluecat"
+	externalDNSProviderTypeInfoblox     = "infoblox"
+	appNameLabel                        = "app.kubernetes.io/name"
+	appInstanceLabel                    = "app.kubernetes.io/instance"
+	masterNodeRoleLabel                 = "node-role.kubernetes.io/master"
+	osLabel                             = "kubernetes.io/os"
+	linuxOS                             = "linux"
+	azurePrivateDNSZonesResourceSubStr  = "privatednszones"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
@@ -190,12 +192,23 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 		isOpenShift:    isOpenShift,
 		platformStatus: platformStatus,
 	}
+
 	if len(externalDNS.Spec.Zones) == 0 {
-		container, err := cbld.build("")
-		if err != nil {
-			return nil, fmt.Errorf("failed to build container: %w", err)
+		// an empty list means publish to all zones
+		// this is a special case for Azure
+		// both public and private zones will need to be published to
+		providerList := []string{provider}
+		if cbld.provider == externalDNSProviderTypeAzure {
+			providerList = append(providerList, externalDNSProviderTypeAzurePrivate)
 		}
-		depl.Spec.Template.Spec.Containers = []corev1.Container{*container}
+		for _, p := range providerList {
+			cbld.provider = p
+			container, err := cbld.build("")
+			if err != nil {
+				return nil, fmt.Errorf("failed to build container: %w", err)
+			}
+			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
+		}
 	} else {
 		for _, zone := range externalDNS.Spec.Zones {
 			container, err := cbld.build(zone)
