@@ -356,7 +356,10 @@ func customResolver(nameserver string) *net.Resolver {
 	}
 }
 
-func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
+// Test to verify the ExternalDNS should create the CNAME and txt record for the OpenshiftRoute
+// with multiple ingress controller deployed in Openshift.
+// the canonical name of route should resolve to the CNAME of Host,
+func TestExternalDNSCustomIngress(t *testing.T) {
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
@@ -365,7 +368,7 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	}
 	openshiftRouterName := "external-dns"
 	name := types.NamespacedName{Namespace: testIngressNamespace, Name: openshiftRouterName}
-	t.Logf("Create custome ingress controller %s/%s", name.Namespace, name.Name)
+	t.Logf("Create custom ingress controller %s/%s", name.Namespace, name.Name)
 	ing := newHostNetworkController(name, name.Name+"."+hostedZoneDomain)
 	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("failed to create ingresscontroller: %v", err)

@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/pointer"
 
 	configv1 "github.com/openshift/api/config/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -262,7 +263,6 @@ func equalFQDN(name1, name2 string) bool {
 }
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
-	repl := int32(1)
 	return &operatorv1.IngressController{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: name.Namespace,
@@ -270,7 +270,7 @@ func newHostNetworkController(name types.NamespacedName, domain string) *operato
 		},
 		Spec: operatorv1.IngressControllerSpec{
 			Domain:   domain,
-			Replicas: &repl,
+			Replicas: pointer.Int32(1),
 			EndpointPublishingStrategy: &operatorv1.EndpointPublishingStrategy{
 				Type: operatorv1.HostNetworkStrategyType,
 			},
