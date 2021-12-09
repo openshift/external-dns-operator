@@ -380,48 +380,24 @@ func TestExternalDNSRecordLifecycleWithSourceAs_OpenShiftRoute(t *testing.T) {
 	}
 	defer kubeClient.Delete(context.TODO(), &extDNS)
 
-	// Create conflicting routes in the namespaces
-	makeRoute := func(name types.NamespacedName, host, path string) *routev1.Route {
-		return &routev1.Route{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: name.Namespace,
-				Name:      name.Name,
-				Annotations: map[string]string{
-					"external-dns.mydomain.org/publish": "yes",
-				},
-				Labels: map[string]string{
-					"external-dns": "",
-				},
-			},
-			Spec: routev1.RouteSpec{
-				Host: host,
-				Path: path,
-				To: routev1.RouteTargetReference{
-					Kind: "Service",
-					Name: "testServiceName",
-				},
-			},
-		}
-	}
-	// use unique names for each test route to simplify debugging.
 	routeName := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns-route"}
-	route := makeRoute(routeName, "app."+hostedZoneDomain, "/apis")
+	host := fmt.Sprintf("app.%s", hostedZoneDomain)
+	route := testRoute(routeName.Name, routeName.Namespace, host, "testServiceName")
 
 	// The first route should be admitted
-	if err = kubeClient.Create(context.TODO(), route); err != nil && !errors.IsAlreadyExists(err) {
+	if err = kubeClient.Create(context.TODO(), route); err != nil {
 		t.Fatalf("failed to create route: %v", err)
 	}
 	defer kubeClient.Delete(context.TODO(), route)
-	canonicalName := ""
-	t.Logf("Getting canonicalName for the route :%s ", routeName.Name)
-	if canonicalName, err = fetchRouterCanonicalHostname(t, routeName); err != nil {
+	canonicalName, err := fetchRouterCanonicalHostname(t, routeName)
+	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
 	t.Logf("canonicalName  : %s for the route :%s ", routeName.Name, canonicalName)
-	verifyOpenShiftRouteSource(t, canonicalName, fmt.Sprintf("app.%s", hostedZoneDomain))
+	verifyCNAMERecordForOpenshiftRoute(t, canonicalName, host)
 }
 
-func verifyOpenShiftRouteSource(t *testing.T, canonicalName, host string) {
+func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
 	//var canonicalName = "router-external-dns.external-dns.example-naga.info"
 	// try all nameservers and fail only if all failed
 	recordExist := false
@@ -451,24 +427,25 @@ func verifyOpenShiftRouteSource(t *testing.T, canonicalName, host string) {
 }
 
 func fetchRouterCanonicalHostname(t *testing.T, route1Name types.NamespacedName) (string, error) {
-	customeRoute := routev1.Route{}
+	route := routev1.Route{}
 	canonicalName := ""
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
 		err = kubeClient.Get(context.TODO(), types.NamespacedName{
 			Namespace: route1Name.Namespace,
 			Name:      route1Name.Name,
-		}, &customeRoute)
+		}, &route)
 		if err != nil {
 			return false, err
 		}
-		if len(customeRoute.Status.Ingress) < 1 {
+		if len(route.Status.Ingress) < 1 {
 			t.Logf("No ingress found in route, retrying..")
 			return false, nil
 		}
 
-		for _, ingress := range customeRoute.Status.Ingress {
+		for _, ingress := range route.Status.Ingress {
 			if strings.Contains(ingress.RouterCanonicalHostname, hostedZoneDomain) {
 				canonicalName = ingress.RouterCanonicalHostname
+				return true, nil
 			}
 		}
 		if canonicalName == "" {
