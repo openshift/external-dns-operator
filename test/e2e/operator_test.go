@@ -170,7 +170,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	}
 
 	t.Log("Creating external dns instance with source type route")
-	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "")
+	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "default")
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
@@ -355,9 +355,9 @@ func customResolver(nameserver string) *net.Resolver {
 	}
 }
 
-// Test to verify the ExternalDNS should create the CNAME and txt record for the OpenshiftRoute
+// Test to verify the ExternalDNS should create the CNAME record for the OpenshiftRoute
 // with multiple ingress controller deployed in Openshift.
-// the canonical name of route should resolve to the CNAME of Host,
+// Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
@@ -400,7 +400,6 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 }
 
 func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
-	//var canonicalName = "router-external-dns.external-dns.example-naga.info"
 	// try all nameservers and fail only if all failed
 	recordExist := false
 	for _, nameSrv := range nameServers {

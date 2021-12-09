@@ -184,7 +184,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 }
 
 func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
-	resoure := operatorv1alpha1.ExternalDNS{
+	return operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -196,19 +196,15 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alp
 					AnnotationFilter: map[string]string{
 						"external-dns.mydomain.org/publish": "yes",
 					},
+					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+						RouterName: routerName,
+					},
 				},
 				HostnameAnnotationPolicy: "Ignore",
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
 	}
-	if routerName != "" {
-		resoure.Spec.Source.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
-			RouterName: routerName,
-		}
-	}
-	return resoure
-
 }
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
@@ -244,7 +240,7 @@ func lookupCNAME(host, server string) (string, error) {
 		return "", err
 	}
 	if len(r.Answer) == 0 {
-		return "", fmt.Errorf("No results for the host:%s in nameServer: %s ", host, server)
+		return "", fmt.Errorf("not found")
 	}
 	cname, ok := r.Answer[0].(*dns.CNAME)
 	if !ok {
