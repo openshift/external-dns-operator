@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	miekg "github.com/miekg/dns"
+	"github.com/miekg/dns"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -185,7 +185,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 }
 
 func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
-	return operatorv1alpha1.ExternalDNS{
+	resoure := operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -197,15 +197,19 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alp
 					AnnotationFilter: map[string]string{
 						"external-dns.mydomain.org/publish": "yes",
 					},
-					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
-						RouterName: routerName,
-					},
 				},
 				HostnameAnnotationPolicy: "Ignore",
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
 	}
+	if routerName != "" {
+		resoure.Spec.Source.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+			RouterName: routerName,
+		}
+	}
+	return resoure
+
 }
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
@@ -230,20 +234,20 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 // and the other CNAMEs down to the last one are not known to this replaced nameserver.
 // This may result in "no such host" error.
 func lookupCNAME(host, server string) (string, error) {
-	c := miekg.Client{}
-	m := miekg.Msg{}
+	c := dns.Client{}
+	m := dns.Msg{}
 	if host[len(host)-1] != '.' {
 		host += "."
 	}
-	m.SetQuestion(host, miekg.TypeCNAME)
+	m.SetQuestion(host, dns.TypeCNAME)
 	r, _, err := c.Exchange(&m, server+":53")
 	if err != nil {
 		return "", err
 	}
 	if len(r.Answer) == 0 {
-		return "", fmt.Errorf("No results for the host :%s in nameServer : %s ", host, server)
+		return "", fmt.Errorf("No results for the host:%s in nameServer: %s ", host, server)
 	}
-	cname, ok := r.Answer[0].(*miekg.CNAME)
+	cname, ok := r.Answer[0].(*dns.CNAME)
 	if !ok {
 		return "", fmt.Errorf("not a CNAME record")
 	}
