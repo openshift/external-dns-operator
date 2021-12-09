@@ -32,6 +32,7 @@ metadata:
     support: Red Hat, Inc.
     createdAt: 2021/09/28
     containerImage: quay.io/openshift/origin-external-dns-operator:latest
+    operatorframework.io/suggested-namespace: external-dns-operator
   name: external-dns-operator.v0.0.1
   namespace: external-dns-operator
 spec:
@@ -82,11 +83,14 @@ spec:
                     memory: 20Mi
               - args:
                 - --metrics-bind-address=127.0.0.1:8080
+                - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
                 env:
                 - name: OPERATOR_NAMESPACE
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+                - name: RELATED_IMAGE_EXTERNAL_DNS
+                  value: k8s.gcr.io/external-dns/external-dns:v0.8.0
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: operator
                 ports:

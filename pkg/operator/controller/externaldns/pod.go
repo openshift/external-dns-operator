@@ -37,6 +37,7 @@ const (
 	defaultMetricsStartPort = 7979
 	defaultConfigMountPath  = "/etc/kubernetes"
 	defaultTXTRecordPrefix  = "external-dns-"
+	providerArg             = "--provider="
 	//
 	// AWS
 	//
@@ -103,7 +104,7 @@ func (b *externalDNSContainerBuilder) buildSeq(seq int, zone string) (*corev1.Co
 	if err != nil {
 		return nil, err
 	}
-	b.fillProviderSpecificFields(container)
+	b.fillProviderSpecificFields(zone, container)
 	return container, nil
 }
 
@@ -250,12 +251,14 @@ func combineRegexps(patterns []string) string {
 }
 
 // fillProviderSpecificFields fills the fields specific to the provider of given ExternalDNS
-func (b *externalDNSContainerBuilder) fillProviderSpecificFields(container *corev1.Container) {
+func (b *externalDNSContainerBuilder) fillProviderSpecificFields(zone string, container *corev1.Container) {
 	switch b.provider {
 	case externalDNSProviderTypeAWS:
 		b.fillAWSFields(container)
 	case externalDNSProviderTypeAzure:
-		b.fillAzureFields(container)
+		b.fillAzureFields(zone, container)
+	case externalDNSProviderTypeAzurePrivate:
+		b.fillAzureFields(zone, container)
 	case externalDNSProviderTypeGCP:
 		b.fillGCPFields(container)
 	case externalDNSProviderTypeBlueCat:
@@ -302,10 +305,21 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 }
 
 // fillAzureFields fills the given container with the data specific to Azure provider
-func (b *externalDNSContainerBuilder) fillAzureFields(container *corev1.Container) {
+func (b *externalDNSContainerBuilder) fillAzureFields(zone string, container *corev1.Container) {
 	// https://github.com/kubernetes-sigs/external-dns/issues/2082
 	container.Args = addTXTPrefixFlag(container.Args)
 
+	// check the zone field for the keyword 'privatednszones', this ensures that the
+	// provider 'azure-private-dns' is passed to the container
+	// to set the operand provider correctly
+	if strings.Contains(strings.ToLower(zone), azurePrivateDNSZonesResourceSubStr) {
+		for i, x := range container.Args {
+			if strings.Contains(x, providerArg) {
+				container.Args[i] = providerArg + externalDNSProviderTypeAzurePrivate
+				break
+			}
+		}
+	}
 	// no volume mounts will be added if there is no config volume added before
 	for _, v := range b.volumes {
 		// config volume
