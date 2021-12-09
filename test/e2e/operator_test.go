@@ -226,7 +226,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
-			if equalFQDN(cname, targetRouterCName) {
+			if strings.Contains(cname, targetRouterCName) {
 				return true, nil
 			}
 			return false, nil

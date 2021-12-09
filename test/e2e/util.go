@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -252,18 +251,6 @@ func lookupCNAME(host, server string) (string, error) {
 		return "", fmt.Errorf("not a CNAME record")
 	}
 	return cname.Target, nil
-}
-
-func equalFQDN(name1, name2 string) bool {
-	index1 := strings.LastIndex(name1, ".")
-	index2 := strings.LastIndex(name2, ".")
-	if index1 != len(name1)-1 {
-		name1 += "."
-	}
-	if index2 != len(name2)-1 {
-		name2 += "."
-	}
-	return name1 == name2
 }
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
