@@ -62,10 +62,6 @@ func defaultService(name, namespace string) *corev1.Service {
 	return testService(name, namespace, corev1.ServiceTypeLoadBalancer)
 }
 
-func clusterIPService(name, namespace string) *corev1.Service {
-	return testService(name, namespace, corev1.ServiceTypeClusterIP)
-}
-
 func testRoute(name, namespace, host, svcName string) *routev1.Route {
 	return &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{

@@ -8,17 +8,16 @@ import (
 	"fmt"
 	"strings"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
-
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 // clusterConfig represents common config items for Azure DNS and Azure Private DNS

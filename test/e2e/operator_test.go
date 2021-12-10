@@ -48,7 +48,6 @@ var (
 	scheme           *runtime.Scheme
 	nameServers      []string
 	hostedZoneID     string
-	providerOptions  []string
 	helper           providerTestHelper
 	hostedZoneDomain = baseZoneDomain
 )
@@ -119,7 +118,7 @@ func TestMain(m *testing.M) {
 
 	if providersToSkip := os.Getenv("E2E_SKIP_CLOUD_PROVIDERS"); len(providersToSkip) > 0 {
 		for _, provider := range strings.Split(providersToSkip, ",") {
-			if strings.ToLower(provider) == strings.ToLower(platformType) {
+			if strings.EqualFold(provider, platformType) {
 				fmt.Printf("Skipping e2e test for the provider %q!\n", provider)
 				os.Exit(0)
 			}
@@ -174,7 +173,9 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
-	defer kubeClient.Delete(context.TODO(), &extDNS)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), &extDNS)
+	}()
 
 	// create a route with the annotation targeted by the ExternalDNS resource
 	t.Log("Creating source route")
@@ -183,7 +184,9 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	if err := kubeClient.Create(context.Background(), route); err != nil {
 		t.Fatalf("Failed to create test route %s/%s: %v", testNamespace, testRouteName, err)
 	}
-	defer kubeClient.Delete(context.TODO(), route)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), route)
+	}()
 	t.Logf("Created Route Host is %v", testRouteHost)
 
 	// get the router canonical name
@@ -258,7 +261,9 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
-	defer kubeClient.Delete(context.TODO(), &extDNS)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), &extDNS)
+	}()
 
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
 	t.Log("Creating source service")
@@ -266,7 +271,9 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	if err := kubeClient.Create(context.Background(), service); err != nil {
 		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testServiceName, err)
 	}
-	defer kubeClient.Delete(context.TODO(), service)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), service)
+	}()
 
 	serviceIPs := make(map[string]struct{})
 	// get the IPs of the loadbalancer which is created for the service
@@ -359,7 +366,7 @@ func customResolver(nameserver string) *net.Resolver {
 // with multiple ingress controller deployed in Openshift.
 // Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
-	t.Skip("Ths test need to enable once latest external-dns image available(>v0.10.1).")
+	t.Skip("The test needs to be enabled once latest external-dns image available (>v0.10.1).")
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
