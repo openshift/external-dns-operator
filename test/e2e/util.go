@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -5,7 +6,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/miekg/dns"
 	"math/rand"
 	"os"
 	"reflect"
@@ -13,19 +13,18 @@ import (
 	"testing"
 	"time"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-
+	"github.com/miekg/dns"
+	configv1 "github.com/openshift/api/config/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	configv1 "github.com/openshift/api/config/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	routev1 "github.com/openshift/api/route/v1"
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 )
 
 type providerTestHelper interface {
@@ -57,10 +56,6 @@ func getPlatformType(kubeClient client.Client) (string, error) {
 
 func defaultService(name, namespace string) *corev1.Service {
 	return testService(name, namespace, corev1.ServiceTypeLoadBalancer)
-}
-
-func clusterIPService(name, namespace string) *corev1.Service {
-	return testService(name, namespace, corev1.ServiceTypeClusterIP)
 }
 
 func testRoute(name, namespace, host, svcName string) *routev1.Route {

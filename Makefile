@@ -39,7 +39,7 @@ INDEX_IMG ?= olm-bundle-index:latest
 OPM_VERSION ?= v1.17.4
 
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION=v1.42.1
+GOLANGCI_LINT_VERSION=v1.43.0
 
 COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
@@ -209,6 +209,7 @@ endef
 ## Checks the code with golangci-lint
 lint: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --deadline=30m
+	$(GOLANGCI_LINT_BIN) run --build-tags e2e -c .golangci.yaml --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(BIN_DIR)
