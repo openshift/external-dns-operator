@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -184,7 +185,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 }
 
 func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
-	return operatorv1alpha1.ExternalDNS{
+	extDns := operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -196,15 +197,20 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alp
 					AnnotationFilter: map[string]string{
 						"external-dns.mydomain.org/publish": "yes",
 					},
-					OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
-						RouterName: routerName,
-					},
 				},
 				HostnameAnnotationPolicy: "Ignore",
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
 			},
 		},
 	}
+	// this additional check can be removed with latest external-dns image (>v0.10.1)
+	// instantiate the route additional information at ExternalDNS initiation level.
+	if routerName != "" {
+		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+			RouterName: routerName,
+		}
+	}
+	return extDns
 }
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
@@ -247,6 +253,18 @@ func lookupCNAME(host, server string) (string, error) {
 		return "", fmt.Errorf("not a CNAME record")
 	}
 	return cname.Target, nil
+}
+
+func equalFQDN(name1, name2 string) bool {
+	index1 := strings.LastIndex(name1, ".")
+	index2 := strings.LastIndex(name2, ".")
+	if index1 != len(name1)-1 {
+		name1 += "."
+	}
+	if index2 != len(name2)-1 {
+		name2 += "."
+	}
+	return name1 == name2
 }
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {

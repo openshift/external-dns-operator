@@ -170,7 +170,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	}
 
 	t.Log("Creating external dns instance with source type route")
-	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "default")
+	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "")
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
@@ -226,7 +226,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
-			if strings.Contains(cname, targetRouterCName) {
+			if equalFQDN(cname, targetRouterCName) {
 				return true, nil
 			}
 			return false, nil
@@ -359,7 +359,7 @@ func customResolver(nameserver string) *net.Resolver {
 // with multiple ingress controller deployed in Openshift.
 // Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
-	t.Skip("Ths test need to enable once latest external-dns image available.")
+	t.Skip("Ths test need to enable once latest external-dns image available(>v0.10.1).")
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
