@@ -51,7 +51,7 @@ var (
 	hostedZoneID     string
 	helper           providerTestHelper
 	hostedZoneDomain = baseZoneDomain
-	operandVersion   = "v0.10.0"
+	operandVersion   = "v0.10.1"
 )
 
 func init() {

@@ -209,7 +209,6 @@ endef
 ## Checks the code with golangci-lint
 lint: $(GOLANGCI_LINT_BIN)
 	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --deadline=30m
-	$(GOLANGCI_LINT_BIN) run --build-tags e2e -c .golangci.yaml --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(BIN_DIR)
