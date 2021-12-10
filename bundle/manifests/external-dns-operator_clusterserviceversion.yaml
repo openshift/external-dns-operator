@@ -90,7 +90,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: RELATED_IMAGE_EXTERNAL_DNS
-                  value: quay.io/snagarju/external-dns:latest
+                  value: k8s.gcr.io/external-dns/external-dns:v0.8.0
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: operator
                 ports:
