@@ -12,23 +12,21 @@ import (
 	"testing"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
-	kscheme "k8s.io/client-go/kubernetes/scheme"
-
 	configv1 "github.com/openshift/api/config/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-
 	operatorv1 "github.com/openshift/api/operator/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/version"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
@@ -50,6 +48,7 @@ var (
 	hostedZoneID     string
 	helper           providerTestHelper
 	hostedZoneDomain = baseZoneDomain
+	operandVersion   = "v0.10.0"
 )
 
 func init() {
@@ -366,7 +365,9 @@ func customResolver(nameserver string) *net.Resolver {
 // with multiple ingress controller deployed in Openshift.
 // Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
-	t.Skip("The test needs to be enabled once latest external-dns image available (>v0.10.1).")
+	if operandVersion == "v0.10.1" {
+		t.Skip("The test needs to be enabled once latest external-dns image available (>v0.10.1).")
+	}
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
@@ -380,7 +381,9 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("failed to create ingresscontroller: %v", err)
 	}
-	defer kubeClient.Delete(context.TODO(), ing)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), ing)
+	}()
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
 	t.Logf("Creating external dns instance: %s", externalDnsServiceName)
@@ -388,7 +391,9 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
-	defer kubeClient.Delete(context.TODO(), &extDNS)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), &extDNS)
+	}()
 
 	routeName := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns-route"}
 	host := fmt.Sprintf("app.%s", hostedZoneDomain)
@@ -398,7 +403,9 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	if err = kubeClient.Create(context.TODO(), route); err != nil {
 		t.Fatalf("Failed to create route: %v", err)
 	}
-	defer kubeClient.Delete(context.TODO(), route)
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), route)
+	}()
 	canonicalName, err := fetchRouterCanonicalHostname(t, routeName)
 	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
@@ -429,9 +436,7 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 	}
 
 	if !recordExist {
-		t.Logf("Cname record not found in any nameService, heance test failed")
-		t.Fail()
-		return
+		t.Fatalf("Cname record not found in any nameService, heance test failed")
 	}
 }
 
