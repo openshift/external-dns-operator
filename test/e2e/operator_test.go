@@ -439,7 +439,7 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 	}
 
 	if !recordExist {
-		t.Fatalf("Cname record not found in any nameService, heance test failed")
+		t.Fatalf("CNAME record not found in any name server")
 	}
 }
 
