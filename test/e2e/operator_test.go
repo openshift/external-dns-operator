@@ -17,6 +17,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,15 +34,19 @@ import (
 )
 
 const (
-	baseZoneDomain     = "example-test.info"
-	testNamespace      = "external-dns-test"
-	testServiceName    = "test-service"
-	testRouteName      = "test-route"
-	testCredSecretName = "external-dns-operator"
-	testExtDNSName     = "test-extdns"
-	dnsPollingInterval = 15 * time.Second
-	dnsPollingTimeout  = 15 * time.Minute
-	dialTimeout        = 10 * time.Second
+	baseZoneDomain         = "example-test.info"
+	testNamespace          = "external-dns-test"
+	testServiceName        = "test-service"
+	testRouteName          = "test-route"
+	testCredSecretName     = "external-dns-operator"
+	testExtDNSName         = "test-extdns"
+	operandNamespace       = "external-dns"
+	operatorNamespace      = "external-dns-operator"
+	rbacRsrcName           = "external-dns-operator"
+	operatorServiceAccount = "external-dns-operator"
+	dnsPollingInterval     = 15 * time.Second
+	dnsPollingTimeout      = 15 * time.Minute
+	dialTimeout            = 10 * time.Second
 )
 
 var (
@@ -141,6 +146,18 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		fmt.Printf("Failed to created hosted zone for domain %s: %v\n", hostedZoneDomain, err)
 		os.Exit(1)
+	}
+
+	if err = ensureOperandNamespace(); err != nil {
+		fmt.Printf("Failed to create %s namespace: %v\n", operandNamespace, err)
+	}
+
+	if err = ensureOperandRole(); err != nil {
+		fmt.Printf("Failed to create role external-dns-operator in ns %s: %v\n", operandNamespace, err)
+	}
+
+	if err = ensureOperandRoleBinding(); err != nil {
+		fmt.Printf("Failed to create rolebinding external-dns-operator in ns %s: %v\n", operandNamespace, err)
 	}
 
 	exitStatus := m.Run()
@@ -362,6 +379,61 @@ func customResolver(nameserver string) *net.Resolver {
 			return d.DialContext(ctx, network, address)
 		},
 	}
+}
+
+func ensureOperandNamespace() error {
+	return kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: operandNamespace}})
+}
+
+func ensureOperandRole() error {
+	rules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"secrets", "serviceaccounts"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
+		},
+	}
+
+	role := rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rbacRsrcName,
+			Namespace: operandNamespace,
+		},
+		Rules: rules,
+	}
+	return kubeClient.Create(context.TODO(), &role)
+}
+
+func ensureOperandRoleBinding() error {
+	rb := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rbacRsrcName,
+			Namespace: operandNamespace,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     rbacRsrcName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      operatorServiceAccount,
+				Namespace: operatorNamespace,
+			},
+		},
+	}
+	return kubeClient.Create(context.TODO(), &rb)
 }
 
 // Test to verify the ExternalDNS should create the CNAME record for the OpenshiftRoute

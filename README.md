@@ -14,11 +14,16 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    $ make image-build
    $ make image-push
    ```
-2. Run the following command to deploy the `ExternalDNS` Operator:
+2. Prepare the operand namespace:
+   ```
+   oc create ns external-dns
+   oc apply -f config/samples/extra-roles.yaml
+   ```
+3. Run the following command to deploy the `ExternalDNS` Operator:
     ```
     $ make deploy
     ```
-3. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
+4. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
    manifests deployed through the `make deploy` command do not contain a valid certificate and key. You must provision a valid certificate and key through other tools.
    You can use a convenience script, `hack/generate-certs.sh` to generate the certificate bundle and patch the validation webhook config.   
    _Important_: Do not use the hack/generate-certs.sh script in a production environment.   
@@ -27,7 +32,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    $ hack/generate-certs.sh --service webhook-service --webhook validating-webhook-configuration \
    --secret webhook-server-cert --namespace external-dns-operator
    ```
-4. Now you can deploy an instance of ExternalDNS:
+5. Now you can deploy an instance of ExternalDNS:
     * Run the following command to create the credentials secret for AWS:
         ```bash
         $ kubectl -n external-dns-operator create secret generic aws-access-key \
@@ -97,11 +102,12 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    $ make index-image-push
    ```
 
-5. Create the `external-dns-operator` namespace:
-   ```sh
-   $ oc create ns external-dns-operator
+5. Prepare the operand namespace:
    ```
-
+   oc create ns external-dns
+   oc apply -f config/samples/extra-roles.yaml
+   ```
+   
 6. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.9/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
 
     a. Login to your registry:

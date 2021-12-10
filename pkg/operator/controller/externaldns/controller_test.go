@@ -113,13 +113,6 @@ func TestReconcile(t *testing.T) {
 						Name: "external-dns-test",
 					},
 				},
-				{
-					eventType: watch.Added,
-					objType:   "namespace",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns",
-					},
-				},
 			},
 		},
 		{
@@ -171,13 +164,6 @@ func TestReconcile(t *testing.T) {
 					objType:   "clusterrolebinding",
 					NamespacedName: types.NamespacedName{
 						Name: "external-dns-test",
-					},
-				},
-				{
-					eventType: watch.Added,
-					objType:   "namespace",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns",
 					},
 				},
 			},
