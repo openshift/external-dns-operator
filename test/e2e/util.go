@@ -15,6 +15,7 @@ import (
 
 	"github.com/miekg/dns"
 	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -33,7 +35,7 @@ type providerTestHelper interface {
 	platform() string
 	makeCredentialsSecret(namespace string) *corev1.Secret
 	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
-	buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS
+	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -176,8 +178,8 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 	}
 }
 
-func routeExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
-	return operatorv1alpha1.ExternalDNS{
+func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+	extDns := operatorv1alpha1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -195,6 +197,14 @@ func routeExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.External
 			},
 		},
 	}
+	// this additional check can be removed with latest external-dns image (>v0.10.1)
+	// instantiate the route additional information at ExternalDNS initiation level.
+	if routerName != "" {
+		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+			RouterName: routerName,
+		}
+	}
+	return extDns
 }
 
 func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, error) {
@@ -218,7 +228,7 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 // is replaced (custom net.Resolver with overridden Dial function) with not recursive resolver
 // and the other CNAMEs down to the last one are not known to this replaced nameserver.
 // This may result in "no such host" error.
-func lookupCNAMEMiekg(host, server string) (string, error) {
+func lookupCNAME(host, server string) (string, error) {
 	c := dns.Client{}
 	m := dns.Msg{}
 	if host[len(host)-1] != '.' {
@@ -249,4 +259,20 @@ func equalFQDN(name1, name2 string) bool {
 		name2 += "."
 	}
 	return name1 == name2
+}
+
+func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
+	return &operatorv1.IngressController{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: name.Namespace,
+			Name:      name.Name,
+		},
+		Spec: operatorv1.IngressControllerSpec{
+			Domain:   domain,
+			Replicas: pointer.Int32(1),
+			EndpointPublishingStrategy: &operatorv1.EndpointPublishingStrategy{
+				Type: operatorv1.HostNetworkStrategyType,
+			},
+		},
+	}
 }

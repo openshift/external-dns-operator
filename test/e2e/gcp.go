@@ -58,8 +58,8 @@ func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
-func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
-	resource := routeExternalDNS(name, zoneID, zoneDomain)
+func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeGCP,
 		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
