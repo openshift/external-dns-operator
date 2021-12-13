@@ -39,7 +39,8 @@ INDEX_IMG ?= olm-bundle-index:latest
 OPM_VERSION ?= v1.17.4
 
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION=v1.43.0
+
+OPERATOR_SDK_BIN=$(BIN_DIR)/operator-sdk
 
 COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
@@ -99,6 +100,7 @@ verify: lint
 	hack/verify-gofmt.sh
 	hack/verify-deps.sh
 	hack/verify-generated.sh
+	hack/verify-olm.sh
 
 ##@ Build
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
@@ -132,6 +134,7 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+.SILENT: olm-manifests
 .PHONY: olm-manifests
 # TODO: try to replace this rule with 'operator-sdk generate bundle'
 # A little helper command to generate the manifests of OLM bundle from the files in config/.
@@ -154,8 +157,8 @@ olm-manifests: manifests
 	for f in $$(\grep -l 'kind: *\(Service\|ConfigMap\|Secret\|Role\) *$$' $(BUNDLE_MANIFEST_DIR)/*.yaml); do sed -i '/namespace:/d' $${f};done
 
 .PHONY: validate-bundle
-validate-bundle:
-	operator-sdk bundle validate $(BUNDLE_DIR) --select-optional suite=operatorframework
+validate-bundle: $(OPERATOR_SDK_BIN)
+	$(OPERATOR_SDK_BIN) bundle validate $(BUNDLE_DIR) --select-optional suite=operatorframework
 
 .PHONY: bundle-image-build
 bundle-image-build: olm-manifests
@@ -213,3 +216,7 @@ lint: $(GOLANGCI_LINT_BIN)
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(BIN_DIR)
 	hack/golangci-lint.sh $(GOLANGCI_LINT_BIN)
+
+$(OPERATOR_SDK_BIN):
+	mkdir -p $(BIN_DIR)
+	hack/operator-sdk.sh $(OPERATOR_SDK_BIN)
