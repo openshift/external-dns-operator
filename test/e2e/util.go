@@ -189,8 +189,7 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alp
 					Type:        operatorv1alpha1.SourceTypeRoute,
 					LabelFilter: utils.MustParseLabelSelector("external-dns.mydomain.org/publish=yes"),
 				},
-				HostnameAnnotationPolicy: "Ignore",
-				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
+				HostnameAnnotationPolicy: operatorv1alpha1.HostnameAnnotationPolicyIgnore,
 			},
 		},
 	}

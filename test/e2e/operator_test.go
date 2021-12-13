@@ -234,7 +234,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	if targetRouterCName == "" {
 		t.Fatalf("Router's canonical name is empty %v", err)
 	}
-	t.Logf("Target router's CName is %v", targetRouterCName)
+	t.Logf("Target router's CNAME is %v", targetRouterCName)
 
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
@@ -248,6 +248,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 				return false, nil
 			}
 			if equalFQDN(cNameHost, targetRouterCName) {
+				t.Log("DNS record found")
 				return true, nil
 			}
 			return false, nil

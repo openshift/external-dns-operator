@@ -100,6 +100,11 @@ func (r *ExternalDNS) validateFilters() error {
 }
 
 func (r *ExternalDNS) validateHostnameAnnotationPolicy() error {
+	if r.Spec.Source.Type == SourceTypeRoute {
+		// dummy fqdnTemplate is used for Route source
+		return nil
+	}
+
 	if r.Spec.Source.HostnameAnnotationPolicy == HostnameAnnotationPolicyIgnore && len(r.Spec.Source.FQDNTemplate) == 0 {
 		return errors.New(`"fqdnTemplate" must be specified when "hostnameAnnotation" is "Ignore"`)
 	}
