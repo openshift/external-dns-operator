@@ -135,10 +135,6 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--zone-id-filter=%s", zone))
 	}
 
-	if b.externalDNS.Spec.Source.Namespace != nil && len(*b.externalDNS.Spec.Source.Namespace) > 0 {
-		args = append(args, fmt.Sprintf("--namespace=%s", *b.externalDNS.Spec.Source.Namespace))
-	}
-
 	if len(b.externalDNS.Spec.Source.AnnotationFilter) > 0 {
 		annotationFilter := ""
 		for key, value := range b.externalDNS.Spec.Source.AnnotationFilter {

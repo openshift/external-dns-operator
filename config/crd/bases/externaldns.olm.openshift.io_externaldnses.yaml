@@ -260,73 +260,6 @@ spec:
                       records for. The annotation filter uses label selector semantics
                       against source resource annotations.
                     type: object
-                  crd:
-                    description: CRD describes source configuration options specific
-                      to the CRD source resource. See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/contributing/crd-source.md
-                      for more information about the requirements for ExternalDNS
-                      Source CRD requirements.
-                    properties:
-                      kind:
-                        description: "Kind is the kind of the CRD source resource
-                          type to be consumed by ExternalDNS. \n e.g. \"DNSEndpoint\""
-                        minLength: 1
-                        type: string
-                      labelFilter:
-                        description: LabelFilter specifies a label filter to be used
-                          to filter CRD resource instances. Only one label filter
-                          can be specified on an ExternalDNS instance.
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
-                            type: object
-                        type: object
-                      version:
-                        description: "Version is the API version of the given resource
-                          kind for ExternalDNS to use. \n e.g. \"externaldns.k8s.io/v1alpha1\""
-                        minLength: 1
-                        type: string
-                    required:
-                    - kind
-                    - version
-                    type: object
                   fqdnTemplate:
                     description: "FQDNTemplate sets a templated string that's used
                       to generate DNS names from sources that don't define a hostname
@@ -355,10 +288,6 @@ spec:
                     enum:
                     - Ignore
                     - Allow
-                    type: string
-                  namespace:
-                    description: Namespace instructs ExternalDNS to only acknowledge
-                      source resource instances in a specific namespace.
                     type: string
                   openshiftRouteOptions:
                     description: OpenShiftRoute source configuration options for specifying

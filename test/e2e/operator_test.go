@@ -377,19 +377,20 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	if err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to ensure namespace %s: %v", testIngressNamespace, err)
 	}
+
 	openshiftRouterName := "external-dns"
 	name := types.NamespacedName{Namespace: testIngressNamespace, Name: openshiftRouterName}
-	t.Logf("Create custom ingress controller %s/%s", name.Namespace, name.Name)
+	t.Log("Create custom ingress controller")
 	ing := newHostNetworkController(name, name.Name+"."+hostedZoneDomain)
 	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
-		t.Fatalf("failed to create ingresscontroller: %v", err)
+		t.Fatalf("Failed to create ingresscontroller %s/%s: %v", name.Namespace, name.Name, err)
 	}
 	defer func() {
 		_ = kubeClient.Delete(context.TODO(), ing)
 	}()
 
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
-	t.Logf("Creating external dns instance: %s", externalDnsServiceName)
+	t.Log("Creating external dns instance")
 	extDNS := helper.buildOpenShiftExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain, openshiftRouterName)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
@@ -400,20 +401,21 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 
 	routeName := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns-route"}
 	host := fmt.Sprintf("app.%s", hostedZoneDomain)
-	route := testRoute(routeName.Name, routeName.Namespace, host, "testServiceName")
-
-	// The first route should be admitted
+	route := testRoute(routeName.Name, routeName.Namespace, host, testServiceName)
+	t.Log("Creating test route")
 	if err = kubeClient.Create(context.TODO(), route); err != nil {
-		t.Fatalf("Failed to create route: %v", err)
+		t.Fatalf("Failed to create route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
 	defer func() {
 		_ = kubeClient.Delete(context.TODO(), route)
 	}()
+
 	canonicalName, err := fetchRouterCanonicalHostname(t, routeName)
 	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
-	t.Logf("CanonicalName: %s for the route: %s ", routeName.Name, canonicalName)
+	t.Logf("CanonicalName: %s for the route: %s", canonicalName, routeName.Name)
+
 	verifyCNAMERecordForOpenshiftRoute(t, canonicalName, host)
 }
 

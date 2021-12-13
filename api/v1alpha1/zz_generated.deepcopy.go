@@ -337,19 +337,9 @@ func (in *ExternalDNSSourceUnion) DeepCopyInto(out *ExternalDNSSourceUnion) {
 			(*out)[key] = val
 		}
 	}
-	if in.Namespace != nil {
-		in, out := &in.Namespace, &out.Namespace
-		*out = new(string)
-		**out = **in
-	}
 	if in.Service != nil {
 		in, out := &in.Service, &out.Service
 		*out = new(ExternalDNSServiceSourceOptions)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.CRD != nil {
-		in, out := &in.CRD, &out.CRD
-		*out = new(ExternalDNSCRDSourceOptions)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.OpenShiftRoute != nil {
