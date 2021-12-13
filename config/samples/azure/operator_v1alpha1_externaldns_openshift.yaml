@@ -1,0 +1,23 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-azure
+spec:
+  domains:
+  - filterType: Include
+    matchType: Exact
+    name: test-azure1.qe.azure.devcluster.openshift.com
+  provider:
+    type: Azure
+  source:
+    # Incase you have multiple ingress controllers you must specify ingress controller name in the routerName
+    # so that the external dns will use the router canonical name correrponding to it to create a dns record.
+    openshiftRouteOptions:
+      routerName: default
+    # Source Type is route resource of OpenShift
+    type: OpenShiftRoute
+    # It's not possible to not have FQDNTemplate if the hostname annotation policy is ignore.
+    fqdnTemplate:
+    - "{{.Name}}.apps.test-azure1.qe.azure.devcluster.openshift.com"
+  zones:
+  - "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
