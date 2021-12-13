@@ -110,7 +110,13 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role: %w", err)
 	}
 
-	if r.config.IsOpenShift && operatorutils.ManagedCredentialsProvider(externalDNS) {
+	// request credentials from CCO only if all of the following is true:
+	//  - underlying platform is OpenShift
+	//  - DNS provider is supported by CCO
+	//  - no credentials secret was provided
+	if r.config.IsOpenShift &&
+		operatorutils.ManagedCredentialsProvider(externalDNS) &&
+		controlleroperator.ExternalDNSCredentialsSecretNameFromProvider(externalDNS) == "" {
 		if _, _, err := r.ensureExternalCredentialsRequest(ctx, externalDNS); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to ensure credentials request for externalDNS: %w", err)
 		}

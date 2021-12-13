@@ -348,13 +348,20 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 				t.Logf("Waiting for dns record: %s", expectedHost)
 				return false, nil
 			}
-			t.Logf("Got IPs: %v", ips)
+			gotIPs := make(map[string]struct{})
+			for _, ip := range ips {
+				gotIPs[ip] = struct{}{}
+			}
+			t.Logf("Got IPs: %v", gotIPs)
+
 			// If all IPs of the loadbalancer are not present query again.
-			if len(ips) < len(serviceIPs) {
+			if len(gotIPs) < len(serviceIPs) {
 				return false, nil
 			}
-			for _, ip := range ips {
-				if _, ok := serviceIPs[ip]; !ok {
+			// all expected IPs should be in the received IPs
+			// but these 2 sets are not necessary equal
+			for ip := range serviceIPs {
+				if _, found := gotIPs[ip]; !found {
 					return false, nil
 				}
 			}
