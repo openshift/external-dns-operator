@@ -51,7 +51,6 @@ var (
 	hostedZoneID     string
 	helper           providerTestHelper
 	hostedZoneDomain = baseZoneDomain
-	operandVersion   = "v0.10.1"
 )
 
 func init() {
@@ -368,9 +367,6 @@ func customResolver(nameserver string) *net.Resolver {
 // with multiple ingress controller deployed in Openshift.
 // Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
-	if operandVersion == "v0.10.1" {
-		t.Skip("The test needs to be enabled once latest external-dns image available (>v0.10.1).")
-	}
 	testIngressNamespace := "test-extdns-openshift-route"
 	t.Log("Ensuring test namespace")
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
