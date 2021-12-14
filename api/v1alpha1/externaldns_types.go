@@ -442,26 +442,11 @@ type ExternalDNSSourceUnion struct {
 	// +optional
 	AnnotationFilter map[string]string `json:"annotationFilter,omitempty"`
 
-	// Namespace instructs ExternalDNS to only acknowledge
-	// source resource instances in a specific namespace.
-	//
-	// +optional
-	Namespace *string `json:"namespace,omitempty"`
-
 	// Service describes source configuration options specific
 	// to the service source resource.
 	//
 	// +optional
 	Service *ExternalDNSServiceSourceOptions `json:"service,omitempty"`
-
-	// CRD describes source configuration options specific
-	// to the CRD source resource.
-	// See
-	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/contributing/crd-source.md
-	// for more information about the requirements for ExternalDNS Source CRD requirements.
-	//
-	// +optional
-	CRD *ExternalDNSCRDSourceOptions `json:"crd,omitempty"`
 
 	// OpenShiftRoute source configuration options for specifying ingress controller names.
 	// +kubebuilder:validation:Optional

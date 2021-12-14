@@ -67,7 +67,6 @@ var providerStringTable = map[operatorv1alpha1.ExternalDNSProviderType]string{
 var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 	operatorv1alpha1.SourceTypeRoute:   "openshift-route",
 	operatorv1alpha1.SourceTypeService: "service",
-	// TODO: Add CRD source support
 }
 
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
