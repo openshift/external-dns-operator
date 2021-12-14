@@ -6,7 +6,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -46,7 +45,7 @@ const (
 	operatorServiceAccount = "external-dns-operator"
 	dnsPollingInterval     = 15 * time.Second
 	dnsPollingTimeout      = 15 * time.Minute
-	dialTimeout            = 10 * time.Second
+	googleDNSServer        = "8.8.8.8"
 )
 
 var (
@@ -243,12 +242,12 @@ func TestExternalDNSWithRoute(t *testing.T) {
 
 		// verify dns records has been created for the route host.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			cname, err := lookupCNAME(testRouteHost, nameSrv)
+			cNameHost, err := lookupCNAME(testRouteHost, nameSrv)
 			if err != nil {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
 				return false, nil
 			}
-			if equalFQDN(cname, targetRouterCName) {
+			if equalFQDN(cNameHost, targetRouterCName) {
 				return true, nil
 			}
 			return false, nil
@@ -317,15 +316,14 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
 		} else if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
 			lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
-			// use built in Go resolver instead of the platform's one
-			ips, err := customResolver("").LookupIP(context.TODO(), "ip", lbHostname)
+			ips, err := lookupARecord(lbHostname, googleDNSServer)
 			if err != nil {
 				t.Logf("Waiting for IP of loadbalancer %s", lbHostname)
 				// if the hostname cannot be resolved currently then retry later
 				return false, nil
 			}
 			for _, ip := range ips {
-				serviceIPs[ip.String()] = struct{}{}
+				serviceIPs[ip] = struct{}{}
 			}
 		} else {
 			t.Logf("Waiting for loadbalancer details for service %s", testServiceName)
@@ -340,15 +338,18 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// try all nameservers and fail only if all failed
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
-		// create a DNS resolver which uses the nameservers of the test hosted zone
-		customResolver := customResolver(nameSrv)
 
 		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
 		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			rec := fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain)
-			ips, err := customResolver.LookupHost(context.TODO(), rec)
+			expectedHost := fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain)
+			ips, err := lookupARecord(expectedHost, nameSrv)
 			if err != nil {
-				t.Logf("Waiting for dns record: %s", rec)
+				t.Logf("Waiting for dns record: %s", expectedHost)
+				return false, nil
+			}
+			t.Logf("Got IPs: %v", ips)
+			// If all IPs of the loadbalancer are not present query again.
+			if len(ips) < len(serviceIPs) {
 				return false, nil
 			}
 			for _, ip := range ips {
@@ -364,21 +365,6 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		}
 	}
 	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
-}
-
-func customResolver(nameserver string) *net.Resolver {
-	return &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := net.Dialer{
-				Timeout: dialTimeout,
-			}
-			if len(nameserver) > 0 {
-				return d.DialContext(ctx, network, fmt.Sprintf("%s:53", nameserver))
-			}
-			return d.DialContext(ctx, network, address)
-		},
-	}
 }
 
 func ensureOperandNamespace() error {
