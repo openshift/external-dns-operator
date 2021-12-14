@@ -9,11 +9,9 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/miekg/dns"
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -24,6 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
+
+	"github.com/miekg/dns"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -219,7 +219,7 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 	return secret.Data, nil
 }
 
-// lookupCNAMEMiekg retrieves the first canonical name of the given host.
+// lookupCNAME retrieves the first canonical name of the given host.
 // This function is different from net.LookupCNAME.
 // net.LookupCNAME assumes the nameserver used is the recursive resolver (https://github.com/golang/go/blob/master/src/net/dnsclient_unix.go#L637).
 // Therefore CNAME is tried to be resolved to its last canonical name, the quote from doc:
@@ -229,13 +229,10 @@ func rootCredentials(kubeClient client.Client, name string) (map[string][]byte, 
 // and the other CNAMEs down to the last one are not known to this replaced nameserver.
 // This may result in "no such host" error.
 func lookupCNAME(host, server string) (string, error) {
-	c := dns.Client{}
-	m := dns.Msg{}
-	if host[len(host)-1] != '.' {
-		host += "."
-	}
-	m.SetQuestion(host, dns.TypeCNAME)
-	r, _, err := c.Exchange(&m, server+":53")
+	dnsClient := dns.Client{}
+	message := &dns.Msg{}
+	message.SetQuestion(dns.Fqdn(host), dns.TypeCNAME)
+	r, _, err := dnsClient.Exchange(message, fmt.Sprintf("%s:53", server))
 	if err != nil {
 		return "", err
 	}
@@ -249,16 +246,31 @@ func lookupCNAME(host, server string) (string, error) {
 	return cname.Target, nil
 }
 
+func lookupARecord(host, server string) ([]string, error) {
+	dnsClient := &dns.Client{}
+	message := &dns.Msg{}
+	message.SetQuestion(dns.Fqdn(host), dns.TypeA)
+	response, _, err := dnsClient.Exchange(message, fmt.Sprintf("%s:53", server))
+	if err != nil {
+		return nil, err
+	}
+	if len(response.Answer) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+	var ips []string
+	for _, ans := range response.Answer {
+		if aRec, ok := ans.(*dns.A); ok {
+			ips = append(ips, aRec.A.String())
+		}
+	}
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("not found")
+	}
+	return ips, nil
+}
+
 func equalFQDN(name1, name2 string) bool {
-	index1 := strings.LastIndex(name1, ".")
-	index2 := strings.LastIndex(name2, ".")
-	if index1 != len(name1)-1 {
-		name1 += "."
-	}
-	if index2 != len(name2)-1 {
-		name2 += "."
-	}
-	return name1 == name2
+	return dns.Fqdn(name1) == dns.Fqdn(name2)
 }
 
 func newHostNetworkController(name types.NamespacedName, domain string) *operatorv1.IngressController {
