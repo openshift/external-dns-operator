@@ -31,6 +31,15 @@ func ManagedCredentialsProvider(e *operatorv1alpha1.ExternalDNS) bool {
 	return false
 }
 
+// EnvProxySupportedProvider returns true if the ExternalDNS provider supports the proxy settings via environment variables HTTP(S)_PROXY, NO_PROXY
+func EnvProxySupportedProvider(e *operatorv1alpha1.ExternalDNS) bool {
+	switch e.Spec.Provider.Type {
+	case operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.ProviderTypeAzure, operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.ProviderTypeInfoblox:
+		return true
+	}
+	return false
+}
+
 func MustParseLabelSelector(input string) *metav1.LabelSelector {
 	selector, err := metav1.ParseToLabelSelector(input)
 	if err != nil {
