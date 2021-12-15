@@ -1,0 +1,52 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-dns-operator
+  namespace: external-dns
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: external-dns-operator
+  namespace: external-dns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: external-dns-operator
+subjects:
+  - kind: ServiceAccount
+    name: external-dns-operator
+    namespace: external-dns-operator
+
