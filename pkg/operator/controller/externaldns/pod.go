@@ -161,6 +161,14 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 
 	if len(b.externalDNS.Spec.Source.FQDNTemplate) > 0 {
 		args = append(args, fmt.Sprintf("--fqdn-template=%s", strings.Join(b.externalDNS.Spec.Source.FQDNTemplate, ",")))
+	} else {
+		// ExternalDNS needs FQDNTemplate if the hostname annotation is ignored even for Route source.
+		// However it doesn't make much sense as the hostname is retrieved from the route's spec.
+		// Feeding ExternalDNS with some dummy template just to pass the validation.
+		if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1alpha1.HostnameAnnotationPolicyIgnore &&
+			b.externalDNS.Spec.Source.Type == operatorv1alpha1.SourceTypeRoute {
+			args = append(args, "--fqdn-template={{\"\"}}")
+		}
 	}
 
 	if b.externalDNS.Spec.Source.OpenShiftRoute != nil && len(b.externalDNS.Spec.Source.OpenShiftRoute.RouterName) > 0 {
@@ -247,9 +255,7 @@ func (b *externalDNSContainerBuilder) fillProviderSpecificFields(zone string, co
 	switch b.provider {
 	case externalDNSProviderTypeAWS:
 		b.fillAWSFields(container)
-	case externalDNSProviderTypeAzure:
-		b.fillAzureFields(zone, container)
-	case externalDNSProviderTypeAzurePrivate:
+	case externalDNSProviderTypeAzure, externalDNSProviderTypeAzurePrivate:
 		b.fillAzureFields(zone, container)
 	case externalDNSProviderTypeGCP:
 		b.fillGCPFields(container)

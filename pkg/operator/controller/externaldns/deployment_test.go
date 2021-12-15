@@ -1134,7 +1134,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		// OCP Route Source
 		{
-			name:             "Nominal AWS",
+			name:             "Nominal AWS Route",
 			inputSecretName:  "awssecret",
 			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1164,6 +1164,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 						Env: []corev1.EnvVar{
@@ -1195,7 +1196,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No credentials AWS",
+			name:             "No credentials AWS Route",
 			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1224,6 +1225,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1231,7 +1233,69 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Nominal Azure",
+			name:             "FQDNTemplate set AWS Route",
+			inputSecretName:  "awssecret",
+			inputExternalDNS: testAWSExternalDNSFQDNTemplate(operatorv1alpha1.SourceTypeRoute),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name: "AWS_ACCESS_KEY_ID",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "awssecret",
+										},
+										Key: "aws_access_key_id",
+									},
+								},
+							},
+							{
+								Name: "AWS_SECRET_ACCESS_KEY",
+								ValueFrom: &corev1.EnvVarSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "awssecret",
+										},
+										Key: "aws_secret_access_key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "Nominal Azure Route",
 			inputSecretName:  "azuresecret",
 			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1277,6 +1341,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
 						},
@@ -1292,7 +1357,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No credentials Azure",
+			name:             "No credentials Azure Route",
 			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1321,6 +1386,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1328,7 +1394,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No zones Azure",
+			name:             "No zones Azure Route",
 			inputSecretName:  "azuresecret",
 			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1373,6 +1439,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
 						},
@@ -1396,6 +1463,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
 						},
@@ -1410,9 +1478,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
-
 		{
-			name:             "Nominal GCP",
+			name:             "Nominal GCP Route",
 			inputSecretName:  "gcpsecret",
 			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1458,6 +1525,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--google-project=external-dns-gcp-project",
 							"--txt-prefix=external-dns-",
 						},
@@ -1479,7 +1547,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No project GCP",
+			name:             "No project GCP Route",
 			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1508,6 +1576,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1515,7 +1584,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Nominal Bluecat",
+			name:             "Nominal Bluecat Route",
 			inputSecretName:  "bluecatsecret",
 			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1561,6 +1630,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--bluecat-config-file=/etc/kubernetes/bluecat.json",
 							"--txt-prefix=external-dns-",
 						},
@@ -1576,7 +1646,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No credentials Bluecat",
+			name:             "No credentials Bluecat Route",
 			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1605,6 +1675,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1612,7 +1683,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Nominal Infoblox",
+			name:             "Nominal Infoblox Route",
 			inputSecretName:  "infobloxsecret",
 			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -1642,6 +1713,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--infoblox-wapi-port=443",
 							"--infoblox-grid-host=gridhost.example.com",
 							"--infoblox-wapi-version=2.3.1",
@@ -1675,7 +1747,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No credentials Infoblox",
+			name:             "No credentials Infoblox Route",
 			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1704,6 +1776,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 						},
 					},
 				},
@@ -1745,7 +1818,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Many zones",
+			name:             "Many zones Route",
 			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1774,6 +1847,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1790,6 +1864,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1797,7 +1872,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Annotation filter",
+			name:             "Annotation filter Route",
 			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes"), operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1827,6 +1902,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--log-level=debug",
 							"--label-filter=testannotation=yes",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1834,7 +1910,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No zones && no domain filter",
+			name:             "No zones && no domain filter Route",
 			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1862,6 +1938,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1869,7 +1946,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "No zones + Domain filter",
+			name:             "No zones + Domain filter Route",
 			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1898,6 +1975,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -1905,7 +1983,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:             "Zone + Domain filter",
+			name:             "Zone + Domain filter Route",
 			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1935,6 +2013,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
 					},
@@ -3049,6 +3128,12 @@ func testAWSExternalDNSHostnameAllow(source operatorv1alpha1.ExternalDNSSourceTy
 		return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, source, nil, []string{test.PublicZone}, routerName)
 	}
 	return nil
+}
+
+func testAWSExternalDNSFQDNTemplate(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+	extDNS := testAWSExternalDNS(source)
+	extDNS.Spec.Source.FQDNTemplate = []string{"{{.Name}}.test.com"}
+	return extDNS
 }
 
 func testAWSExternalDNSManyFQDN() *operatorv1alpha1.ExternalDNS {
