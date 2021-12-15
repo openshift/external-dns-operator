@@ -368,7 +368,7 @@ func customResolver(nameserver string) *net.Resolver {
 // Route's host should resolve to the canonical name of the specified ingress controller.
 func TestExternalDNSCustomIngress(t *testing.T) {
 	testIngressNamespace := "test-extdns-openshift-route"
-	t.Log("Ensuring test namespace")
+	t.Logf("Ensuring test namespace %s created", testIngressNamespace)
 	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testIngressNamespace}})
 	if err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to ensure namespace %s: %v", testIngressNamespace, err)
