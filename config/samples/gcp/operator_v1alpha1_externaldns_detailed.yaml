@@ -24,8 +24,9 @@ spec:
         - LoadBalancer
         - ClusterIP
     # consider source services only with these annotations
-    annotationFilter:
-      external-dns.mydomain.org/publish: "yes"
+    labelFilter:
+      matchLabels:
+        external-dns.mydomain.org/publish: "yes"
     # if hostname annotation is ignored
     # you can set a template for FQDN which will be created
     # note that this template will add the name of the service to FQDN

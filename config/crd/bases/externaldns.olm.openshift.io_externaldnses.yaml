@@ -252,14 +252,6 @@ spec:
                   CRs must be created if multiple ExternalDNS source resources are
                   desired."
                 properties:
-                  annotationFilter:
-                    additionalProperties:
-                      type: string
-                    description: AnnotationFilter describes an annotation filter used
-                      to filter which source instance resources ExternalDNS publishes
-                      records for. The annotation filter uses label selector semantics
-                      against source resource annotations.
-                    type: object
                   fqdnTemplate:
                     description: "FQDNTemplate sets a templated string that's used
                       to generate DNS names from sources that don't define a hostname
@@ -289,6 +281,53 @@ spec:
                     - Ignore
                     - Allow
                     type: string
+                  labelFilter:
+                    description: LabelFilter specifies a label selector used to filter
+                      which source instance resources ExternalDNS publishes records
+                      for. The filter uses label selector semantics against source
+                      resource labels.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: A label selector requirement is a selector
+                            that contains values, a key, and an operator that relates
+                            the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: operator represents a key's relationship
+                                to a set of values. Valid operators are In, NotIn,
+                                Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: values is an array of string values. If
+                                the operator is In or NotIn, the values array must
+                                be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced
+                                during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: matchLabels is a map of {key,value} pairs. A
+                          single {key,value} in the matchLabels map is equivalent
+                          to an element of matchExpressions, whose key field is "key",
+                          the operator is "In", and the values array contains only
+                          "value". The requirements are ANDed.
+                        type: object
+                    type: object
                   openshiftRouteOptions:
                     description: OpenShiftRoute source configuration options for specifying
                       ingress controller names.

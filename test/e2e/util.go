@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 type providerTestHelper interface {
@@ -167,9 +168,7 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 							corev1.ServiceTypeClusterIP,
 						},
 					},
-					AnnotationFilter: map[string]string{
-						"external-dns.mydomain.org/publish": "yes",
-					},
+					LabelFilter: utils.MustParseLabelSelector("external-dns.mydomain.org/publish=yes"),
 				},
 				HostnameAnnotationPolicy: "Ignore",
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
@@ -187,10 +186,8 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alp
 			Zones: []string{zoneID},
 			Source: operatorv1alpha1.ExternalDNSSource{
 				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeRoute,
-					AnnotationFilter: map[string]string{
-						"external-dns.mydomain.org/publish": "yes",
-					},
+					Type:        operatorv1alpha1.SourceTypeRoute,
+					LabelFilter: utils.MustParseLabelSelector("external-dns.mydomain.org/publish=yes"),
 				},
 				HostnameAnnotationPolicy: "Ignore",
 				FQDNTemplate:             []string{fmt.Sprintf("{{.Name}}.%s", zoneDomain)},
