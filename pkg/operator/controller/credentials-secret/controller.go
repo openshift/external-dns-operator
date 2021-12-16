@@ -263,7 +263,7 @@ func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalD
 // getExternalDNSCredentialsSecretNameWithTrace returns the name of the credentials secret which should be used as source
 // second value is true if the secret came from the ExternalDNS' provider, false otherwise
 func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) (string, bool) {
-	if name := getExternalDNSCredentialsSecretNameFromProvider(externalDNS); name != "" {
+	if name := extdnscontroller.ExternalDNSCredentialsSecretNameFromProvider(externalDNS); name != "" {
 		return name, true
 	}
 
@@ -272,31 +272,4 @@ func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1alpha1.
 	}
 
 	return "", false
-}
-
-// getExternalDNSCredentialsSecretNameFromProvider returns the name of the credentials secret retrieved from externalDNS resource
-func getExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1alpha1.ExternalDNS) string {
-	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
-		if externalDNS.Spec.Provider.AWS != nil {
-			return externalDNS.Spec.Provider.AWS.Credentials.Name
-		}
-	case operatorv1alpha1.ProviderTypeAzure:
-		if externalDNS.Spec.Provider.Azure != nil {
-			return externalDNS.Spec.Provider.Azure.ConfigFile.Name
-		}
-	case operatorv1alpha1.ProviderTypeGCP:
-		if externalDNS.Spec.Provider.GCP != nil {
-			return externalDNS.Spec.Provider.GCP.Credentials.Name
-		}
-	case operatorv1alpha1.ProviderTypeBlueCat:
-		if externalDNS.Spec.Provider.BlueCat != nil {
-			return externalDNS.Spec.Provider.BlueCat.ConfigFile.Name
-		}
-	case operatorv1alpha1.ProviderTypeInfoblox:
-		if externalDNS.Spec.Provider.Infoblox != nil {
-			return externalDNS.Spec.Provider.Infoblox.Credentials.Name
-		}
-	}
-	return ""
 }
