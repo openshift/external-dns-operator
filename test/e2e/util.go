@@ -66,7 +66,7 @@ func testRoute(name, namespace, host, svcName string) *routev1.Route {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
-			Annotations: map[string]string{
+			Labels: map[string]string{
 				"external-dns.mydomain.org/publish": "yes",
 			},
 		},
@@ -84,7 +84,7 @@ func testService(name, namespace string, svcType corev1.ServiceType) *corev1.Ser
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Annotations: map[string]string{
+			Labels: map[string]string{
 				"external-dns.mydomain.org/publish": "yes",
 			},
 		},
