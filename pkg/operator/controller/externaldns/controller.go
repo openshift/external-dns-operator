@@ -106,10 +106,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS %s: %w", req, err)
 	}
 
-	if _, _, err := r.ensureExternalDNSClusterRole(ctx, externalDNS); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role: %w", err)
-	}
-
 	// request credentials from CCO only if all of the following is true:
 	//  - underlying platform is OpenShift
 	//  - DNS provider is supported by CCO
@@ -127,10 +123,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service account: %w", err)
 	} else if !haveServiceAccount {
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS service account: %w", err)
-	}
-
-	if _, _, err := r.ensureExternalDNSClusterRoleBinding(ctx, r.config.Namespace, externalDNS); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS cluster role binding: %w", err)
 	}
 
 	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, externalDNS)

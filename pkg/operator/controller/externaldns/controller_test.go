@@ -54,8 +54,6 @@ func TestReconcile(t *testing.T) {
 		&corev1.NamespaceList{},
 		&appsv1.DeploymentList{},
 		&corev1.ServiceAccountList{},
-		&rbacv1.ClusterRoleList{},
-		&rbacv1.ClusterRoleBindingList{},
 		&operatorv1alpha1.ExternalDNSList{},
 	}
 	eventWaitTimeout := time.Duration(1 * time.Second)
@@ -78,13 +76,6 @@ func TestReconcile(t *testing.T) {
 			expectedEvents: []testEvent{
 				{
 					eventType: watch.Added,
-					objType:   "clusterrole",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns",
-					},
-				},
-				{
-					eventType: watch.Added,
 					objType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
@@ -104,13 +95,6 @@ func TestReconcile(t *testing.T) {
 					objType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
-					},
-				},
-				{
-					eventType: watch.Added,
-					objType:   "clusterrolebinding",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns-test",
 					},
 				},
 			},
@@ -131,13 +115,6 @@ func TestReconcile(t *testing.T) {
 				},
 				{
 					eventType: watch.Added,
-					objType:   "clusterrole",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns",
-					},
-				},
-				{
-					eventType: watch.Added,
 					objType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
@@ -157,13 +134,6 @@ func TestReconcile(t *testing.T) {
 					objType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
-					},
-				},
-				{
-					eventType: watch.Added,
-					objType:   "clusterrolebinding",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns-test",
 					},
 				},
 			},
@@ -177,13 +147,6 @@ func TestReconcile(t *testing.T) {
 			expectedEvents: []testEvent{
 				{
 					eventType: watch.Added,
-					objType:   "clusterrole",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns",
-					},
-				},
-				{
-					eventType: watch.Added,
 					objType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
@@ -203,13 +166,6 @@ func TestReconcile(t *testing.T) {
 					objType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
-					},
-				},
-				{
-					eventType: watch.Added,
-					objType:   "clusterrolebinding",
-					NamespacedName: types.NamespacedName{
-						Name: "external-dns-test",
 					},
 				},
 			},
