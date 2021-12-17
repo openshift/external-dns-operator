@@ -462,7 +462,9 @@ type ExternalDNSSourceUnion struct {
 	// +optional
 	Service *ExternalDNSServiceSourceOptions `json:"service,omitempty"`
 
-	// OpenShiftRoute source configuration options for specifying ingress controller names.
+	// OpenShiftRoute describes source configuration options specific to the
+	// routes.route.openshift.io resource.
+	//
 	// +kubebuilder:validation:Optional
 	// +optional
 	OpenShiftRoute *ExternalDNSOpenShiftRouteOptions `json:"openshiftRouteOptions,omitempty"`

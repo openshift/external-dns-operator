@@ -328,8 +328,8 @@ spec:
                         type: object
                     type: object
                   openshiftRouteOptions:
-                    description: OpenShiftRoute source configuration options for specifying
-                      ingress controller names.
+                    description: OpenShiftRoute describes source configuration options
+                      specific to the routes.route.openshift.io resource.
                     properties:
                       routerName:
                         description: RouterName is the name of a router (AKA ingress
