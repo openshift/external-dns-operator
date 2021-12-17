@@ -368,7 +368,7 @@ type ExternalDNSInfobloxProviderOptions struct {
 }
 
 // SecretReference contains the information to let you locate the desired secret.
-// Secret is expected to be in the operator namespace.
+// Secret is required to be in the operator namespace.
 type SecretReference struct {
 	// Name is the name of the secret.
 	//
@@ -418,7 +418,10 @@ type ExternalDNSSource struct {
 	// from sources that don't define a hostname themselves.
 	// Multiple global FQDN templates are possible.
 	//
-	// Should not be empty when HostnameAnnotationPolicy is set to Ignore.
+	// This field must be specified with a nonempty value if the source type
+	// is Service or CRD and HostnameAnnotationPolicy is set to Ignore.  The
+	// field value may be omitted or empty if HostnameAnnotationPolicy is
+	// set to Allow or if the source type is OpenShiftRoute.
 	//
 	// Provided templates should follow the syntax defined for text/template Go package,
 	// see https://pkg.go.dev/text/template.
@@ -442,8 +445,11 @@ type ExternalDNSSourceUnion struct {
 	// +required
 	Type ExternalDNSSourceType `json:"type"`
 
-	// LabelFilter specifies a label selector used to filter which source instance resources ExternalDNS publishes
-	// records for. The filter uses label selector semantics against source resource labels.
+	// LabelFilter specifies a label selector for filtering the objects for
+	// which ExternalDNS publishes records. The filter uses label selector
+	// semantics against object labels.  Specifying a null or empty label
+	// selector causes ExternalDNS to publish records for all objects of the
+	// source type resource.
 	//
 	// +kubebuilder:validation:Optional
 	// +optional
@@ -510,7 +516,11 @@ type ExternalDNSServiceSourceOptions struct {
 }
 
 type ExternalDNSOpenShiftRouteOptions struct {
-	// If source is openshift-route then you can pass the ingress controller name. Based on this name external-dns will select the respective router.
+	// RouterName is the name of a router (AKA ingress controller) as
+	// reported in Route.status.ingress[].routerName.  External-dns will use
+	// the canonical hostname of the router identified by this name when
+	// publishing records for a given route.
+	//
 	// +kubebuilder:validation:Required
 	// +required
 	RouterName string `json:"routerName"`
