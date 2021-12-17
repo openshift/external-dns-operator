@@ -399,8 +399,8 @@ type ExternalDNSSource struct {
 	// may grant privileged DNS permissions to under-privileged cluster
 	// users.
 	//
-	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=Ignore
+	// +kubebuilder:validation:Optional
 	// +optional
 	HostnameAnnotationPolicy HostnameAnnotationPolicy `json:"hostnameAnnotation"`
 
