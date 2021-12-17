@@ -59,6 +59,7 @@ type ExternalDNSSpec struct {
 	// Excluding DNS records that were previous included via a resource update
 	// will *not* result in the original DNS records being deleted.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Domains []ExternalDNSDomain `json:"domains,omitempty"`
 
@@ -96,6 +97,7 @@ type ExternalDNSSpec struct {
 	// DNS config
 	//
 	// +kubebuilder:validation:MaxItems=10
+	// +kubebuilder:validation:Optional
 	// +optional
 	Zones []string `json:"zones,omitempty"`
 }
@@ -154,6 +156,7 @@ type ExternalDNSDomainUnion struct {
 	// would also include
 	// foo.my-app.my-cluster-domain.com
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Name *string `json:"name,omitempty"`
 
@@ -163,6 +166,7 @@ type ExternalDNSDomainUnion struct {
 	// used by the go regexp package (RE2).
 	// See https://golang.org/pkg/regexp/ for more information.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Pattern *string `json:"pattern,omitempty"`
 }
@@ -205,30 +209,35 @@ type ExternalDNSProvider struct {
 	// AWS describes provider configuration options
 	// specific to AWS (Route 53).
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	AWS *ExternalDNSAWSProviderOptions `json:"aws,omitempty"`
 
 	// GCP describes provider configuration options
 	// specific to GCP (Google DNS).
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	GCP *ExternalDNSGCPProviderOptions `json:"gcp,omitempty"`
 
 	// Azure describes provider configuration options
 	// specific to Azure DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Azure *ExternalDNSAzureProviderOptions `json:"azure,omitempty"`
 
 	// BlueCat describes provider configuration options
 	// specific to BlueCat DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	BlueCat *ExternalDNSBlueCatProviderOptions `json:"blueCat,omitempty"`
 
 	// Infoblox describes provider configuration options
 	// specific to Infoblox DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Infoblox *ExternalDNSInfobloxProviderOptions `json:"infoblox,omitempty"`
 }
@@ -258,6 +267,7 @@ type ExternalDNSGCPProviderOptions struct {
 	// when running on GCP as externalDNS auto-detects
 	// the GCP project to use when running on GCP.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Project *string `json:"project,omitempty"`
 
@@ -337,28 +347,28 @@ type ExternalDNSInfobloxProviderOptions struct {
 
 	// GridHost is the IP of the Infoblox Grid host.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:="127.0.0.1"
 	// +required
 	GridHost string `json:"gridHost"`
 
 	// WAPIPort is the port for the Infoblox WAPI.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=443
 	// +required
 	WAPIPort int `json:"wapiPort"`
 
 	// WAPIVersion is the version of the Infoblox WAPI.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:="2.3.1"
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
 }
 
 // SecretReference contains the information to let you locate the desired secret.
-// Secret is expected to be in the operator namespace.
+// Secret is required to be in the operator namespace.
 type SecretReference struct {
 	// Name is the name of the secret.
 	//
@@ -399,8 +409,8 @@ type ExternalDNSSource struct {
 	// may grant privileged DNS permissions to under-privileged cluster
 	// users.
 	//
-	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=Ignore
+	// +kubebuilder:validation:Optional
 	// +optional
 	HostnameAnnotationPolicy HostnameAnnotationPolicy `json:"hostnameAnnotation"`
 
@@ -408,7 +418,10 @@ type ExternalDNSSource struct {
 	// from sources that don't define a hostname themselves.
 	// Multiple global FQDN templates are possible.
 	//
-	// Should not be empty when HostnameAnnotationPolicy is set to Ignore.
+	// This field must be specified with a nonempty value if the source type
+	// is Service or CRD and HostnameAnnotationPolicy is set to Ignore.  The
+	// field value may be omitted or empty if HostnameAnnotationPolicy is
+	// set to Allow or if the source type is OpenShiftRoute.
 	//
 	// Provided templates should follow the syntax defined for text/template Go package,
 	// see https://pkg.go.dev/text/template.
@@ -432,19 +445,26 @@ type ExternalDNSSourceUnion struct {
 	// +required
 	Type ExternalDNSSourceType `json:"type"`
 
-	// LabelFilter specifies a label selector used to filter which source instance resources ExternalDNS publishes
-	// records for. The filter uses label selector semantics against source resource labels.
+	// LabelFilter specifies a label selector for filtering the objects for
+	// which ExternalDNS publishes records. The filter uses label selector
+	// semantics against object labels.  Specifying a null or empty label
+	// selector causes ExternalDNS to publish records for all objects of the
+	// source type resource.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	LabelFilter *metav1.LabelSelector `json:"labelFilter,omitempty"`
 
 	// Service describes source configuration options specific
 	// to the service source resource.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Service *ExternalDNSServiceSourceOptions `json:"service,omitempty"`
 
-	// OpenShiftRoute source configuration options for specifying ingress controller names.
+	// OpenShiftRoute describes source configuration options specific to the
+	// routes.route.openshift.io resource.
+	//
 	// +kubebuilder:validation:Optional
 	// +optional
 	OpenShiftRoute *ExternalDNSOpenShiftRouteOptions `json:"openshiftRouteOptions,omitempty"`
@@ -498,7 +518,11 @@ type ExternalDNSServiceSourceOptions struct {
 }
 
 type ExternalDNSOpenShiftRouteOptions struct {
-	// If source is openshift-route then you can pass the ingress controller name. Based on this name external-dns will select the respective router.
+	// RouterName is the name of a router (AKA ingress controller) as
+	// reported in Route.status.ingress[].routerName.  External-dns will use
+	// the canonical hostname of the router identified by this name when
+	// publishing records for a given route.
+	//
 	// +kubebuilder:validation:Required
 	// +required
 	RouterName string `json:"routerName"`
@@ -540,6 +564,7 @@ type ExternalDNSCRDSourceOptions struct {
 	// Only one label filter can be specified on
 	// an ExternalDNS instance.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	LabelFilter *metav1.LabelSelector `json:"labelFilter,omitempty"`
 }

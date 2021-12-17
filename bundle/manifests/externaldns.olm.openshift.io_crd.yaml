@@ -210,18 +210,15 @@ spec:
                         type: object
                       gridHost:
                         default: 127.0.0.1
-                        description: "GridHost is the IP of the Infoblox Grid host.
-                          \n kubebuilder:validation:Required"
+                        description: GridHost is the IP of the Infoblox Grid host.
                         type: string
                       wapiPort:
                         default: 443
-                        description: "WAPIPort is the port for the Infoblox WAPI.
-                          \n kubebuilder:validation:Required"
+                        description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
                       wapiVersion:
                         default: 2.3.1
-                        description: "WAPIVersion is the version of the Infoblox WAPI.
-                          \n kubebuilder:validation:Required"
+                        description: WAPIVersion is the version of the Infoblox WAPI.
                         type: string
                     required:
                     - credentials
@@ -254,13 +251,16 @@ spec:
                     description: "FQDNTemplate sets a templated string that's used
                       to generate DNS names from sources that don't define a hostname
                       themselves. Multiple global FQDN templates are possible. \n
-                      Should not be empty when HostnameAnnotationPolicy is set to
-                      Ignore. \n Provided templates should follow the syntax defined
-                      for text/template Go package, see https://pkg.go.dev/text/template.
-                      Annotations inside the template correspond to the definition
-                      of the source resource object (e.g. Kubernetes service, OpenShift
-                      route). Example: \"{{.Name}}.example.com\" would be expanded
-                      to \"myservice.example.com\" for service source"
+                      This field must be specified with a nonempty value if the source
+                      type is Service or CRD and HostnameAnnotationPolicy is set to
+                      Ignore.  The field value may be omitted or empty if HostnameAnnotationPolicy
+                      is set to Allow or if the source type is OpenShiftRoute. \n
+                      Provided templates should follow the syntax defined for text/template
+                      Go package, see https://pkg.go.dev/text/template. Annotations
+                      inside the template correspond to the definition of the source
+                      resource object (e.g. Kubernetes service, OpenShift route).
+                      Example: \"{{.Name}}.example.com\" would be expanded to \"myservice.example.com\"
+                      for service source"
                     items:
                       type: string
                     type: array
@@ -280,10 +280,11 @@ spec:
                     - Allow
                     type: string
                   labelFilter:
-                    description: LabelFilter specifies a label selector used to filter
-                      which source instance resources ExternalDNS publishes records
-                      for. The filter uses label selector semantics against source
-                      resource labels.
+                    description: LabelFilter specifies a label selector for filtering
+                      the objects for which ExternalDNS publishes records. The filter
+                      uses label selector semantics against object labels.  Specifying
+                      a null or empty label selector causes ExternalDNS to publish
+                      records for all objects of the source type resource.
                     properties:
                       matchExpressions:
                         description: matchExpressions is a list of label selector
@@ -327,13 +328,14 @@ spec:
                         type: object
                     type: object
                   openshiftRouteOptions:
-                    description: OpenShiftRoute source configuration options for specifying
-                      ingress controller names.
+                    description: OpenShiftRoute describes source configuration options
+                      specific to the routes.route.openshift.io resource.
                     properties:
                       routerName:
-                        description: If source is openshift-route then you can pass
-                          the ingress controller name. Based on this name external-dns
-                          will select the respective router.
+                        description: RouterName is the name of a router (AKA ingress
+                          controller) as reported in Route.status.ingress[].routerName.  External-dns
+                          will use the canonical hostname of the router identified
+                          by this name when publishing records for a given route.
                         type: string
                     required:
                     - routerName
