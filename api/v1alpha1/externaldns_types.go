@@ -337,21 +337,21 @@ type ExternalDNSInfobloxProviderOptions struct {
 
 	// GridHost is the IP of the Infoblox Grid host.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:="127.0.0.1"
 	// +required
 	GridHost string `json:"gridHost"`
 
 	// WAPIPort is the port for the Infoblox WAPI.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=443
 	// +required
 	WAPIPort int `json:"wapiPort"`
 
 	// WAPIVersion is the version of the Infoblox WAPI.
 	//
-	// kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// +kubebuilder:default:="2.3.1"
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
