@@ -59,6 +59,7 @@ type ExternalDNSSpec struct {
 	// Excluding DNS records that were previous included via a resource update
 	// will *not* result in the original DNS records being deleted.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Domains []ExternalDNSDomain `json:"domains,omitempty"`
 
@@ -96,6 +97,7 @@ type ExternalDNSSpec struct {
 	// DNS config
 	//
 	// +kubebuilder:validation:MaxItems=10
+	// +kubebuilder:validation:Optional
 	// +optional
 	Zones []string `json:"zones,omitempty"`
 }
@@ -154,6 +156,7 @@ type ExternalDNSDomainUnion struct {
 	// would also include
 	// foo.my-app.my-cluster-domain.com
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Name *string `json:"name,omitempty"`
 
@@ -163,6 +166,7 @@ type ExternalDNSDomainUnion struct {
 	// used by the go regexp package (RE2).
 	// See https://golang.org/pkg/regexp/ for more information.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Pattern *string `json:"pattern,omitempty"`
 }
@@ -205,30 +209,35 @@ type ExternalDNSProvider struct {
 	// AWS describes provider configuration options
 	// specific to AWS (Route 53).
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	AWS *ExternalDNSAWSProviderOptions `json:"aws,omitempty"`
 
 	// GCP describes provider configuration options
 	// specific to GCP (Google DNS).
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	GCP *ExternalDNSGCPProviderOptions `json:"gcp,omitempty"`
 
 	// Azure describes provider configuration options
 	// specific to Azure DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Azure *ExternalDNSAzureProviderOptions `json:"azure,omitempty"`
 
 	// BlueCat describes provider configuration options
 	// specific to BlueCat DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	BlueCat *ExternalDNSBlueCatProviderOptions `json:"blueCat,omitempty"`
 
 	// Infoblox describes provider configuration options
 	// specific to Infoblox DNS.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Infoblox *ExternalDNSInfobloxProviderOptions `json:"infoblox,omitempty"`
 }
@@ -258,6 +267,7 @@ type ExternalDNSGCPProviderOptions struct {
 	// when running on GCP as externalDNS auto-detects
 	// the GCP project to use when running on GCP.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Project *string `json:"project,omitempty"`
 
@@ -435,12 +445,14 @@ type ExternalDNSSourceUnion struct {
 	// LabelFilter specifies a label selector used to filter which source instance resources ExternalDNS publishes
 	// records for. The filter uses label selector semantics against source resource labels.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	LabelFilter *metav1.LabelSelector `json:"labelFilter,omitempty"`
 
 	// Service describes source configuration options specific
 	// to the service source resource.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	Service *ExternalDNSServiceSourceOptions `json:"service,omitempty"`
 
@@ -540,6 +552,7 @@ type ExternalDNSCRDSourceOptions struct {
 	// Only one label filter can be specified on
 	// an ExternalDNS instance.
 	//
+	// +kubebuilder:validation:Optional
 	// +optional
 	LabelFilter *metav1.LabelSelector `json:"labelFilter,omitempty"`
 }
