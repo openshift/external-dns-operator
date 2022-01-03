@@ -26,7 +26,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    olm.skipRange: ">=4.6.0 <4.9.0"
+    olm.skipRange: ">=4.6.0 <=4.10.0"
     certified: "false"
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
