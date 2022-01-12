@@ -2,11 +2,7 @@ package externaldnscontroller
 
 import (
 	"context"
-
 	"fmt"
-
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
-
 	"reflect"
 	"testing"
 
@@ -23,6 +19,7 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
 func TestEnsureCredentialsRequest(t *testing.T) {
@@ -33,7 +30,7 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 		inputConfig               Config
 		inputRequest              ctrl.Request
 		expectedResult            reconcile.Result
-		expectedEvents            []testEvent
+		expectedEvents            []test.Event
 		errExpected               bool
 		ocpPlatform               bool
 		inputExtDNS               *operatorv1alpha1.ExternalDNS

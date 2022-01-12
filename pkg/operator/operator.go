@@ -34,6 +34,7 @@ import (
 	apiv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 	operatorctrl "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	caconfigmapctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/ca-configmap"
 	credsecretctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/credentials-secret"
 	externaldnsctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns"
 )
@@ -112,6 +113,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		OperatorNamespace: opCfg.OperatorNamespace,
 		IsOpenShift:       opCfg.IsOpenShift,
 		PlatformStatus:    opCfg.PlatformStatus,
+		InjectTrustedCA:   opCfg.InjectTrustedCA(),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}
@@ -123,6 +125,17 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		IsOpenShift:     opCfg.IsOpenShift,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create credentials secret controller: %w", err)
+	}
+
+	if opCfg.InjectTrustedCA() {
+		// Create and register the CA config map controller with the operator manager.
+		if _, err := caconfigmapctrl.New(mgr, caconfigmapctrl.Config{
+			SourceNamespace: operatorctrl.ExternalDNSCredentialsSourceNamespace(opCfg),
+			TargetNamespace: opCfg.OperandNamespace,
+			CAConfigMapName: opCfg.TrustedCAConfigMapName,
+		}); err != nil {
+			return nil, fmt.Errorf("failed to create CA configmap controller: %w", err)
+		}
 	}
 
 	restMapper, err := apiutil.NewDiscoveryRESTMapper(cliCfg)

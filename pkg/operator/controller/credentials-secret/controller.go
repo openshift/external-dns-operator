@@ -40,6 +40,7 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	extdnscontroller "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	ctrlutils "github.com/openshift/external-dns-operator/pkg/operator/controller/utils"
 	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
 )
 
@@ -65,7 +66,7 @@ type reconciler struct {
 }
 
 // New creates a new controller that syncs ExternalDNS' providers credentials secrets
-// between the config and operand namespaces.
+// between the operator and operand namespaces.
 func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	log := ctrl.Log.WithName(controllerName)
 
@@ -191,7 +192,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	if err := c.Watch(
 		&source.Kind{Type: &corev1.Secret{}},
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
-		predicate.NewPredicateFuncs(isInNS(config.SourceNamespace)),
+		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)),
 	); err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	if err := c.Watch(
 		&source.Kind{Type: &corev1.Secret{}},
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
-		predicate.NewPredicateFuncs(isInNS(config.TargetNamespace)),
+		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)),
 	); err != nil {
 		return nil, err
 	}
@@ -245,13 +246,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func hasSecret(o client.Object, isOpenShift bool) bool {
 	ed := o.(*operatorv1alpha1.ExternalDNS)
 	return len(getExternalDNSCredentialsSecretName(ed, isOpenShift)) != 0
-}
-
-// isInNS returns a predicate which checks the belonging to the given namespace
-func isInNS(namespace string) func(o client.Object) bool {
-	return func(o client.Object) bool {
-		return o.GetNamespace() == namespace
-	}
 }
 
 // getExternalDNSCredentialsSecretName returns the name of the credentials secret which should be used as source

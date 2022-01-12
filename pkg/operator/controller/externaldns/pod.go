@@ -35,15 +35,19 @@ import (
 )
 
 const (
-	defaultMetricsAddress   = "127.0.0.1"
-	defaultOwnerPrefix      = "external-dns"
-	defaultMetricsStartPort = 7979
-	defaultConfigMountPath  = "/etc/kubernetes"
-	defaultTXTRecordPrefix  = "external-dns-"
-	providerArg             = "--provider="
-	httpProxyEnvVar         = "HTTP_PROXY"
-	httpsProxyEnvVar        = "HTTPS_PROXY"
-	noProxyEnvVar           = "NO_PROXY"
+	defaultMetricsAddress    = "127.0.0.1"
+	defaultOwnerPrefix       = "external-dns"
+	defaultMetricsStartPort  = 7979
+	defaultConfigMountPath   = "/etc/kubernetes"
+	defaultTXTRecordPrefix   = "external-dns-"
+	providerArg              = "--provider="
+	httpProxyEnvVar          = "HTTP_PROXY"
+	httpsProxyEnvVar         = "HTTPS_PROXY"
+	noProxyEnvVar            = "NO_PROXY"
+	trustedCAVolumeName      = "trusted-ca"
+	trustedCAFileName        = "tls-ca-bundle.pem"
+	trustedCAFileKey         = "ca-bundle.crt"
+	trustedCAExtractedPEMDir = "/etc/pki/ca-trust/extracted/pem"
 	//
 	// AWS
 	//
@@ -204,6 +208,20 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		}
 		if val := os.Getenv(noProxyEnvVar); val != "" {
 			container.Env = append(container.Env, corev1.EnvVar{Name: noProxyEnvVar, Value: val})
+		}
+	}
+
+	//
+	// VOLUME MOUNTS
+	//
+	for _, v := range b.volumes {
+		// if trustedCA volume was added
+		if v.Name == trustedCAVolumeName {
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      v.Name,
+				MountPath: trustedCAExtractedPEMDir,
+				ReadOnly:  true,
+			})
 		}
 	}
 
@@ -460,21 +478,49 @@ func (b *externalDNSContainerBuilder) fillInfobloxFields(container *corev1.Conta
 
 // externalDNSVolumeBuilder builds the definition of the volumes for ExternalDNS POD
 type externalDNSVolumeBuilder struct {
-	provider   string
-	secretName string
+	provider               string
+	secretName             string
+	trustedCAConfigMapName string
 }
 
 // newExternalDNSVolumeBuilder returns an instance of volume builder
-func newExternalDNSVolumeBuilder(provider, secretName string) *externalDNSVolumeBuilder {
+func newExternalDNSVolumeBuilder(provider, secretName, trustedCAConfigMapName string) *externalDNSVolumeBuilder {
 	return &externalDNSVolumeBuilder{
-		provider:   provider,
-		secretName: secretName,
+		provider:               provider,
+		secretName:             secretName,
+		trustedCAConfigMapName: trustedCAConfigMapName,
 	}
 }
 
 // build returns the definition of all the volumes
 func (b *externalDNSVolumeBuilder) build() []corev1.Volume {
-	return b.providerSpecificVolumes()
+	volumes := b.providerAgnosticVolumes()
+	return append(volumes, b.providerSpecificVolumes()...)
+}
+
+// providerAgnosticVolumes returns the volumes ...
+func (b *externalDNSVolumeBuilder) providerAgnosticVolumes() []corev1.Volume {
+	if len(b.trustedCAConfigMapName) > 0 {
+		return []corev1.Volume{
+			{
+				Name: trustedCAVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: b.trustedCAConfigMapName,
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  trustedCAFileKey,
+								Path: trustedCAFileName,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+	return nil
 }
 
 // providerSpecificVolumes returns the volumes specific to the provider of given External DNS

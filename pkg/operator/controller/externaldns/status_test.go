@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
 // Option for comparison of conditions : ignore LastTransitionTime

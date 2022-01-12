@@ -43,6 +43,7 @@ func main() {
 	flag.StringVar(&opCfg.OperandNamespace, "operand-namespace", operatorconfig.DefaultOperandNamespace, "The namespace that ExternalDNS containers should run in.")
 	flag.StringVar(&opCfg.ExternalDNSImage, "externaldns-image", operatorconfig.DefaultExternalDNSImage, "The container image used for running ExternalDNS.")
 	flag.StringVar(&opCfg.CertDir, "cert-dir", operatorconfig.DefaultCertDir, "The directory for keys and certificates for serving the webhook.")
+	flag.StringVar(&opCfg.TrustedCAConfigMapName, "trusted-ca-configmap", operatorconfig.DefaultTrustedCAConfigMapName, "The name of the config map containing TLS CA(s) which should be trusted by ExternalDNS containers. PEM encoded file under \"ca-bundle.crt\" key is expected.")
 	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
 	flag.BoolVar(&opCfg.EnablePlatformDetection, "enable-platform-detection", operatorconfig.DefaultEnablePlatformDetection, "Enable the detection of the underlying platform. Defaults to true.")
 	opts := zap.Options{

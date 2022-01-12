@@ -76,7 +76,11 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
-	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus)
+	configMapName := ""
+	if r.config.InjectTrustedCA {
+		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
+	}
+	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -123,7 +127,12 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool, platformStatus *configv1.PlatformStatus) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(namespace, image, secretName string,
+	serviceAccount *corev1.ServiceAccount,
+	externalDNS *operatorv1alpha1.ExternalDNS,
+	isOpenShift bool,
+	platformStatus *configv1.PlatformStatus,
+	trustedCAConfigMapName string) (*appsv1.Deployment, error) {
 
 	replicas := int32(1)
 
@@ -177,7 +186,7 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, serviceAc
 		return nil, fmt.Errorf("unsupported source type: %q", externalDNS.Spec.Source.Type)
 	}
 
-	vbld := newExternalDNSVolumeBuilder(provider, secretName)
+	vbld := newExternalDNSVolumeBuilder(provider, secretName, trustedCAConfigMapName)
 	volumes := vbld.build()
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 

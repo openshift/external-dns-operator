@@ -31,7 +31,7 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
 func TestEnsureExternalDNSServiceAccount(t *testing.T) {

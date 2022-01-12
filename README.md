@@ -129,7 +129,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
 
 7. Create the `Catalogsource` object:
 
-   ```yaml
+   ```bash
    $ cat <<EOF | oc apply -f -
    apiVersion: operators.coreos.com/v1alpha1
    kind: CatalogSource
@@ -142,9 +142,13 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    EOF
    ```
 
-8. Create a subscription object to install the Operator:
-   
-    ```yaml
+8. Create the operator namespace:
+    ```bash
+    oc create namespace external-dns-operator
+    ```
+
+9. Create the `Subscription` object:
+    ```bash
     cat <<EOF | oc apply -f -
     apiVersion: operators.coreos.com/v1alpha1
     kind: Subscription
@@ -158,7 +162,22 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
       sourceNamespace: openshift-marketplace
     EOF
     ```
-    **Note**: You can install the `ExternalDNS` Operator through the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS operator`,  and install it in the `external-dns-operator` namespace.
+
+10. Create the `OperatorGroup` object:
+    ```bash
+    cat <<EOF | oc apply -f -
+    apiVersion: operators.coreos.com/v1
+    kind: OperatorGroup
+    metadata:
+      name: external-dns-operator
+      namespace: external-dns-operator
+    spec:
+      targetNamespaces:
+      - external-dns-operator
+    EOF
+    ```
+
+**Note**: The steps starting from the 8th can be replaced with the following actions in the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS Operator`,  and install it in the `external-dns-operator` namespace.
 
 ### Running end-to-end tests manually
 
@@ -179,3 +198,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
    ```sh
    $ make test-e2e
    ```
+
+### Proxy support
+
+[Configuring proxy support for ExternalDNS Operator](./docs/proxy.md)
