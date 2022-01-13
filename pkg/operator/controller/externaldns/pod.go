@@ -18,6 +18,8 @@ package externaldnscontroller
 
 import (
 	"fmt"
+	"os"
+
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -29,6 +31,7 @@ import (
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 const (
@@ -38,6 +41,9 @@ const (
 	defaultConfigMountPath  = "/etc/kubernetes"
 	defaultTXTRecordPrefix  = "external-dns-"
 	providerArg             = "--provider="
+	httpProxyEnvVar         = "HTTP_PROXY"
+	httpsProxyEnvVar        = "HTTPS_PROXY"
+	noProxyEnvVar           = "NO_PROXY"
 	//
 	// AWS
 	//
@@ -121,6 +127,9 @@ func (b *externalDNSContainerBuilder) defaultContainer(name string) *corev1.Cont
 
 // fillProviderAgnosticFields fills the given container with the data agnostic to any provider
 func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone string, container *corev1.Container) error {
+	//
+	// ARGS
+	//
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
@@ -182,6 +191,22 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 
 	container.Args = append(container.Args, filterArgs...)
 	container.Args = append(container.Args, args...)
+
+	//
+	// ENV
+	//
+	if utils.EnvProxySupportedProvider(b.externalDNS) {
+		if val := os.Getenv(httpProxyEnvVar); val != "" {
+			container.Env = append(container.Env, corev1.EnvVar{Name: httpProxyEnvVar, Value: val})
+		}
+		if val := os.Getenv(httpsProxyEnvVar); val != "" {
+			container.Env = append(container.Env, corev1.EnvVar{Name: httpsProxyEnvVar, Value: val})
+		}
+		if val := os.Getenv(noProxyEnvVar); val != "" {
+			container.Env = append(container.Env, corev1.EnvVar{Name: noProxyEnvVar, Value: val})
+		}
+	}
+
 	return nil
 
 }

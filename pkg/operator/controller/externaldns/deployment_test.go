@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -63,6 +64,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		inputExternalDNS        *operatorv1alpha1.ExternalDNS
 		inputIsOpenShift        bool
 		inputPlatformStatus     *configv1.PlatformStatus
+		inputEnvVars            map[string]string
 		expectedTemplatePodSpec corev1.PodSpec
 	}{
 		{
@@ -2020,10 +2022,79 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:             "Propagate proxy settings",
+			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputEnvVars: map[string]string{
+				"HTTP_PROXY":  "http://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+				"HTTPS_PROXY": "https://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+				"NO_PROXY":    ".cluster.local,.svc,.us-east-2.compute.internal,10.0.0.0/16,127.0.0.1,100.200.300.400",
+			},
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							`--fqdn-template={{""}}`,
+							"--ignore-hostname-annotation",
+							"--txt-prefix=external-dns-",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "HTTP_PROXY",
+								Value: "http://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+							},
+							{
+								Name:  "HTTPS_PROXY",
+								Value: "https://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+							},
+							{
+								Name:  "NO_PROXY",
+								Value: ".cluster.local,.svc,.us-east-2.compute.internal,10.0.0.0/16,127.0.0.1,100.200.300.400",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			for k, v := range tc.inputEnvVars {
+				if err := os.Setenv(k, v); err != nil {
+					t.Errorf("failed to set environment variable %q: %v", k, err)
+				}
+			}
+			defer func() {
+				for k := range tc.inputEnvVars {
+					if err := os.Unsetenv(k); err != nil {
+						t.Errorf("failed to unset environment variable %q: %v", k, err)
+					}
+				}
+			}()
+
 			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)

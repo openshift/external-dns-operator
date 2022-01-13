@@ -12,6 +12,6 @@ if [ "${OPENSHIFT_CI:-false}" = true ]; then
   go mod vendor
   go mod tidy
 
-  test -z "$(git status --porcelain)" || print_failure
+  test -z "$(git status --porcelain | \grep -v '^??')" || print_failure
   echo "verified Go modules"
 fi
