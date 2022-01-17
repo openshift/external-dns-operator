@@ -75,8 +75,8 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
     ```sh
     $ export BUNDLE_IMG=<registry>/<username>/external-dns-operator-bundle:latest
     ```
-    b. In the bundle/manifests/external-dns-operator_clusterserviceversion.yaml
-        add the operator image created in Step 1 as follows - 
+    b. In the `bundle/manifests/external-dns-operator_clusterserviceversion.yaml`
+        add the operator image created in Step 1 as follows:
     ```sh
         In annotations:
         Change containerImage: quay.io/openshift/origin-external-dns-operator:latest
@@ -106,7 +106,7 @@ The following procedure describes how to deploy the `ExternalDNS` Operator for A
 5. Prepare the operand namespace:
    ```
    oc create ns external-dns
-   oc apply -f config/rback/extra-roles.yaml
+   oc apply -f config/rbac/extra-roles.yaml
    ```
 
 6. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.9/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
