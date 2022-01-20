@@ -18,17 +18,16 @@ package externaldnscontroller
 
 import (
 	"context"
-
-	cco "github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1"
-
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	cco "github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
 const (
@@ -64,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		inputConfig     Config
 		inputRequest    ctrl.Request
 		expectedResult  reconcile.Result
-		expectedEvents  []testEvent
+		expectedEvents  []test.Event
 		errExpected     bool
 	}{
 		{
@@ -73,26 +72,26 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "deployment",
+					EventType: watch.Added,
+					ObjType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Added,
-					objType:   "serviceaccount",
+					EventType: watch.Added,
+					ObjType:   "serviceaccount",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Modified,
-					objType:   "externaldns",
+					EventType: watch.Modified,
+					ObjType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -105,33 +104,33 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfigOpenShift(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "credentialsrequest",
+					EventType: watch.Added,
+					ObjType:   "credentialsrequest",
 					NamespacedName: types.NamespacedName{
 						Name: "externaldns-credentials-request-" + strings.ToLower(string(testExtDNSInstance().Spec.Provider.Type)),
 					},
 				},
 				{
-					eventType: watch.Added,
-					objType:   "deployment",
+					EventType: watch.Added,
+					ObjType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Added,
-					objType:   "serviceaccount",
+					EventType: watch.Added,
+					ObjType:   "serviceaccount",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Modified,
-					objType:   "externaldns",
+					EventType: watch.Modified,
+					ObjType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -144,26 +143,26 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfigOpenShift(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "deployment",
+					EventType: watch.Added,
+					ObjType:   "deployment",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Added,
-					objType:   "serviceaccount",
+					EventType: watch.Added,
+					ObjType:   "serviceaccount",
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
 						Name:      "external-dns-test",
 					},
 				},
 				{
-					eventType: watch.Modified,
-					objType:   "externaldns",
+					EventType: watch.Modified,
+					ObjType:   "externaldns",
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -190,15 +189,11 @@ func TestReconcile(t *testing.T) {
 				log:    zap.New(zap.UseDevMode(true)),
 			}
 
-			// get watch interfaces from all the type managed by the operator
-			watches := []watch.Interface{}
-			for _, managedType := range managedTypesList {
-				w, err := cl.Watch(context.TODO(), managedType)
-				if err != nil {
-					t.Fatalf("failed to start the watch for %T: %v", managedType, err)
-				}
-				watches = append(watches, w)
-			}
+			c := test.NewEventCollector(t, cl, managedTypesList, len(tc.expectedEvents))
+
+			// get watch interfaces from all the types managed by the operator
+			c.Start(context.TODO())
+			defer c.Stop()
 
 			// TEST FUNCTION
 			gotResult, err := r.Reconcile(context.TODO(), tc.inputRequest)
@@ -211,98 +206,23 @@ func TestReconcile(t *testing.T) {
 			} else if tc.errExpected {
 				t.Fatalf("error expected but not received")
 			}
+
 			// result check
 			if !reflect.DeepEqual(gotResult, tc.expectedResult) {
 				t.Fatalf("expected result %v, got %v", tc.expectedResult, gotResult)
 			}
-			// events check
-			if len(tc.expectedEvents) == 0 {
-				return
-			}
-			// fan in the events
-			allEventsCh := make(chan watch.Event, len(watches))
-			for _, w := range watches {
-				go func(c <-chan watch.Event) {
-					for e := range c {
-						t.Logf("Got event: %v", e)
-						allEventsCh <- e
-					}
-				}(w.ResultChan())
-			}
-			defer func() {
-				for _, w := range watches {
-					w.Stop()
-				}
-			}()
-			idxExpectedEvents := indexTestEvents(tc.expectedEvents)
-			for {
-				select {
-				case e := <-allEventsCh:
-					key := watch2test(e).key()
-					if _, exists := idxExpectedEvents[key]; !exists {
-						t.Fatalf("unexpected event received: %v", e)
-					}
-					delete(idxExpectedEvents, key)
-					if len(idxExpectedEvents) == 0 {
-						return
-					}
-				case <-time.After(eventWaitTimeout):
-					t.Fatalf("timed out waiting for all expected events")
-				}
+
+			// collect the events received from Reconcile()
+			collectedEvents := c.Collect(len(tc.expectedEvents), eventWaitTimeout)
+
+			// compare collected and expected events
+			idxExpectedEvents := test.IndexEvents(tc.expectedEvents)
+			idxCollectedEvents := test.IndexEvents(collectedEvents)
+			if diff := cmp.Diff(idxExpectedEvents, idxCollectedEvents); diff != "" {
+				t.Fatalf("found diff between expected and collected events: %s", diff)
 			}
 		})
 	}
-}
-
-type testEvent struct {
-	eventType watch.EventType
-	objType   string
-	types.NamespacedName
-}
-
-func (e testEvent) key() string {
-	return string(e.eventType) + "/" + e.objType + "/" + e.Namespace + "/" + e.Name
-}
-
-func indexTestEvents(events []testEvent) map[string]testEvent {
-	m := map[string]testEvent{}
-	for _, e := range events {
-		m[e.key()] = e
-	}
-	return m
-}
-
-func watch2test(we watch.Event) testEvent {
-	te := testEvent{
-		eventType: we.Type,
-	}
-
-	switch obj := we.Object.(type) {
-	case *appsv1.Deployment:
-		te.objType = "deployment"
-		te.Namespace = obj.Namespace
-		te.Name = obj.Name
-	case *corev1.ServiceAccount:
-		te.objType = "serviceaccount"
-		te.Namespace = obj.Namespace
-		te.Name = obj.Name
-	case *rbacv1.ClusterRole:
-		te.objType = "clusterrole"
-		te.Name = obj.Name
-	case *rbacv1.ClusterRoleBinding:
-		te.objType = "clusterrolebinding"
-		te.Name = obj.Name
-	case *corev1.Namespace:
-		te.objType = "namespace"
-		te.Name = obj.Name
-	case *operatorv1alpha1.ExternalDNS:
-		te.objType = "externaldns"
-		te.Name = obj.Name
-	case *cco.CredentialsRequest:
-		te.objType = "credentialsrequest"
-		te.Name = obj.Name
-	}
-	return te
 }
 
 func testConfig() Config {

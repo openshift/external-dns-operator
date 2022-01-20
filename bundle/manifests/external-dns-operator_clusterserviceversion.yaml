@@ -32,6 +32,7 @@ metadata:
     createdAt: 2021/09/28
     containerImage: quay.io/openshift/origin-external-dns-operator:latest
     operatorframework.io/suggested-namespace: external-dns-operator
+    operators.openshift.io/infrastructure-features: '["disconnected","proxy-aware"]'
   name: external-dns-operator.v0.0.1
   namespace: external-dns-operator
 spec:
@@ -87,6 +88,7 @@ spec:
               - args:
                 - --metrics-bind-address=127.0.0.1:8080
                 - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
+                - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
                 env:
                 - name: OPERATOR_NAMESPACE
                   valueFrom:
@@ -94,6 +96,8 @@ spec:
                       fieldPath: metadata.namespace
                 - name: RELATED_IMAGE_EXTERNAL_DNS
                   value: k8s.gcr.io/external-dns/external-dns:v0.10.2
+                - name: TRUSTED_CA_CONFIGMAP_NAME
+                  value: ""
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: operator
                 ports:

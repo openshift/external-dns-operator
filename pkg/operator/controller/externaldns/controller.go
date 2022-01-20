@@ -47,10 +47,12 @@ type Config struct {
 	Image string
 	// OperatorNamespace is the namespace in which this operator is deployed.
 	OperatorNamespace string
-	// IsOpenShift is the flag which instructs the operator that it runs in OpenShift
+	// IsOpenShift is the flag which instructs the operator that it runs in OpenShift.
 	IsOpenShift bool
-	// PlatformStatus is the details about the underlying platform
+	// PlatformStatus is the details about the underlying platform.
 	PlatformStatus *configv1.PlatformStatus
+	// InjectTrustedCA is the flag which instructs the operator to inject the trusted CA into ExternalDNS containers.
+	InjectTrustedCA bool
 }
 
 // reconciler reconciles an ExternalDNS object.

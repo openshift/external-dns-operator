@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -39,6 +40,7 @@ const (
 	DefaultOperandNamespace        = "external-dns"
 	DefaultEnableWebhook           = true
 	DefaultEnablePlatformDetection = true
+	DefaultTrustedCAConfigMapName  = ""
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -80,6 +82,9 @@ type Config struct {
 
 	// PlatformStatus is the details about the underlying platform.
 	PlatformStatus *configv1.PlatformStatus
+
+	// TrustedCAConfigMapName is the name of the configmap containing CA bundle to be trusted by ExternalDNS containers.
+	TrustedCAConfigMapName string
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields
@@ -105,6 +110,11 @@ func (c *Config) FillPlatformDetails(ctx context.Context, ctrlClient ctrlclient.
 		c.PlatformStatus = infraConfig.Status.PlatformStatus
 	}
 	return nil
+}
+
+// InjectTrustedCA returns true if the trusted CA needs to be injected into ExternalDNS containers.
+func (c *Config) InjectTrustedCA() bool {
+	return len(strings.TrimSpace(c.TrustedCAConfigMapName)) != 0
 }
 
 // isOCP returns true if the platform is OCP

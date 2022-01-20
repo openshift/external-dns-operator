@@ -38,7 +38,7 @@ import (
 
 	"github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
@@ -59,13 +59,14 @@ var (
 
 func TestDesiredExternalDNSDeployment(t *testing.T) {
 	testCases := []struct {
-		name                    string
-		inputSecretName         string
-		inputExternalDNS        *operatorv1alpha1.ExternalDNS
-		inputIsOpenShift        bool
-		inputPlatformStatus     *configv1.PlatformStatus
-		inputEnvVars            map[string]string
-		expectedTemplatePodSpec corev1.PodSpec
+		name                        string
+		inputSecretName             string
+		inputExternalDNS            *operatorv1alpha1.ExternalDNS
+		inputIsOpenShift            bool
+		inputPlatformStatus         *configv1.PlatformStatus
+		inputTrustedCAConfigMapName string
+		inputEnvVars                map[string]string
+		expectedTemplatePodSpec     corev1.PodSpec
 	}{
 		{
 			name:             "Nominal AWS",
@@ -171,6 +172,74 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                        "Trusted CA AWS",
+			inputExternalDNS:            testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputTrustedCAConfigMapName: test.TrustedCAConfigMapName,
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: "trusted-ca",
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: test.TrustedCAConfigMapName,
+								},
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "ca-bundle.crt",
+										Path: "tls-ca-bundle.pem",
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  "external-dns-nfbh54h648h6q",
+						Image: "quay.io/test/external-dns:latest",
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "trusted-ca",
+								ReadOnly:  true,
+								MountPath: "/etc/pki/ca-trust/extracted/pem",
+							},
 						},
 					},
 				},
@@ -2095,7 +2164,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				}
 			}()
 
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus)
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}

@@ -68,6 +68,14 @@ func ExternalDNSDestCredentialsSecretName(operandNamespace, extdnsName string) t
 	}
 }
 
+// ExternalDNSDestTrustedCAConfigMapName returns the namespaced name of the destination (operand) trusted CA configmap
+func ExternalDNSDestTrustedCAConfigMapName(operandNamespace string) types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: operandNamespace,
+		Name:      ExternalDNSBaseName + "-trusted-ca",
+	}
+}
+
 func ExternalDNSCredentialsSourceNamespace(cfg *operatorconfig.Config) string {
 	// TODO: use openshift-config namespace for OpenShift?
 	return cfg.OperatorNamespace

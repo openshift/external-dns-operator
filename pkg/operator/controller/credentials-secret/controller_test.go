@@ -22,10 +22,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns/test"
+	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		inputConfig     Config
 		inputRequest    ctrl.Request
 		expectedResult  reconcile.Result
-		expectedEvents  []testEvent
+		expectedEvents  []test.Event
 		errExpected     bool
 	}{
 		{
@@ -70,10 +72,10 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "secret",
+					EventType: watch.Added,
+					ObjType:   "secret",
 					NamespacedName: types.NamespacedName{
 						Namespace: testOperandNamespace,
 						Name:      testTargetSecretName,
@@ -87,10 +89,10 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfig(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Modified,
-					objType:   "secret",
+					EventType: watch.Modified,
+					ObjType:   "secret",
 					NamespacedName: types.NamespacedName{
 						Namespace: testOperandNamespace,
 						Name:      testTargetSecretName,
@@ -112,10 +114,10 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfigOpenShift(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "secret",
+					EventType: watch.Added,
+					ObjType:   "secret",
 					NamespacedName: types.NamespacedName{
 						Namespace: testOperandNamespace,
 						Name:      testTargetSecretName,
@@ -130,10 +132,10 @@ func TestReconcile(t *testing.T) {
 			inputConfig:     testConfigOpenShift(),
 			inputRequest:    testRequest(),
 			expectedResult:  reconcile.Result{},
-			expectedEvents: []testEvent{
+			expectedEvents: []test.Event{
 				{
-					eventType: watch.Added,
-					objType:   "secret",
+					EventType: watch.Added,
+					ObjType:   "secret",
 					NamespacedName: types.NamespacedName{
 						Namespace: testOperandNamespace,
 						Name:      testTargetSecretName,
@@ -162,15 +164,11 @@ func TestReconcile(t *testing.T) {
 				log:    zap.New(zap.UseDevMode(true)),
 			}
 
+			c := test.NewEventCollector(t, cl, managedTypesList, len(tc.expectedEvents))
+
 			// get watch interfaces from all the type managed by the operator
-			watches := []watch.Interface{}
-			for _, managedType := range managedTypesList {
-				w, err := cl.Watch(context.TODO(), managedType)
-				if err != nil {
-					t.Fatalf("failed to start the watch for %T: %v", managedType, err)
-				}
-				watches = append(watches, w)
-			}
+			c.Start(context.TODO())
+			defer c.Stop()
 
 			// TEST FUNCTION
 			gotResult, err := r.Reconcile(context.TODO(), tc.inputRequest)
@@ -183,44 +181,20 @@ func TestReconcile(t *testing.T) {
 			} else if tc.errExpected {
 				t.Fatalf("error expected but not received")
 			}
+
 			// result check
 			if !reflect.DeepEqual(gotResult, tc.expectedResult) {
 				t.Fatalf("expected result %v, got %v", tc.expectedResult, gotResult)
 			}
-			// events check
-			if len(tc.expectedEvents) == 0 {
-				return
-			}
-			// fan in the events
-			allEventsCh := make(chan watch.Event, len(watches))
-			for _, w := range watches {
-				go func(c <-chan watch.Event) {
-					for e := range c {
-						t.Logf("Got event: %v", e)
-						allEventsCh <- e
-					}
-				}(w.ResultChan())
-			}
-			defer func() {
-				for _, w := range watches {
-					w.Stop()
-				}
-			}()
-			idxExpectedEvents := indexTestEvents(tc.expectedEvents)
-			for {
-				select {
-				case e := <-allEventsCh:
-					key := watch2test(e).key()
-					if _, exists := idxExpectedEvents[key]; !exists {
-						t.Fatalf("unexpected event received: %v", e)
-					}
-					delete(idxExpectedEvents, key)
-					if len(idxExpectedEvents) == 0 {
-						return
-					}
-				case <-time.After(eventWaitTimeout):
-					t.Fatalf("timed out waiting for all expected events")
-				}
+
+			// collect the events received from Reconcile()
+			collectedEvents := c.Collect(len(tc.expectedEvents), eventWaitTimeout)
+
+			// compare collected and expected events
+			idxExpectedEvents := test.IndexEvents(tc.expectedEvents)
+			idxCollectedEvents := test.IndexEvents(collectedEvents)
+			if diff := cmp.Diff(idxExpectedEvents, idxCollectedEvents); diff != "" {
+				t.Fatalf("found diff between expected and collected events: %s", diff)
 			}
 		})
 	}
@@ -317,36 +291,6 @@ func TestGetExternalDNSCredentialsSecretName(t *testing.T) {
 	}
 }
 
-func TestIsInNS(t *testing.T) {
-	testCases := []struct {
-		name     string
-		ns       string
-		secret   client.Object
-		expected bool
-	}{
-		{
-			name:     "Belongs",
-			ns:       testOperatorNamespace,
-			secret:   testSrcSecret(),
-			expected: true,
-		},
-		{
-			name:     "Does not belong",
-			ns:       "otherns",
-			secret:   testSrcSecret(),
-			expected: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := isInNS(tc.ns)(tc.secret); got != tc.expected {
-				t.Errorf("unexpected return value received. expected %t, got %t", tc.expected, got)
-			}
-		})
-	}
-}
-
 func TestHasSecret(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -379,37 +323,6 @@ func TestHasSecret(t *testing.T) {
 			}
 		})
 	}
-}
-
-type testEvent struct {
-	eventType watch.EventType
-	objType   string
-	types.NamespacedName
-}
-
-func (e testEvent) key() string {
-	return string(e.eventType) + "/" + e.objType + "/" + e.Namespace + "/" + e.Name
-}
-
-func indexTestEvents(events []testEvent) map[string]testEvent {
-	m := map[string]testEvent{}
-	for _, e := range events {
-		m[e.key()] = e
-	}
-	return m
-}
-
-func watch2test(we watch.Event) testEvent {
-	te := testEvent{
-		eventType: we.Type,
-	}
-	switch obj := we.Object.(type) {
-	case *corev1.Secret:
-		te.objType = "secret"
-		te.Namespace = obj.Namespace
-		te.Name = obj.Name
-	}
-	return te
 }
 
 func testConfig() Config {

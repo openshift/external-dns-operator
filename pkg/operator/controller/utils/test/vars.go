@@ -28,13 +28,15 @@ import (
 )
 
 const (
-	Name                = "test"
-	OperandNamespace    = "external-dns"
-	OperandName         = "external-dns-test"
-	OperandImage        = "quay.io/test/external-dns:latest"
-	PublicZone          = "my-dns-public-zone"
-	PrivateZone         = "my-dns-private-zone"
-	AzurePrivateDNSZone = "/subscriptions/xxxx/resourceGroups/test-az-2f9kj-rg/providers/Microsoft.Network/privateDnsZones/test-az.example.com"
+	Name                   = "test"
+	OperandNamespace       = "external-dns"
+	OperandName            = "external-dns-test"
+	OperandImage           = "quay.io/test/external-dns:latest"
+	OperatorNamespace      = "external-dns-operator"
+	PublicZone             = "my-dns-public-zone"
+	PrivateZone            = "my-dns-private-zone"
+	AzurePrivateDNSZone    = "/subscriptions/xxxx/resourceGroups/test-az-2f9kj-rg/providers/Microsoft.Network/privateDnsZones/test-az.example.com"
+	TrustedCAConfigMapName = "test-trusted-ca"
 )
 
 var (
