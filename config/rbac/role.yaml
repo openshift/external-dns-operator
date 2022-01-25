@@ -81,3 +81,85 @@ rules:
   - get
   - list
   - watch
+# Operator wants to be able to ensure (create/update/delete)
+# rolebinding external-dns-operator in ns external-dns
+# so that its serviceaccount can create/update/delete/get
+# SAs, secrets, deployments and configmaps in external-dns ns
+# and get list watch namespaces, deployments all over
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  resourceNames:
+    - external-dns-operator
+  # Operator wants to be able to ensure (create/update/delete)
+  # clusterrolebinding external-dns so that the operand SA
+  # can get/list/watch ingresses, pods, services, routes, nodes
+  # all over the cluster
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - clusterrolebindings
+  verbs:
+    - create
+    - update
+    - delete
+    - get
+    - list
+    - watch
+  resourceNames:
+    - external-dns
+# Operator wants to be able to ensure (create/update/delete)
+# role external-dns-operator in ns external-dns
+# so that its serviceaccount can create/update/delete/get
+# SAs, secrets, deployments and configmaps in external-dns ns
+# and get list watch namespaces, deployments all over
+# It needs escalate as privileges required for this role
+# are not part of the operator privileges
+# It also needs bind so that it can bind this role to a rolebinding
+# it will create
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - escalate
+  - bind
+  - create
+  - update
+  - delete
+  - get
+  - list
+  - watch
+  resourceNames:
+  - external-dns-operator
+  # Operator wants to be able to ensure (create/update/delete)
+  # clusterrole external-dns so that the operand SA
+  # can get/list/watch ingresses, pods, services, routes, nodes
+  # all over the cluster
+  # It needs escalate as privileges required for this clusterrole
+  # are not part of the operator privileges
+  # It also needs bind so that it can bind this role to a clusterrolebinding
+  # it will create
+- apiGroups:
+    - rbac.authorization.k8s.io
+  resources:
+    - clusterroles
+  verbs:
+    - escalate
+    - bind
+    - create
+    - update
+    - delete
+    - get
+    - list
+    - watch
+  resourceNames:
+    - external-dns
