@@ -120,7 +120,7 @@ Prepare your environment for the installation commands.
     oc -n openshift-marketplace secrets link default extdns-olm-secret --for=pull
     ````
 
-6. Create the `Catalogsource` object:
+6. Create the `CatalogSource` object:
    ```sh
    cat <<EOF | oc apply -f -
    apiVersion: operators.coreos.com/v1alpha1
