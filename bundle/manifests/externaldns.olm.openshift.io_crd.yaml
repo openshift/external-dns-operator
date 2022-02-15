@@ -209,15 +209,12 @@ spec:
                         - name
                         type: object
                       gridHost:
-                        default: 127.0.0.1
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
                       wapiPort:
-                        default: 443
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
                       wapiVersion:
-                        default: 2.3.1
                         description: WAPIVersion is the version of the Infoblox WAPI.
                         type: string
                     required:

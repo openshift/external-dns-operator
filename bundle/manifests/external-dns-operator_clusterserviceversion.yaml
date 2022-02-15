@@ -12,15 +12,11 @@ metadata:
           },
           "spec": {
             "provider": {
-              "type": "AWS",
-              "aws": {
-                "credentials": {
-                  "name": "aws-access-key"
-                }
-              }
+              "type": "AWS"
             },
             "source": {
-              "type": "Service"
+              "type": "Service",
+              "fqdnTemplate": ["{{.Name}}.mydomain.com"]
             }
           }
         }
