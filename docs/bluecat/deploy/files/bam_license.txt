@@ -1,0 +1,4 @@
+#cloud-config
+bluecat_license:
+    key: YOUR_KEY_HERE
+    id: YOUR_ID_HERE
