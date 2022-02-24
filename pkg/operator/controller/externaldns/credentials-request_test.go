@@ -2,7 +2,6 @@ package externaldnscontroller
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -40,38 +39,38 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 			name:                      "Ensure Credential request when no credential requests are there in AWS",
 			existingObjects:           []runtime.Object{},
 			inputExtDNS:               testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided()),
 		},
 		{
 			name:                      "Ensure Credential request when invalid credential requests are there in AWS",
-			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided())},
+			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(t, testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided())},
 			inputExtDNS:               testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided()),
 		},
 		{
 			name:                      "Ensure Credential request when no credential requests are there in Azure",
 			existingObjects:           []runtime.Object{},
 			inputExtDNS:               testAzureExtDNSInstanceWhenSourceIsOCPRoute(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testAzureExtDNSInstanceWhenSourceIsOCPRoute()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testAzureExtDNSInstanceWhenSourceIsOCPRoute()),
 		},
 
 		{
 			name:                      "Ensure Credential request when invalid credential requests are there in Azure",
-			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(testAzureExtDNSInstanceWhenSourceIsOCPRoute())},
+			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(t, testAzureExtDNSInstanceWhenSourceIsOCPRoute())},
 			inputExtDNS:               testAzureExtDNSInstanceWhenSourceIsOCPRoute(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testAzureExtDNSInstanceWhenSourceIsOCPRoute()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testAzureExtDNSInstanceWhenSourceIsOCPRoute()),
 		},
 		{
 			name:                      "Ensure Credential request when no credential requests are there in GCP",
 			existingObjects:           []runtime.Object{},
 			inputExtDNS:               testGCPExtDNSInstanceWhenSourceIsOCPRoute(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testGCPExtDNSInstanceWhenSourceIsOCPRoute()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testGCPExtDNSInstanceWhenSourceIsOCPRoute()),
 		},
 		{
 			name:                      "Ensure Credential request when invalid credential requests are there in GCP",
-			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(testGCPExtDNSInstanceWhenSourceIsOCPRoute())},
+			existingObjects:           []runtime.Object{getUnDesiredCredentialRequest(t, testGCPExtDNSInstanceWhenSourceIsOCPRoute())},
 			inputExtDNS:               testGCPExtDNSInstanceWhenSourceIsOCPRoute(),
-			expectedCredentialRequest: getDesiredCredentialRequest(testGCPExtDNSInstanceWhenSourceIsOCPRoute()),
+			expectedCredentialRequest: getDesiredCredentialRequest(t, testGCPExtDNSInstanceWhenSourceIsOCPRoute()),
 		},
 	}
 	for _, tc := range testCases {
@@ -212,8 +211,7 @@ func testAzureExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS
 	return extDNS
 }
 
-func getUnDesiredCredentialRequest(externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
-	var t *testing.T
+func getUnDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
 	name := controller.ExternalDNSCredentialsRequestName(externalDNS)
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -235,12 +233,12 @@ func getUnDesiredCredentialRequest(externalDNS *operatorv1alpha1.ExternalDNS) *c
 
 	codec, err := cco.NewCodec()
 	if err != nil {
-		t.Log("error encoding:", err)
+		t.Log("error creating a codec for undesired credentials request:", err)
 		return nil
 	}
 	providerSpec, err := createUnDesiredProviderConfig(externalDNS, codec)
 	if err != nil {
-		t.Log("error encoding:", err)
+		t.Log("error encoding provider config for undesired credentials request:", err)
 		return nil
 	}
 
@@ -298,7 +296,7 @@ func createUnDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, co
 	return nil, nil
 }
 
-func getDesiredCredentialRequest(externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
+func getDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
 	name := controller.ExternalDNSCredentialsRequestName(externalDNS)
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -320,12 +318,12 @@ func getDesiredCredentialRequest(externalDNS *operatorv1alpha1.ExternalDNS) *cco
 
 	codec, err := cco.NewCodec()
 	if err != nil {
-		fmt.Printf("error encoding: %v", err)
+		t.Log("error creating a codec for desired credentials request:", err)
 		return nil
 	}
 	providerSpec, err := createDesiredProviderConfig(externalDNS, codec)
 	if err != nil {
-		fmt.Printf("error encoding: %v", err)
+		t.Log("error encoding provider config for desired credentials request:", err)
 		return nil
 	}
 
