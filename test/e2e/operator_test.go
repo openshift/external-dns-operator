@@ -24,6 +24,7 @@ import (
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 
 	configv1 "github.com/openshift/api/config/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -33,20 +34,22 @@ import (
 )
 
 const (
-	baseZoneDomain         = "example-test.info"
-	testNamespace          = "external-dns-test"
-	testServiceName        = "test-service"
-	testRouteName          = "test-route"
-	testCredSecretName     = "external-dns-operator"
-	testExtDNSName         = "test-extdns"
-	operandNamespace       = "external-dns"
-	operatorNamespace      = "external-dns-operator"
-	rbacRsrcName           = "external-dns-operator"
-	operandRbacRsrcName    = "external-dns"
-	operatorServiceAccount = "external-dns-operator"
-	dnsPollingInterval     = 15 * time.Second
-	dnsPollingTimeout      = 15 * time.Minute
-	googleDNSServer        = "8.8.8.8"
+	baseZoneDomain            = "example-test.info"
+	testNamespace             = "external-dns-test"
+	testServiceName           = "test-service"
+	testRouteName             = "test-route"
+	testExtDNSName            = "test-extdns"
+	operandNamespace          = "external-dns"
+	operatorNamespace         = "external-dns-operator"
+	rbacRsrcName              = "external-dns-operator"
+	operandRbacRsrcName       = "external-dns"
+	operatorServiceAccount    = "external-dns-operator"
+	dnsPollingInterval        = 15 * time.Second
+	dnsPollingTimeout         = 15 * time.Minute
+	googleDNSServer           = "8.8.8.8"
+	infobloxDNSProvider       = "INFOBLOX"
+	dnsProviderEnvVar         = "DNS_PROVIDER"
+	e2eSkipDNSProvidersEnvVar = "E2E_SKIP_DNS_PROVIDERS"
 )
 
 var (
@@ -72,6 +75,9 @@ func init() {
 	if err := routev1.Install(scheme); err != nil {
 		panic(err)
 	}
+	if err := olmv1alpha1.AddToScheme(scheme); err != nil {
+		panic(err)
+	}
 }
 
 func initKubeClient() error {
@@ -95,6 +101,8 @@ func initProviderHelper(openshiftCI bool, platformType string) (providerTestHelp
 		return newAzureHelper(kubeClient)
 	case string(configv1.GCPPlatformType):
 		return newGCPHelper(openshiftCI, kubeClient)
+	case infobloxDNSProvider:
+		return newInfobloxHelper(kubeClient)
 	default:
 		return nil, fmt.Errorf("unsupported provider: %q", platformType)
 	}
@@ -113,16 +121,20 @@ func TestMain(m *testing.M) {
 
 	if os.Getenv("OPENSHIFT_CI") != "" {
 		openshiftCI = true
-		platformType, err = getPlatformType(kubeClient)
-		if err != nil {
-			fmt.Printf("Failed to determine platform type: %v\n", err)
-			os.Exit(1)
+		if dnsProvider := os.Getenv(dnsProviderEnvVar); dnsProvider != "" {
+			platformType = dnsProvider
+		} else {
+			platformType, err = getPlatformType(kubeClient)
+			if err != nil {
+				fmt.Printf("Failed to determine platform type: %v\n", err)
+				os.Exit(1)
+			}
 		}
 	} else {
-		platformType = mustGetEnv("CLOUD_PROVIDER")
+		platformType = mustGetEnv(dnsProviderEnvVar)
 	}
 
-	if providersToSkip := os.Getenv("E2E_SKIP_CLOUD_PROVIDERS"); len(providersToSkip) > 0 {
+	if providersToSkip := os.Getenv(e2eSkipDNSProvidersEnvVar); len(providersToSkip) > 0 {
 		for _, provider := range strings.Split(providersToSkip, ",") {
 			if strings.EqualFold(provider, platformType) {
 				fmt.Printf("Skipping e2e test for the provider %q!\n", provider)
@@ -194,8 +206,17 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		t.Fatalf("Failed to ensure namespace %s: %v", testNamespace, err)
 	}
 
+	// secret is needed only for DNS providers which cannot get their credentials from CCO
+	// namely Infobox, BlueCat
+	t.Log("Creating credentials secret")
+	credSecret := helper.makeCredentialsSecret(operatorNamespace)
+	err = kubeClient.Create(context.TODO(), credSecret)
+	if err != nil {
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+
 	t.Log("Creating external dns instance with source type route")
-	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "")
+	extDNS := helper.buildOpenShiftExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, "", credSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
@@ -277,14 +298,14 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	}
 
 	t.Log("Creating credentials secret")
-	resourceSecret := helper.makeCredentialsSecret(testCredSecretName)
-	err = kubeClient.Create(context.TODO(), resourceSecret)
+	credSecret := helper.makeCredentialsSecret(operatorNamespace)
+	err = kubeClient.Create(context.TODO(), credSecret)
 	if err != nil {
-		t.Fatalf("Failed to create credentials secret %s/%s for resource: %v", resourceSecret.Namespace, resourceSecret.Name, err)
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
 	}
 
 	t.Log("Creating external dns instance")
-	extDNS := helper.buildExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, resourceSecret)
+	extDNS := helper.buildExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, credSecret)
 	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
@@ -391,7 +412,7 @@ func ensureOperandRole() error {
 	rules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
-			Resources: []string{"secrets", "serviceaccounts"},
+			Resources: []string{"secrets", "serviceaccounts", "configmaps"},
 			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
 		},
 		{
@@ -509,9 +530,18 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 		_ = kubeClient.Delete(context.TODO(), ing)
 	}()
 
+	// secret is needed only for DNS providers which cannot get their credentials from CCO
+	// namely Infobox, BlueCat
+	t.Log("Creating credentials secret")
+	credSecret := helper.makeCredentialsSecret(operatorNamespace)
+	err = kubeClient.Create(context.TODO(), credSecret)
+	if err != nil {
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+
 	externalDnsServiceName := fmt.Sprintf("%s-source-as-openshift-route", testExtDNSName)
 	t.Log("Creating external dns instance")
-	extDNS := helper.buildOpenShiftExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain, openshiftRouterName)
+	extDNS := helper.buildOpenShiftExternalDNS(externalDnsServiceName, hostedZoneID, hostedZoneDomain, openshiftRouterName, credSecret)
 	if err = kubeClient.Create(context.TODO(), &extDNS); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
