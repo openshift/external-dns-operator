@@ -40,6 +40,13 @@ const (
 
 func ExternalDNSCredentialsRequestName(externalDNS *operatorv1alpha1.ExternalDNS) types.NamespacedName {
 	return types.NamespacedName{
+		// CCO recommendation for the core operators (for which it was primarily designed for) is to use CCO namespace:
+		// https://github.com/openshift/cloud-credential-operator#for-openshift-second-level-operators
+		// At the same time CCO watches for all the namespaces and the credentials requests can be created anywhere.
+		// Which allows OLM operators to create credentials requests in their installation namespaces.
+		// However, there are plans to restrict the credentials request watch to CCO namespace only:
+		// https://github.com/openshift/cloud-credential-operator/blob/611939bce7694d5b1128cb3e569d794f8cba06a1/pkg/operator/credentialsrequest/credentialsrequest_controller.go#L127-L128
+		// So the recommendation from the CCO engineering was to stick to CCO namespace.
 		Namespace: CredentialsRequestNamespace,
 		Name:      "externaldns-credentials-request-" + strings.ToLower(string(externalDNS.Spec.Provider.Type)),
 	}
