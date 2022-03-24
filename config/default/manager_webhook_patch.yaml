@@ -12,10 +12,19 @@ spec:
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
+        - containerPort: 9440
+          name: health-check
+          protocol: TCP
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health-check
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
       - name: cert
         secret:

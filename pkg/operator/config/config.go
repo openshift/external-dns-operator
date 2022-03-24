@@ -41,6 +41,7 @@ const (
 	DefaultEnableWebhook           = true
 	DefaultEnablePlatformDetection = true
 	DefaultTrustedCAConfigMapName  = ""
+	DefaultHealthProbeAddr         = ":9440"
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -85,6 +86,10 @@ type Config struct {
 
 	// TrustedCAConfigMapName is the name of the configmap containing CA bundle to be trusted by ExternalDNS containers.
 	TrustedCAConfigMapName string
+
+	// HealthProbeBindAddress is the TCP address that the operator should bind to for
+	// serving health probes (readiness and liveness).
+	HealthProbeBindAddress string
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields

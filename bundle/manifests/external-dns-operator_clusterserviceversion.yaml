@@ -100,6 +100,16 @@ spec:
                 ports:
                   - containerPort: 9443
                     name: webhook-server
+                    protocol: TCP
+                  - containerPort: 9440
+                    name: health-check
+                    protocol: TCP
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: health-check
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
                 resources:
                   requests:
                     cpu: 100m

@@ -46,6 +46,7 @@ func main() {
 	flag.StringVar(&opCfg.TrustedCAConfigMapName, "trusted-ca-configmap", operatorconfig.DefaultTrustedCAConfigMapName, "The name of the config map containing TLS CA(s) which should be trusted by ExternalDNS containers. PEM encoded file under \"ca-bundle.crt\" key is expected.")
 	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
 	flag.BoolVar(&opCfg.EnablePlatformDetection, "enable-platform-detection", operatorconfig.DefaultEnablePlatformDetection, "Enable the detection of the underlying platform. Defaults to true.")
+	flag.StringVar(&opCfg.HealthProbeBindAddress, "health-probe-bind-addr", operatorconfig.DefaultHealthProbeAddr, "The address the health endpoint binds to.")
 	opts := zap.Options{
 		Development: true,
 	}
