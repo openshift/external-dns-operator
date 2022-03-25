@@ -48,6 +48,11 @@ const (
 	trustedCAFileName        = "tls-ca-bundle.pem"
 	trustedCAFileKey         = "ca-bundle.crt"
 	trustedCAExtractedPEMDir = "/etc/pki/ca-trust/extracted/pem"
+	// RHEL path for the trusted certificate bundle may not work for some distributions (e.g. Alpine).
+	// This makes the usage of the trusted CAs impossible when the vanilla upstream image is given.
+	// SSL_CERT_DIR allows Golang's crypto library to override the default locations.
+	// https://pkg.go.dev/crypto/x509#SystemCertPool
+	sslCertDirEnvVar = "SSL_CERT_DIR"
 	//
 	// AWS
 	//
@@ -222,6 +227,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 				MountPath: trustedCAExtractedPEMDir,
 				ReadOnly:  true,
 			})
+			container.Env = append(container.Env, corev1.EnvVar{Name: sslCertDirEnvVar, Value: trustedCAExtractedPEMDir})
 		}
 	}
 
@@ -446,6 +452,8 @@ func (b *externalDNSContainerBuilder) fillInfobloxFields(container *corev1.Conta
 	if len(b.externalDNS.Spec.Provider.Infoblox.WAPIVersion) > 0 {
 		args = append(args, fmt.Sprintf("--infoblox-wapi-version=%s", b.externalDNS.Spec.Provider.Infoblox.WAPIVersion))
 	}
+
+	args = addTXTPrefixFlag(args)
 
 	env := []corev1.EnvVar{
 		{
