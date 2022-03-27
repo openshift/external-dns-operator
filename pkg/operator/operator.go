@@ -70,9 +70,10 @@ type Operator struct {
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	mgrOpts := manager.Options{
-		Scheme:             GetOperatorScheme(),
-		MetricsBindAddress: opCfg.MetricsBindAddress,
-		Namespace:          opCfg.OperatorNamespace,
+		Scheme:                 GetOperatorScheme(),
+		MetricsBindAddress:     opCfg.MetricsBindAddress,
+		HealthProbeBindAddress: opCfg.HealthProbeBindAddress,
+		Namespace:              opCfg.OperatorNamespace,
 		NewCache: cache.MultiNamespacedCacheBuilder([]string{
 			opCfg.OperatorNamespace,
 			opCfg.OperandNamespace,
@@ -101,6 +102,10 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		}
 	}
 	//+kubebuilder:scaffold:builder
+
+	if err := mgr.AddReadyzCheck("webhook", mgr.GetWebhookServer().StartedChecker()); err != nil {
+		return nil, fmt.Errorf("unable to setup ready check: %w", err)
+	}
 
 	if err = opCfg.FillPlatformDetails(context.TODO(), mgr.GetClient()); err != nil {
 		return nil, fmt.Errorf("failed to fill the platform details: %w", err)
