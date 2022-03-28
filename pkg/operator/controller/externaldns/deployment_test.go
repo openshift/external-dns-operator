@@ -234,6 +234,12 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
 						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "SSL_CERT_DIR",
+								Value: "/etc/pki/ca-trust/extracted/pem",
+							},
+						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      "trusted-ca",
@@ -826,6 +832,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--infoblox-wapi-port=443",
 							"--infoblox-grid-host=gridhost.example.com",
 							"--infoblox-wapi-version=2.3.1",
+							"--txt-prefix=external-dns-",
 						},
 						Env: []corev1.EnvVar{
 							{
@@ -1788,6 +1795,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--infoblox-wapi-port=443",
 							"--infoblox-grid-host=gridhost.example.com",
 							"--infoblox-wapi-version=2.3.1",
+							"--txt-prefix=external-dns-",
 						},
 						Env: []corev1.EnvVar{
 							{
