@@ -27,8 +27,6 @@ type gcpTestHelper struct {
 	gcpProjectId   string
 }
 
-var _ providerTestHelper = &gcpTestHelper{}
-
 func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &gcpTestHelper{}
 	err := provider.prepareConfigurations(isOpenShiftCI, kubeClient)
@@ -58,7 +56,7 @@ func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
-func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeGCP,

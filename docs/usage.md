@@ -43,6 +43,10 @@ spec:
         name: aws-access-key
   zones: # Replace with the desired hosted zone IDs
     - "Z3URY6TWQ91KXX"
+  source:
+    type: Service
+    fqdnTemplate:
+    - '{{.Name}}.mydomain.net'
 ```
 
 Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
@@ -90,6 +94,10 @@ spec:
       wapiVersion: # the WAPI version, eg: 2.11, 2.3.1
   zones: # Replace with the desired hosted zones
     - "ZG5zLm5ldHdvcmtfdmlldyQw"
+  source:
+    type: Service
+    fqdnTemplate:
+    - '{{.Name}}.mydomain.net'
 ```
 
 Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
@@ -182,6 +190,10 @@ spec:
       project: gcp-devel
   zones: # Replace with the desired managed zones
     - "3651032588905568971"
+  source:
+    type: Service
+    fqdnTemplate:
+    - '{{.Name}}.mydomain.net'
 ```
 
 # Azure
@@ -228,4 +240,8 @@ spec:
         name: azure-config-file
   zones: # Replace with the desired hosted zones
     - "myzoneid"
+  source:
+    type: Service
+    fqdnTemplate:
+    - '{{.Name}}.mydomain.net'
 ```

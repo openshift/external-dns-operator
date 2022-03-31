@@ -38,8 +38,6 @@ type azureTestHelper struct {
 	zoneClient dns.ZonesClient
 }
 
-var _ providerTestHelper = &azureTestHelper{}
-
 // Build the necessary object for the provider test
 // for Azure Need the credentials ref clusterConfig
 func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
@@ -144,7 +142,7 @@ func (a *azureTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, cred
 	return resource
 }
 
-func (a *azureTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+func (a *azureTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAzure,

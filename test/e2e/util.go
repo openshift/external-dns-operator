@@ -4,13 +4,23 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	ibclient "github.com/infobloxopen/infoblox-go-client"
+	"github.com/miekg/dns"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
@@ -23,9 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 
-	"github.com/miekg/dns"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
@@ -36,7 +43,7 @@ type providerTestHelper interface {
 	platform() string
 	makeCredentialsSecret(namespace string) *corev1.Secret
 	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
-	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string) operatorv1alpha1.ExternalDNS
+	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -283,4 +290,141 @@ func newHostNetworkController(name types.NamespacedName, domain string) *operato
 			},
 		},
 	}
+}
+
+// enhancedIBClient provides enhancements not implemented in Infoblox golang client.
+// https://pkg.go.dev/github.com/infobloxopen/infoblox-go-client
+type enhancedIBClient struct {
+	*ibclient.Connector
+	httpClient *http.Client
+}
+
+func newEnhancedIBClient(hostConfig ibclient.HostConfig, transportConfig ibclient.TransportConfig) (*enhancedIBClient, error) {
+	ibcli, err := ibclient.NewConnector(hostConfig, transportConfig, &ibclient.WapiRequestBuilder{}, &ibclient.WapiHttpRequestor{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &enhancedIBClient{
+		Connector: ibcli,
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: !transportConfig.SslVerify,
+				},
+			},
+		},
+	}, nil
+}
+
+// addNameServer uses NIOS REST API to add the Grid host as the nameserver for the given DNS zone.
+// Infoblox golang client has the interface for creating DNS zones.
+// However these zones don't have NS/SOA records added by default.
+func (c *enhancedIBClient) addNameServer(zoneRef, nameserver string) error {
+	payload := fmt.Sprintf(`{"grid_primary":[{"name":"%s"}]}`, nameserver)
+	qparams := map[string]string{
+		"_return_fields+":   "fqdn,grid_primary",
+		"_return_as_object": "1",
+	}
+	_, err := c.doHTTPRequest(context.TODO(), "PUT", "https://"+c.HostConfig.Host+"/wapi/v"+c.HostConfig.Version+"/"+zoneRef, qparams, []byte(payload))
+	return err
+}
+
+// restartServices uses NIOS REST API to restart all Grid services.
+// Some configurations don't take effect until the corresponding service is not restarted,
+// see the doc: https://docs.infoblox.com/display/nios85/Configurations+Requiring+Service+Restart
+func (c *enhancedIBClient) restartServices() error {
+	respJSON, err := c.doHTTPRequest(context.TODO(), "GET", "https://"+c.HostConfig.Host+"/wapi/v"+c.HostConfig.Version+"/grid", nil, nil)
+	if err != nil {
+		return err
+	}
+	type Ref struct {
+		Ref string `json:"_ref"`
+	}
+	resp := &[]Ref{}
+	if err = json.Unmarshal(respJSON, resp); err != nil {
+		return err
+	}
+
+	payload := `{"member_order" : "SIMULTANEOUSLY","service_option": "ALL"}`
+	qparams := map[string]string{
+		"_function": "restartservices",
+	}
+	_, err = c.doHTTPRequest(context.TODO(), "POST", "https://"+c.HostConfig.Host+"/wapi/v"+c.HostConfig.Version+"/"+(*resp)[0].Ref, qparams, []byte(payload))
+	return err
+}
+
+func (c *enhancedIBClient) doHTTPRequest(ctx context.Context, method, url string, queryParams map[string]string, body []byte) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %s", err)
+	}
+
+	// set query parameters
+	query := req.URL.Query()
+	for k, v := range queryParams {
+		query.Add(k, v)
+	}
+	req.URL.RawQuery = query.Encode()
+
+	// set headers
+	req.Header.Add("Content-Type", "application/json")
+	req.SetBasicAuth(c.HostConfig.Username, c.HostConfig.Password)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http request failed: %s", err)
+	}
+	defer resp.Body.Close()
+
+	// 2xx
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, fmt.Errorf("failure http status code received: %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read http response body: %s", err)
+	}
+
+	return respBody, nil
+}
+
+// readServerTLSCert returns PEM encoded TLS certificate of the given server.
+func readServerTLSCert(addr string, selfSigned bool) ([]byte, error) {
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: selfSigned,
+	}
+
+	conn, err := tls.Dial("tcp", addr, tlsConf)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	derCertsRaw := []byte{}
+	certs := conn.ConnectionState().PeerCertificates
+	for _, cert := range certs {
+		derCertsRaw = append(derCertsRaw, cert.Raw...)
+	}
+
+	block := &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: derCertsRaw,
+	}
+	return pem.EncodeToMemory(block), nil
+}
+
+// ensureEnvVar ensures the environment variable is present in the given list.
+func ensureEnvVar(vars []corev1.EnvVar, v corev1.EnvVar) []corev1.EnvVar {
+	if vars == nil {
+		return []corev1.EnvVar{v}
+	}
+	for i := range vars {
+		if vars[i].Name == v.Name {
+			vars[i].Value = v.Value
+			return vars
+		}
+	}
+	return append(vars, v)
 }

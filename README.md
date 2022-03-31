@@ -180,9 +180,17 @@ Prepare your environment for the installation commands.
    For AWS:
    ```sh
    export KUBECONFIG=/path/to/mycluster/kubeconfig
-   export CLOUD_PROVIDER=AWS
+   export DNS_PROVIDER=AWS
    export AWS_ACCESS_KEY_ID=my-aws-access-key
    export AWS_SECRET_ACCESS_KEY=my-aws-access-secret
+   ```
+   For Infoblox:
+   ```sh
+   export KUBECONFIG=/path/to/mycluster/kubeconfig
+   export DNS_PROVIDER=INFOBLOX
+   export INFOBLOX_GRID_HOST=100.100.100.100
+   export INFOBLOX_WAPI_USERNAME=my-infoblox-username
+   export INFOBLOX_WAPI_PASSWORD=my-infoblox-password
    ```
    For the other providers: check out [e2e directory](./test/e2e/).
 

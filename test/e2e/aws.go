@@ -28,8 +28,6 @@ type awsTestHelper struct {
 	secretKey string
 }
 
-var _ providerTestHelper = &awsTestHelper{}
-
 func newAWSHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
 	provider := &awsTestHelper{}
 	if err := provider.prepareConfigurations(isOpenShiftCI, kubeClient); err != nil {
@@ -70,7 +68,7 @@ func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
-func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAWS,
