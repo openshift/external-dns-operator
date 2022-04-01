@@ -18,6 +18,8 @@ package externaldnscontroller
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 
 	"fmt"
 	"sort"
@@ -72,7 +74,7 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
-
+	var secretHash string
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
@@ -80,7 +82,20 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	if r.config.InjectTrustedCA {
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
 	}
-	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
+
+	secretExists, currentSecret, err := r.currentExternalDNSSecret(ctx, nsName, secretName)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to get current secret: %w", err)
+	}
+	if secretExists {
+		// build secret hash
+		secretHash, err = buildSecretHash(currentSecret.Data)
+		if err != nil {
+			return false, nil, err
+		}
+	}
+
+	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, secretHash, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -114,6 +129,39 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	return true, current, nil
 }
 
+// buildSecretHash is a utility function to get a checksum of the resource data
+func buildSecretHash(data map[string][]byte) (string, error) {
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	hash := sha1.New()
+	for _, k := range keys {
+		_, err := hash.Write([]byte(k))
+		if err != nil {
+			return "", err
+		}
+		_, err = hash.Write(data[k])
+		if err != nil {
+			return "", err
+		}
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+// currentExternalDNSSecret gets the current externalDNS secret resource.
+func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.NamespacedName, secretName string) (bool, *corev1.Secret, error) {
+	currentSecret := &corev1.Secret{}
+	if err := r.client.Get(ctx, nsName, currentSecret); err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil, nil
+		}
+		return false, nil, err
+	}
+	return true, currentSecret, nil
+}
+
 // currentExternalDNSDeployment gets the current externalDNS deployment resource.
 func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName types.NamespacedName) (bool, *appsv1.Deployment, error) {
 	depl := &appsv1.Deployment{}
@@ -127,7 +175,7 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image, secretName string,
+func desiredExternalDNSDeployment(namespace, image, secretName string, secretHash string,
 	serviceAccount *corev1.ServiceAccount,
 	externalDNS *operatorv1alpha1.ExternalDNS,
 	isOpenShift bool,
@@ -154,10 +202,14 @@ func desiredExternalDNSDeployment(namespace, image, secretName string,
 		},
 	}
 
+	secretHashAnnotation := make(map[string]string)
+	secretHashAnnotation[secretName] = secretHash
+
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      controller.ExternalDNSResourceName(externalDNS),
-			Namespace: namespace,
+			Name:        controller.ExternalDNSResourceName(externalDNS),
+			Namespace:   namespace,
+			Annotations: secretHashAnnotation,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,

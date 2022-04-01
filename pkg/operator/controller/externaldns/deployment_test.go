@@ -2172,7 +2172,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				}
 			}()
 
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, "", serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2312,6 +2312,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
 						},
+					},
+					Annotations: map[string]string{
+						"external-dns-credentials-test": "",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
@@ -2770,6 +2773,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
 						},
+					},
+					Annotations: map[string]string{
+						"external-dns-credentials-test": "",
 					},
 				},
 				Spec: appsv1.DeploymentSpec{
