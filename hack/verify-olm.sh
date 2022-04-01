@@ -3,7 +3,7 @@
 set -euo pipefail
 
 function print_failure {
-  echo "There are unexpected changes to the tree when running 'make olm-manifests'. Please"
+  echo "There are unexpected changes to the tree when running 'make bundle'. Please"
   echo "run these commands locally and double-check the Git repository for unexpected changes which may"
   echo "need to be committed."
   exit 1
@@ -11,11 +11,8 @@ function print_failure {
 
 if [ "${OPENSHIFT_CI:-false}" = true ]; then
   echo "> generating the OLM bundle"
-  make olm-manifests
+  make bundle
   test -z "$(git status --porcelain | \grep -v '^??')" || print_failure
-
-  echo "> verifying the OLM bundle"
-  make validate-bundle
 
   echo "> verified generated bundle and deep copy"
 fi

@@ -43,12 +43,23 @@ Prepare your environment for the installation commands.
    kubectl apply -f config/rbac/extra-roles.yaml
    ```
 
-3. Run the following command to deploy the `ExternalDNS` Operator:
+3. You may need to link the registry secret to `external-dns-operator` service account if the image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
+
+    a. Create a secret with authentication details of your image registry:
+    ```sh
+    oc -n external-dns-operator create secret generic extdns-pull-secret  --type=kubernetes.io/dockercfg  --from-file=.dockercfg=${XDG_RUNTIME_DIR}/containers/auth.json
+    ```
+    b. Link the secret to `external-dns-operator` service account:
+    ```sh
+    oc -n external-dns-operator secrets link external-dns-operator extdns-pull-secret --for=pull
+    ````
+
+4. Run the following command to deploy the `ExternalDNS` Operator:
     ```sh
     make deploy
     ```
 
-4. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
+5. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
    manifests deployed through the `make deploy` command do not contain a valid certificate and key. You must provision a valid certificate and key through other tools.
    You can use a convenience script, `hack/generate-certs.sh` to generate the certificate bundle and patch the validation webhook config.   
    _Important_: Do not use the hack/generate-certs.sh script in a production environment.   
@@ -58,7 +69,7 @@ Prepare your environment for the installation commands.
    --secret webhook-server-cert --namespace external-dns-operator
    ```
 
-5. Now you can deploy an instance of ExternalDNS:
+6. Now you can deploy an instance of ExternalDNS:
     * Run the following command to create the credentials secret for AWS:
         ```sh
         kubectl -n external-dns-operator create secret generic aws-access-key \
@@ -109,7 +120,7 @@ Prepare your environment for the installation commands.
    oc apply -f config/rbac/extra-roles.yaml
    ```
 
-5. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.9/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
+5. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
 
     a. Create a secret with authentication details of your image registry:
     ```sh

@@ -33,8 +33,9 @@ kubectl -n external-dns-operator set env deployment/external-dns-operator HTTP_P
 
 2. Patch the operator's deployment to reference the configmap created in the previous step:
     ```bash
-    # "operator" container is patched
-    kubectl -n external-dns-operator patch deployment external-dns-operator --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value":"--trusted-ca-configmap=trusted-ca"}]'
+    # "external-dns-operator" container is patched (first number: 0)
+    # "TRUSTED_CA_CONFIGMAP_NAME" environment variable is patched (second number: 2)
+    kubectl -n external-dns-operator patch deployment external-dns-operator --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/env/2/value", "value":"trusted-ca"}]'
     ```
 
 ## OpenShift instructions

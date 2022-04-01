@@ -1,6 +1,31 @@
+# BUNDLE_VERSION defines the project version for the bundle.
+# Update this value when you upgrade the version of your project.
+# To re-generate a bundle for another specific version without changing the standard setup, you can:
+# - use the BUNDLE_VERSION as arg of the bundle target (e.g make bundle BUNDLE_VERSION=0.0.2)
+# - use environment variables to overwrite this value (e.g export BUNDLE_VERSION=0.0.2)
+BUNDLE_VERSION ?= 0.0.1
+
+# CHANNELS define the bundle channels used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
+# To re-generate a bundle for other specific channels without changing the standard setup, you can:
+# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
+# - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+
+# DEFAULT_CHANNEL defines the default channel used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
+# To re-generate a bundle for any other default channel without changing the default setup, you can:
+# - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
+# - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= quay.io/openshift/origin-external-dns-operator:latest
 # Used for internal registry access
 TLS_VERIFY ?= true
 
@@ -128,42 +153,24 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	# do not commit the following 2 changes
+	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=${IMG}
+	# webhook volume and service are added explicilty so that they don't land in the bundle where it's managed by OLM
+	cd config/default && $(KUSTOMIZE) edit add patch --path=manager_webhook_volume_patch.yaml
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-.SILENT: olm-manifests
-.PHONY: olm-manifests
-# TODO: try to replace this rule with 'operator-sdk generate bundle'
-# A little helper command to generate the manifests of OLM bundle from the files in config/.
-# The idea is that config/ is the main directory for the manifests and OLM manifests are secondary
-# and is supposed to be updated afterwards.
-# Note that ClusterServiceVersion is not touched as is supposed to be verified manually.
-# The install strategy of ClusterServiceVersion contains the deployment which is not copied over from config/ either.
-olm-manifests: manifests
-	cp -f config/crd/bases/externaldns.olm.openshift.io_externaldnses.yaml $(BUNDLE_MANIFEST_DIR)/externaldns.olm.openshift.io_crd.yaml
-	cp -f config/rbac/role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrole.yaml
-	cp -f config/rbac/role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
-	cp -f config/rbac/operator_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_role.yaml
-	cp -f config/rbac/operator_rolebinding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator_rbac.authorization.k8s.io_v1_rolebinding.yaml
-	cp -f config/rbac/auth_proxy_role.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrole.yaml
-	cp -f config/rbac/auth_proxy_role_binding.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
-	cp -f config/rbac/auth_proxy_service.yaml $(BUNDLE_MANIFEST_DIR)/external-dns-operator-auth-proxy_v1_service.yaml
-	# opm is unable to find CRD if the standard yaml --- is at the top
-	sed -i -e '/^---$$/d' -e '/^$$/d' $(BUNDLE_MANIFEST_DIR)/*.yaml
-	# as per the recommendation of 'operator-sdk bundle validate' command
-	# doing the best (yaml regexp is far from perfect) to strip the metadata.namespace from the bundle manifests
-	# trying to not touch cluster level resources as they don't have the namespace
-	for f in $$(\grep -l 'kind: *\(Service\|ConfigMap\|Secret\|Role\) *$$' $(BUNDLE_MANIFEST_DIR)/*.yaml); do sed -i '/namespace:/d' $${f};done
-
-.PHONY: validate-bundle
-validate-bundle: $(OPERATOR_SDK_BIN)
-	$(OPERATOR_SDK_BIN) bundle validate $(BUNDLE_DIR) --select-optional suite=operatorframework
+.PHONY: bundle
+bundle: $(OPERATOR_SDK_BIN) manifests kustomize
+	$(OPERATOR_SDK_BIN) generate kustomize manifests -q
+	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=${IMG}
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK_BIN) generate bundle -q --overwrite=false --version $(BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK_BIN) bundle validate $(BUNDLE_DIR)
 
 .PHONY: bundle-image-build
-bundle-image-build: olm-manifests
+bundle-image-build: bundle
 	$(CONTAINER_ENGINE) build -t ${BUNDLE_IMG} -f Dockerfile.bundle .
 
 .PHONY: bundle-image-push

@@ -7,6 +7,6 @@ resources:
 generatorOptions:
   disableNameSuffixHash: true
 images:
-- name: controller
-  newName: controller
+- name: quay.io/openshift/origin-external-dns-operator
+  newName: quay.io/openshift/origin-external-dns-operator
   newTag: latest
