@@ -83,12 +83,13 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
 	}
 
-	secretExists, currentSecret, err := r.currentExternalDNSSecret(ctx, nsName, secretName)
+	secretNamespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
+	secretExists, currentSecret, err := r.currentExternalDNSSecret(ctx, secretNamespacedName, secretName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get current secret: %w", err)
 	}
+
 	if secretExists {
-		// build secret hash
 		secretHash, err = buildSecretHash(currentSecret.Data)
 		if err != nil {
 			return false, nil, err
@@ -278,6 +279,7 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	}
+
 	return depl, nil
 }
 
@@ -317,8 +319,21 @@ func (r *reconciler) updateExternalDNSDeployment(ctx context.Context, current, d
 // Returns a boolean if an update is necessary, and the deployment resource to update to.
 func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *appsv1.Deployment) {
 	updated := current.DeepCopy()
+	return externalDNSSecretChanged(current, expected, updated) || externalDNSContainersChanged(current, expected, updated), updated
+}
 
-	return externalDNSContainersChanged(current, expected, updated), updated
+// externalDNSSecretChanged returns true if the current secret annotation differ from the expected
+func externalDNSSecretChanged(current, expected, updated *appsv1.Deployment) bool {
+	changed := false
+	for expected_key, expected_val := range expected.Annotations {
+		if current_val, ok := current.Annotations[expected_key]; ok {
+			if current_val != expected_val {
+				updated.Annotations[expected_key] = expected_val
+				return true
+			}
+		}
+	}
+	return changed
 }
 
 // externalDNSContainersChanged returns true if the current containers differ from the expected

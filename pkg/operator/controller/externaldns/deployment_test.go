@@ -2171,8 +2171,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					}
 				}
 			}()
-
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, "", serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
+			secretData := make(map[string][]byte)
+			for k, v := range tc.inputEnvVars {
+				secretData[k] = []byte(v)
+			}
+			secretHash, err := buildSecretHash(secretData)
+			if err != nil {
+				t.Errorf("failed to create secret hash %v", err)
+			}
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, secretHash, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2195,6 +2202,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 }
 
 func TestExternalDNSDeploymentChanged(t *testing.T) {
+	updatedSecretHashAnnotation := make(map[string]string)
+	updatedSecretHashAnnotation["external-dns-credentials-test"] = "31f4ea504e2efd429769e1d09b586449f0b339eb"
 	testCases := []struct {
 		description        string
 		originalDeployment *appsv1.Deployment
@@ -2259,6 +2268,17 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 				testContainer(),
 			}),
 		},
+		{
+			description: "if externalDNS annotation changes",
+			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+			}),
+			mutate: func(dep1 *appsv1.Deployment) {
+				dep1.Annotations = updatedSecretHashAnnotation
+			},
+			expect:             true,
+			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -2270,7 +2290,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
-			if changed, updated := externalDNSDeploymentChanged(original, mutated); changed != tc.expect {
+			changed, updated := externalDNSDeploymentChanged(original, mutated)
+
+			if changed != tc.expect {
 				t.Errorf("Expect externalDNSDeploymentChanged to be %t, got %t", tc.expect, changed)
 			} else if changed {
 				if changedAgain, updatedAgain := externalDNSDeploymentChanged(mutated, updated); changedAgain {
@@ -3131,10 +3153,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 }
 
 func testDeployment() *appsv1.Deployment {
+	secretHashAnnotation := make(map[string]string)
+	secretHashAnnotation["external-dns-credentials-test"] = "f17bceb5a060e33473c68229903ef5c517d9a172"
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "testns",
+			Name:        "test",
+			Namespace:   "testns",
+			Annotations: secretHashAnnotation,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -3164,6 +3189,12 @@ func testDeployment() *appsv1.Deployment {
 func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deployment {
 	depl := testDeployment()
 	depl.Spec.Template.Spec.Containers = containers
+	return depl
+}
+
+func testDeploymentWithAnnotations(updatedSecretHashAnnotation map[string]string) *appsv1.Deployment {
+	depl := testDeployment()
+	depl.Annotations = updatedSecretHashAnnotation
 	return depl
 }
 
