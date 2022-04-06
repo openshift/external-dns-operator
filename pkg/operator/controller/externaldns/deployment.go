@@ -202,8 +202,10 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 		},
 	}
 
-	secretHashAnnotation := make(map[string]string)
-	secretHashAnnotation[secretName] = secretHash
+	annotations := map[string]string{
+	    // would be good to make a constant out of the annotation name
+	    "externaldns.olm.openshift.io/credentials-secret-hash": secretHash,
+	}
 
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
