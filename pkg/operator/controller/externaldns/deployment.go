@@ -91,7 +91,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	if secretExists {
 		secretHash, err = buildSecretHash(currentSecret.Data)
 		if err != nil {
-			return false, nil, err
+			return false, nil, Errorf("failed build the secret's hash: %w", err)
 		}
 	}
 
