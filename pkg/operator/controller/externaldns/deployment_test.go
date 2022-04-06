@@ -3181,7 +3181,7 @@ func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deploym
 	return depl
 }
 
-func testDeploymentWithAnnotations(updatedSecretHashAnnotation map[string]string) *appsv1.Deployment {
+func testDeploymentWithAnnotations(annotations map[string]string) *appsv1.Deployment {
 	depl := testDeployment()
 	depl.Annotations = updatedSecretHashAnnotation
 	return depl
