@@ -28,24 +28,28 @@ const (
 	infobloxGridHostEnvVar      = "INFOBLOX_GRID_HOST"
 	infobloxWAPIUsernameEnvVar  = "INFOBLOX_WAPI_USERNAME"
 	infobloxWAPIPasswordEnvVar  = "INFOBLOX_WAPI_PASSWORD"
-	trustedCAConfigMapEnvVar    = "TRUSTED_CA_CONFIGMAP_NAME"
-	defaultWAPIPort             = "443"
-	defaultWAPIVersion          = "2.3.1"
-	defaultTLSVerify            = "false"
-	defaultHTTPRequestTimeout   = 20
-	defaultHTTPConnPool         = 10
-	defaultGridMasterHostname   = "infoblox.localdomain"
-	defaultHostFilename         = "host"
-	defaultUsernameFilename     = "username"
-	defaultPasswordFilename     = "password"
-	operatorContainerName       = "operator"
+	// infobloxGridMasterHostnameEnvVar can be used in case the grid master hostname
+	// is different from grid host (e.g. default "infoblox.localdomain")
+	infobloxGridMasterHostnameEnvVar = "INFOBLOX_GRID_MASTER_HOSTNAME"
+	trustedCAConfigMapEnvVar         = "TRUSTED_CA_CONFIGMAP_NAME"
+	defaultWAPIPort                  = "443"
+	defaultWAPIVersion               = "2.3.1"
+	defaultTLSVerify                 = "false"
+	defaultHTTPRequestTimeout        = 20
+	defaultHTTPConnPool              = 10
+	defaultHostFilename              = "host"
+	defaultUsernameFilename          = "username"
+	defaultPasswordFilename          = "password"
+	defaultMasterHostnameFilename    = "masterhostname"
+	operatorContainerName            = "operator"
 )
 
 type infobloxTestHelper struct {
-	client       *enhancedIBClient
-	gridHost     string
-	wapiUsername string
-	wapiPassword string
+	client             *enhancedIBClient
+	gridHost           string
+	wapiUsername       string
+	wapiPassword       string
+	gridMasterHostname string
 }
 
 func newInfobloxHelper(kubeClient client.Client) (*infobloxTestHelper, error) {
@@ -93,7 +97,7 @@ func (h *infobloxTestHelper) ensureHostedZone(zoneDomain string) (string, []stri
 	authZone.Ref = ref
 
 	// NS record is not added automatically with the zone creation
-	if err = h.client.addNameServer(authZone.Ref, defaultGridMasterHostname); err != nil {
+	if err = h.client.addNameServer(authZone.Ref, h.gridMasterHostname); err != nil {
 		return "", nil, fmt.Errorf("failed to add nameserver to authoritative zone: %w", err)
 	}
 
@@ -184,13 +188,27 @@ func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) err
 		if err != nil {
 			return fmt.Errorf("failed to read wapi password from file: %w", err)
 		}
+		masterHostname, err := ioutil.ReadFile(configDir + "/" + defaultMasterHostnameFilename)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return fmt.Errorf("failed to read grid master hostname from file: %w", err)
+			}
+			// assume that grid host is a resolvable DNS name
+			masterHostname = host
+		}
 		h.gridHost = string(host)
 		h.wapiUsername = string(username)
 		h.wapiPassword = string(password)
+		h.gridMasterHostname = string(masterHostname)
 	} else {
 		h.gridHost = mustGetEnv(infobloxGridHostEnvVar)
 		h.wapiUsername = mustGetEnv(infobloxWAPIUsernameEnvVar)
 		h.wapiPassword = mustGetEnv(infobloxWAPIPasswordEnvVar)
+		h.gridMasterHostname = os.Getenv(infobloxGridMasterHostnameEnvVar)
+		if h.gridMasterHostname == "" {
+			// assume that grid host is a resolvable DNS name
+			h.gridMasterHostname = h.gridHost
+		}
 	}
 
 	// TODO: only needed while we are using the temporary setup of Infoblox.

@@ -188,7 +188,7 @@ Prepare your environment for the installation commands.
    ```sh
    export KUBECONFIG=/path/to/mycluster/kubeconfig
    export DNS_PROVIDER=INFOBLOX
-   export INFOBLOX_GRID_HOST=100.100.100.100
+   export INFOBLOX_GRID_HOST=myinfoblox.myorg.com
    export INFOBLOX_WAPI_USERNAME=my-infoblox-username
    export INFOBLOX_WAPI_PASSWORD=my-infoblox-password
    ```
