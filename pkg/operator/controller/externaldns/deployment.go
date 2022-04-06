@@ -152,7 +152,7 @@ func buildSecretHash(data map[string][]byte) (string, error) {
 
 // currentExternalDNSSecret gets the current externalDNS secret resource.
 func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.NamespacedName, secretName string) (bool, *corev1.Secret, error) {
-	currentSecret := &corev1.Secret{}
+	secret := &corev1.Secret{}
 	if err := r.client.Get(ctx, nsName, currentSecret); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil, nil
