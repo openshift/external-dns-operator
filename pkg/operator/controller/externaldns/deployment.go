@@ -83,10 +83,9 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
 	}
 
-	secretNamespacedName := types.NamespacedName{Namespace: namespace, Name: secretName}
-	secretExists, currentSecret, err := r.currentExternalDNSSecret(ctx, secretNamespacedName, secretName)
+	secretExists, secret, err := r.currentExternalDNSSecret(ctx, secretName)
 	if err != nil {
-		return false, nil, fmt.Errorf("failed to get current secret: %w", err)
+		return false, nil, fmt.Errorf("failed to get the target secret: %w", err)
 	}
 
 	if secretExists {
