@@ -77,7 +77,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	var secretHash string
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
-	secretName := controller.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name).Name
+	secretName := controller.ExternalDNSDestCredentialsSecretName(namespace, externalDNS.Name)
 	configMapName := ""
 	if r.config.InjectTrustedCA {
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
