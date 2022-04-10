@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: externaldns-editor
+rules:
+- apiGroups:
+  - externaldns.olm.openshift.io
+  resources:
+  - externaldns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - externaldns.olm.openshift.io
+  resources:
+  - externaldns/status
+  verbs:
+  - get

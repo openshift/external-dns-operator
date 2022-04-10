@@ -96,13 +96,6 @@ Prepare your environment for the installation commands.
     ```
 
 2. Build and push the bundle image to the registry:
-  
-    a. In the `bundle/manifests/external-dns-operator_clusterserviceversion.yaml`
-        add the operator image created in Step 1 as follows:
-    ```sh
-    sed -i "s|quay.io/openshift/origin-external-dns-operator:latest|${IMG}|g" bundle/manifests/external-dns-operator_clusterserviceversion.yaml
-    ```
-    b. Build the image
     ```sh
     export BUNDLE_IMG=${REGISTRY}/${REPOSITORY}/external-dns-operator-bundle:${VERSION}
     make bundle-image-build bundle-image-push
