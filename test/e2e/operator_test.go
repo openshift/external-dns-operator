@@ -42,7 +42,6 @@ const (
 	operandNamespace          = "external-dns"
 	operatorNamespace         = "external-dns-operator"
 	rbacRsrcName              = "external-dns-operator"
-	operandRbacRsrcName       = "external-dns"
 	operatorServiceAccount    = "external-dns-operator"
 	dnsPollingInterval        = 15 * time.Second
 	dnsPollingTimeout         = 15 * time.Minute
@@ -169,14 +168,6 @@ func TestMain(m *testing.M) {
 
 	if err = ensureOperandRoleBinding(); err != nil {
 		fmt.Printf("Failed to create rolebinding external-dns-operator in ns %s: %v\n", operandNamespace, err)
-	}
-
-	if err = ensureOperandClusterRoleBinding(); err != nil {
-		fmt.Printf("Failed to create clusterrolebinding external-dns : %v\n", err)
-	}
-
-	if err = ensureOperandClusterRole(); err != nil {
-		fmt.Printf("Failed to create clusterrole external-dns in : %v\n", err)
 	}
 
 	exitStatus := m.Run()
@@ -437,34 +428,6 @@ func ensureOperandRole() error {
 	return kubeClient.Create(context.TODO(), &role)
 }
 
-func ensureOperandClusterRole() error {
-	rules := []rbacv1.PolicyRule{
-		{
-			APIGroups: []string{"networking.k8s.io"},
-			Resources: []string{"ingresses"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"endpoints", "services", "pods", "nodes"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-		{
-			APIGroups: []string{"route.openshift.io"},
-			Resources: []string{"routes"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-	}
-
-	clusterrole := rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: operandRbacRsrcName,
-		},
-		Rules: rules,
-	}
-	return kubeClient.Create(context.TODO(), &clusterrole)
-}
-
 func ensureOperandRoleBinding() error {
 	rb := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -485,27 +448,6 @@ func ensureOperandRoleBinding() error {
 		},
 	}
 	return kubeClient.Create(context.TODO(), &rb)
-}
-
-func ensureOperandClusterRoleBinding() error {
-	crb := rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: operandRbacRsrcName,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "ClusterRole",
-			Name:     operandRbacRsrcName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      rbacv1.GroupKind,
-				Name:      "system:serviceaccounts:" + operandNamespace,
-				Namespace: operandNamespace,
-			},
-		},
-	}
-	return kubeClient.Create(context.TODO(), &crb)
 }
 
 // Test to verify the ExternalDNS should create the CNAME record for the OpenshiftRoute
