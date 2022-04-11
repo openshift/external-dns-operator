@@ -10,3 +10,8 @@ Use the following convenience script to secure communication between the API and
 ```bash
 $ ./hack/add-serving-cert.sh --namespace external-dns-operator --service webhook-service --webhook validating-webhook-configuration --secret webhook-server-cert
 ```
+
+## Release-branch mapping
+| OCP version | ExternalDNS Operator branch |
+| :---------: | :-------------------------: |
+| 4.10        | release-0.1                 |
