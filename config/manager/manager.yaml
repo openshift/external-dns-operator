@@ -28,14 +28,20 @@ spec:
         runAsNonRoot: true
       containers:
       - name: external-dns-operator
-        image: controller:latest
+        image: quay.io/openshift/origin-external-dns-operator:latest
         args:
+        - --metrics-bind-address=127.0.0.1:8080
         - --operator-namespace=$(OPERATOR_NAMESPACE)
+        - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
+        - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: RELATED_IMAGE_EXTERNAL_DNS
+          value: k8s.gcr.io/external-dns/external-dns:v0.10.2
+        - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           allowPrivilegeEscalation: false
         resources:

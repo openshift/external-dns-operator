@@ -1,2 +1,2 @@
 resources:
-- operator_v1alpha1_infoblox_detailed.yaml
+- operator_v1alpha1_infoblox_openshift.yaml

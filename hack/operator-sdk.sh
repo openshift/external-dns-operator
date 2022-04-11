@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION="1.15.0"
+VERSION="1.17.0"
 
 OUTPUT_PATH=${1:-./bin/operator-sdk}
 VERIFY=${2:-yes}
@@ -15,10 +15,10 @@ OPERATOR_SDK_DL_URL="https://github.com/operator-framework/operator-sdk/releases
 
 case ${GOOS} in
   linux)
-    CHECKSUM="d2065f1f7a0d03643ad71e396776dac0ee809ef33195e0f542773b377bab1b2a"
+    CHECKSUM="fab92aba2e11e76b0f310436dbd846aec636e8f8b300a2f8afaa3722b2188481"
     ;;
   darwin)
-    CHECKSUM="5fc30d04a31736449adb5c9b0b44e78ebeaa5cf968cc7afcbdf533135b72e31a"
+    CHECKSUM="766d90d90e9b854a4b75ac15d9bb5d236aa7a4bee10bc9a11eda9682e4b33037"
     ;;
     *)
     echo "Unsupported OS $GOOS"

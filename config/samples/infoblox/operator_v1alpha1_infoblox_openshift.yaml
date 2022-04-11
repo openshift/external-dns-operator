@@ -1,0 +1,24 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-infoblox
+spec:
+  domains:
+  - filterType: Include
+    matchType: Exact
+    name: myzonedomain.com
+  provider:
+    type: Infoblox
+    infoblox:
+      credentials:
+        name: infoblox-credentials
+      gridHost: "100.100.100.100"
+      wapiPort: 443
+      wapiVersion: "2.3.1"
+  source:
+    # Source Type is route resource of OpenShift
+    type: OpenShiftRoute
+    # In case you have multiple ingress controllers you must specify ingress controller name in the routerName
+    # so that the external dns will use the router canonical name correrponding to it to create a dns record.
+    openshiftRouteOptions:
+      routerName: default
