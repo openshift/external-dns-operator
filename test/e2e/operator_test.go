@@ -35,21 +35,22 @@ import (
 )
 
 const (
-	baseZoneDomain            = "example-test.info"
-	testNamespace             = "external-dns-test"
-	testServiceName           = "test-service"
-	testRouteName             = "test-route"
-	testExtDNSName            = "test-extdns"
-	operandNamespace          = "external-dns"
-	operatorNamespace         = "external-dns-operator"
-	rbacRsrcName              = "external-dns-operator"
-	operatorServiceAccount    = "external-dns-operator"
-	dnsPollingInterval        = 15 * time.Second
-	dnsPollingTimeout         = 15 * time.Minute
-	googleDNSServer           = "8.8.8.8"
-	infobloxDNSProvider       = "INFOBLOX"
-	dnsProviderEnvVar         = "DNS_PROVIDER"
-	e2eSkipDNSProvidersEnvVar = "E2E_SKIP_DNS_PROVIDERS"
+	baseZoneDomain             = "example-test.info"
+	testNamespace              = "external-dns-test"
+	testServiceName            = "test-service"
+	testRouteName              = "test-route"
+	testExtDNSName             = "test-extdns"
+	operandNamespace           = "external-dns"
+	operatorNamespace          = "external-dns-operator"
+	rbacRsrcName               = "external-dns-operator"
+	operatorServiceAccount     = "external-dns-operator"
+	dnsPollingInterval         = 15 * time.Second
+	dnsPollingTimeout          = 15 * time.Minute
+	googleDNSServer            = "8.8.8.8"
+	infobloxDNSProvider        = "INFOBLOX"
+	dnsProviderEnvVar          = "DNS_PROVIDER"
+	e2eSkipDNSProvidersEnvVar  = "E2E_SKIP_DNS_PROVIDERS"
+	e2eSeparateOperandNsEnvVar = "E2E_SEPARATE_OPERAND_NAMESPACE"
 )
 
 var (
@@ -162,16 +163,8 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err = ensureOperandNamespace(); err != nil {
-		fmt.Printf("Failed to create %s namespace: %v\n", operandNamespace, err)
-	}
-
-	if err = ensureOperandRole(); err != nil {
-		fmt.Printf("Failed to create role external-dns-operator in ns %s: %v\n", operandNamespace, err)
-	}
-
-	if err = ensureOperandRoleBinding(); err != nil {
-		fmt.Printf("Failed to create rolebinding external-dns-operator in ns %s: %v\n", operandNamespace, err)
+	if err := ensureOperandResources(); err != nil {
+		fmt.Printf("Failed to ensure operand resources: %v\n", err)
 	}
 
 	exitStatus := m.Run()
@@ -399,61 +392,6 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
 }
 
-func ensureOperandNamespace() error {
-	return kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: operandNamespace}})
-}
-
-func ensureOperandRole() error {
-	rules := []rbacv1.PolicyRule{
-		{
-			APIGroups: []string{""},
-			Resources: []string{"secrets", "serviceaccounts", "configmaps"},
-			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"namespaces"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-		{
-			APIGroups: []string{"apps"},
-			Resources: []string{"deployments"},
-			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
-		},
-	}
-
-	role := rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rbacRsrcName,
-			Namespace: operandNamespace,
-		},
-		Rules: rules,
-	}
-	return kubeClient.Create(context.TODO(), &role)
-}
-
-func ensureOperandRoleBinding() error {
-	rb := rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rbacRsrcName,
-			Namespace: operandNamespace,
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "Role",
-			Name:     rbacRsrcName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      rbacv1.ServiceAccountKind,
-				Name:      operatorServiceAccount,
-				Namespace: operatorNamespace,
-			},
-		},
-	}
-	return kubeClient.Create(context.TODO(), &rb)
-}
-
 // Test to verify the ExternalDNS should create the CNAME record for the OpenshiftRoute
 // with multiple ingress controller deployed in Openshift.
 // Route's host should resolve to the canonical name of the specified ingress controller.
@@ -608,75 +546,6 @@ func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
 	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
 }
 
-func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
-	// try all nameservers and fail only if all failed
-	recordExist := false
-	for _, nameSrv := range nameServers {
-		t.Logf("Looking for cname record in nameserver: %s", nameSrv)
-		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-			cname, err := lookupCNAME(host, nameSrv)
-			if err != nil {
-				t.Logf("Cname lookup failed for nameserver: %s , error: %v", nameSrv, err)
-				return false, nil
-			}
-			if strings.Contains(cname, canonicalName) {
-				recordExist = true
-				return true, nil
-			}
-			return false, nil
-		}); err != nil {
-			t.Logf("Failed to verify host record with CNAME Record")
-		}
-	}
-
-	if !recordExist {
-		t.Fatalf("CNAME record not found in any name server")
-	}
-}
-
-func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName, routerDomain string) (string, error) {
-	route := routev1.Route{}
-	canonicalName := ""
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
-			Namespace: routeName.Namespace,
-			Name:      routeName.Name,
-		}, &route)
-		if err != nil {
-			return false, err
-		}
-		if len(route.Status.Ingress) < 1 {
-			t.Logf("No ingress found in route, retrying..")
-			return false, nil
-		}
-
-		for _, ingress := range route.Status.Ingress {
-			if strings.Contains(ingress.RouterCanonicalHostname, routerDomain) {
-				if ingressConditionHasStatus(ingress, routev1.RouteAdmitted, corev1.ConditionTrue) {
-					canonicalName = ingress.RouterCanonicalHostname
-					return true, nil
-				}
-				t.Logf("Router didn't admit the route, retrying..")
-				return false, nil
-			}
-		}
-		t.Logf("Unable to fetch the canonicalHostname, retrying..")
-		return false, nil
-	}); err != nil {
-		return "", err
-	}
-	return canonicalName, nil
-}
-
-func ingressConditionHasStatus(ingress routev1.RouteIngress, condition routev1.RouteIngressConditionType, status corev1.ConditionStatus) bool {
-	for _, c := range ingress.Conditions {
-		if condition == c.Type {
-			return c.Status == status
-		}
-	}
-	return false
-}
-
 // TestExternalDNSSecretCredentialUpdate verifies that at first DNS records are not created when wrong secret is supplied.
 // When the wrong secret is updated with the right values, DNS records are created.
 func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
@@ -807,6 +676,152 @@ func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
 	if resolved := <-dnsCheck; !resolved {
 		t.Fatal("All nameservers failed to verify that DNS has been correctly set.")
 	}
+}
+
+// HELPER FUNCTIONS
+
+func ensureOperandResources() error {
+	if os.Getenv(e2eSeparateOperandNsEnvVar) != "true" {
+		return nil
+	}
+
+	if err := ensureOperandNamespace(); err != nil {
+		return fmt.Errorf("Failed to create %s namespace: %v\n", operandNamespace, err)
+	}
+
+	if err := ensureOperandRole(); err != nil {
+		return fmt.Errorf("Failed to create role external-dns-operator in ns %s: %v\n", operandNamespace, err)
+	}
+
+	if err := ensureOperandRoleBinding(); err != nil {
+		return fmt.Errorf("Failed to create rolebinding external-dns-operator in ns %s: %v\n", operandNamespace, err)
+	}
+
+	return nil
+}
+
+func ensureOperandNamespace() error {
+	return kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: operandNamespace}})
+}
+
+func ensureOperandRole() error {
+	rules := []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"secrets", "serviceaccounts", "configmaps"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"namespaces"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "delete"},
+		},
+	}
+
+	role := rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rbacRsrcName,
+			Namespace: operandNamespace,
+		},
+		Rules: rules,
+	}
+	return kubeClient.Create(context.TODO(), &role)
+}
+
+func ensureOperandRoleBinding() error {
+	rb := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rbacRsrcName,
+			Namespace: operandNamespace,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     rbacRsrcName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      operatorServiceAccount,
+				Namespace: operatorNamespace,
+			},
+		},
+	}
+	return kubeClient.Create(context.TODO(), &rb)
+}
+
+func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
+	// try all nameservers and fail only if all failed
+	recordExist := false
+	for _, nameSrv := range nameServers {
+		t.Logf("Looking for cname record in nameserver: %s", nameSrv)
+		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			cname, err := lookupCNAME(host, nameSrv)
+			if err != nil {
+				t.Logf("Cname lookup failed for nameserver: %s , error: %v", nameSrv, err)
+				return false, nil
+			}
+			if strings.Contains(cname, canonicalName) {
+				recordExist = true
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			t.Logf("Failed to verify host record with CNAME Record")
+		}
+	}
+
+	if !recordExist {
+		t.Fatalf("CNAME record not found in any name server")
+	}
+}
+
+func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName, routerDomain string) (string, error) {
+	route := routev1.Route{}
+	canonicalName := ""
+	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+			Namespace: routeName.Namespace,
+			Name:      routeName.Name,
+		}, &route)
+		if err != nil {
+			return false, err
+		}
+		if len(route.Status.Ingress) < 1 {
+			t.Logf("No ingress found in route, retrying..")
+			return false, nil
+		}
+
+		for _, ingress := range route.Status.Ingress {
+			if strings.Contains(ingress.RouterCanonicalHostname, routerDomain) {
+				if ingressConditionHasStatus(ingress, routev1.RouteAdmitted, corev1.ConditionTrue) {
+					canonicalName = ingress.RouterCanonicalHostname
+					return true, nil
+				}
+				t.Logf("Router didn't admit the route, retrying..")
+				return false, nil
+			}
+		}
+		t.Logf("Unable to fetch the canonicalHostname, retrying..")
+		return false, nil
+	}); err != nil {
+		return "", err
+	}
+	return canonicalName, nil
+}
+
+func ingressConditionHasStatus(ingress routev1.RouteIngress, condition routev1.RouteIngressConditionType, status corev1.ConditionStatus) bool {
+	for _, c := range ingress.Conditions {
+		if condition == c.Type {
+			return c.Status == status
+		}
+	}
+	return false
 }
 
 func makeWrongCredentialsSecret(namespace string) *corev1.Secret {
