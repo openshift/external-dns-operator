@@ -296,18 +296,17 @@ func (r *reconciler) updateExternalDNSDeployment(ctx context.Context, current, d
 // Returns a boolean if an update is necessary, and the deployment resource to update to.
 func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *appsv1.Deployment) {
 	updated := current.DeepCopy()
-	return externalDNSSecretChanged(current, expected, updated) || externalDNSContainersChanged(current, expected, updated), updated
+	return externalDNSAnnotationsChanged(current, expected, updated) || externalDNSContainersChanged(current, expected, updated), updated
 }
 
-// externalDNSSecretChanged returns true if the current secret annotation differ from the expected
-func externalDNSSecretChanged(current, expected, updated *appsv1.Deployment) bool {
+// externalDNSAnnotationsChanged returns true if the current secret annotation differ from the expected
+func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
-	expectedVal, expectedExists := expected.Annotations[credentialsAnnotation]
-	if expectedExists {
-		currentVal, currentExists := current.Annotations[credentialsAnnotation]
+	for expectedKey, expectedValue := range expected.Annotations {
+		currentVal, currentExists := current.Annotations[expectedKey]
 		if currentExists {
-			if currentVal != expectedVal || !currentExists {
-				updated.Annotations[credentialsAnnotation] = expectedVal
+			if currentVal != expectedValue || !currentExists {
+				updated.Annotations[credentialsAnnotation] = expectedValue
 				return true
 			}
 		}
