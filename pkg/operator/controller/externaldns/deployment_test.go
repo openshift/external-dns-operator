@@ -60,7 +60,6 @@ var (
 const testSecretHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
 func TestDesiredExternalDNSDeployment(t *testing.T) {
-	secretHash := "f17bceb5a060e33473c68229903ef5c517d9a172"
 	testCases := []struct {
 		name                        string
 		inputSecretName             string
@@ -2174,7 +2173,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					}
 				}
 			}()
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, secretHash, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
+			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, testSecretHash, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2303,15 +2302,6 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 }
 
 func TestEnsureExternalDNSDeployment(t *testing.T) {
-	secretData := map[string][]byte{
-		"aws_access_key_id":     []byte("aws_access_key_id"),
-		"aws_secret_access_key": []byte("aws_secret_access_key"),
-	}
-	secretHash, err := buildSecretHash(secretData)
-	if err != nil {
-		t.Error("failed to build secret hash")
-	}
-
 	testCases := []struct {
 		name               string
 		existingObjects    []runtime.Object
@@ -2332,7 +2322,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Name:      "external-dns-credentials-" + test.OperandName,
 					Namespace: test.OperandNamespace,
 				},
-				Data: secretData,
 			},
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2347,7 +2336,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: secretHash},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2885,7 +2874,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: secretHash},
+						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -3178,7 +3167,7 @@ func testDeployment() *appsv1.Deployment {
 			Name:      "test",
 			Namespace: "testns",
 			Annotations: map[string]string{
-				credentialsAnnotation: "f17bceb5a060e33473c68229903ef5c517d9a172",
+				credentialsAnnotation: testSecretHash,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
