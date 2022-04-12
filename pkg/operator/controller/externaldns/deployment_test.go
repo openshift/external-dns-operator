@@ -2293,8 +2293,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
-			changed, updated := externalDNSDeploymentChanged(original, mutated)
-			if changed != tc.expect {
+			if changed, updated := externalDNSDeploymentChanged(original, mutated); changed != tc.expect {
 				t.Errorf("Expect externalDNSDeploymentChanged to be %t, got %t", tc.expect, changed)
 			} else if changed {
 				if changedAgain, updatedAgain := externalDNSDeploymentChanged(mutated, updated); changedAgain {
