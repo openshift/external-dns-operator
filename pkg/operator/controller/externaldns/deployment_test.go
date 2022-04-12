@@ -2273,6 +2273,15 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
 		},
+		{
+			description:        "if externalDNS annotation is not present",
+			originalDeployment: testDeploymentWithoutAnnotations(),
+			mutate: func(dep1 *appsv1.Deployment) {
+				dep1.Annotations = updatedSecretHashAnnotation
+			},
+			expect:             true,
+			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -2285,7 +2294,6 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
 			changed, updated := externalDNSDeploymentChanged(original, mutated)
-
 			if changed != tc.expect {
 				t.Errorf("Expect externalDNSDeploymentChanged to be %t, got %t", tc.expect, changed)
 			} else if changed {
@@ -2679,6 +2687,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
+						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2733,6 +2742,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -3012,6 +3022,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
+						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -3066,6 +3077,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -3169,6 +3181,37 @@ func testDeployment() *appsv1.Deployment {
 			Annotations: map[string]string{
 				credentialsAnnotation: testSecretHash,
 			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"testlbl": "yes",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"testlbl": "yes",
+					},
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: "testsa",
+					NodeSelector: map[string]string{
+						"testlbl": "yes",
+					},
+					Containers: []corev1.Container{testContainer()},
+				},
+			},
+		},
+	}
+}
+
+func testDeploymentWithoutAnnotations() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "testns",
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
