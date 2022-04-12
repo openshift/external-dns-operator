@@ -2196,7 +2196,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 
 func TestExternalDNSDeploymentChanged(t *testing.T) {
 	updatedSecretHashAnnotation := make(map[string]string)
-	updatedSecretHashAnnotation["external-dns-credentials-test"] = "31f4ea504e2efd429769e1d09b586449f0b339eb"
+	updatedSecretHashAnnotation[credentialsAnnotation] = "31f4ea504e2efd429769e1d09b586449f0b339eb"
 	testCases := []struct {
 		description        string
 		originalDeployment *appsv1.Deployment
@@ -3165,13 +3165,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 }
 
 func testDeployment() *appsv1.Deployment {
-	secretHashAnnotation := make(map[string]string)
-	secretHashAnnotation["external-dns-credentials-test"] = "f17bceb5a060e33473c68229903ef5c517d9a172"
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        "test",
-			Namespace:   "testns",
-			Annotations: secretHashAnnotation,
+			Name:      "test",
+			Namespace: "testns",
+			Annotations: map[string]string{
+				credentialsAnnotation: "f17bceb5a060e33473c68229903ef5c517d9a172",
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
