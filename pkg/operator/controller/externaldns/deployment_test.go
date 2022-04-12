@@ -2301,10 +2301,20 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 }
 
 func TestEnsureExternalDNSDeployment(t *testing.T) {
+	secretData := map[string][]byte{
+		"aws_access_key_id":     []byte("aws_access_key_id"),
+		"aws_secret_access_key": []byte("aws_secret_access_key"),
+	}
+	secretHash, err := buildSecretHash(secretData)
+	if err != nil {
+		t.Error("failed to build secret hash")
+	}
+
 	testCases := []struct {
 		name               string
 		existingObjects    []runtime.Object
 		expectedExist      bool
+		ExpectedSecret     corev1.Secret
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
 		extDNS             operatorv1alpha1.ExternalDNS
@@ -2315,6 +2325,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{},
 			expectedExist:   true,
+			ExpectedSecret: corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "external-dns-credentials-" + test.OperandName,
+					Namespace: test.OperandNamespace,
+				},
+				Data: secretData,
+			},
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      test.OperandName,
@@ -2328,7 +2345,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{"external-dns-credentials-test": ""},
+					Annotations: map[string]string{credentialsAnnotation: secretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2379,11 +2396,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			errExpected: true,
 		},
 		{
 			name:   "Exist as expected",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
+				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -2516,6 +2535,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist as expected with one Router Names added as flag",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, "default"),
 			existingObjects: []runtime.Object{
+				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -2650,6 +2670,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist and drifted",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
+				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -2771,7 +2792,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		//Source OCP Routes
 		{
 			name:            "Does not exist",
-			existingObjects: []runtime.Object{},
+			existingObjects: []runtime.Object{testSecret()},
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
@@ -2787,7 +2808,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{"external-dns-credentials-test": ""},
+					Annotations: map[string]string{credentialsAnnotation: "da39a3ee5e6b4b0d3255bfef95601890afd80709"},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2844,6 +2865,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist as expected",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
+				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -2979,6 +3001,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist and drifted",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
+				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -3183,7 +3206,7 @@ func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deploym
 
 func testDeploymentWithAnnotations(annotations map[string]string) *appsv1.Deployment {
 	depl := testDeployment()
-	depl.Annotations = updatedSecretHashAnnotation
+	depl.Annotations = annotations
 	return depl
 }
 
@@ -3401,5 +3424,47 @@ func testPlatformStatusGCP(projectID string) *configv1.PlatformStatus {
 		GCP: &configv1.GCPPlatformStatus{
 			ProjectID: projectID,
 		},
+	}
+}
+
+func TestBuildSecretHash(t *testing.T) {
+	testCases := []struct {
+		name            string
+		inputSecretData map[string][]byte
+		expectedHash    string
+		errExpected     bool
+	}{
+		{
+			name: "correct hash",
+			inputSecretData: map[string][]byte{
+				"aws_access_key_id":     []byte("aws_access_key_id"),
+				"aws_secret_access_key": []byte("aws_secret_access_key"),
+			},
+			expectedHash: "93fd56cba8fc84aba59b5f6743b2ea34aca7690fa829aa98b8cdcbf42808d213",
+			errExpected:  false,
+		},
+		{
+			name:            "empty data",
+			inputSecretData: map[string][]byte{},
+			expectedHash:    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			errExpected:     false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotHash, err := buildSecretHash(tc.inputSecretData)
+			if err != nil {
+				if !tc.errExpected {
+					t.Fatalf("unexpected error received: %v", err)
+				}
+				return
+			}
+			if tc.errExpected {
+				t.Fatalf("Error expected but wasn't received")
+			}
+			if gotHash != tc.expectedHash {
+				t.Errorf("unexpected secret hash: %s", gotHash)
+			}
+		})
 	}
 }

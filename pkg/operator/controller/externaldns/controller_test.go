@@ -43,10 +43,6 @@ import (
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
-const (
-	testSecretName = "testsecret"
-)
-
 func TestReconcile(t *testing.T) {
 	managedTypesList := []client.ObjectList{
 		&cco.CredentialsRequestList{},
@@ -280,7 +276,7 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	extDNS := testExtDNSInstanceNoSecret()
 	extDNS.Spec.Provider.AWS = &operatorv1alpha1.ExternalDNSAWSProviderOptions{
 		Credentials: operatorv1alpha1.SecretReference{
-			Name: testSecretName,
+			Name: test.OperandName,
 		},
 	}
 	return extDNS
@@ -289,7 +285,7 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 func testSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testSecretName,
+			Name:      test.OperandName,
 			Namespace: test.OperandNamespace,
 		},
 	}

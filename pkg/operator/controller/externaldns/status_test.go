@@ -557,7 +557,7 @@ func fakeExternalDNS() *operatorv1alpha1.ExternalDNS {
 				Type: operatorv1alpha1.ProviderTypeAWS,
 				AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
 					Credentials: operatorv1alpha1.SecretReference{
-						Name: testSecretName,
+						Name: test.OperandName,
 					},
 				},
 			},

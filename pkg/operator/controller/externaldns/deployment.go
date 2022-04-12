@@ -18,7 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 
 	"fmt"
@@ -52,6 +52,7 @@ const (
 	osLabel                             = "kubernetes.io/os"
 	linuxOS                             = "linux"
 	azurePrivateDNSZonesResourceSubStr  = "privatednszones"
+	credentialsAnnotation               = "externaldns.olm.openshift.io/credentials-secret-hash"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
@@ -74,28 +75,26 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
-	var secretHash string
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
-
-	secretName := controller.ExternalDNSDestCredentialsSecretName(namespace, externalDNS.Name)
 	configMapName := ""
 	if r.config.InjectTrustedCA {
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
 	}
 
-	secretExists, secret, err := r.currentExternalDNSSecret(ctx, secretName)
+	secretExists, secret, err := r.currentExternalDNSSecret(ctx, nsName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get the target secret: %w", err)
 	}
-
-	if secretExists {
-		secretHash, err = buildSecretHash(currentSecret.Data)
-		if err != nil {
-			return false, nil, Errorf("failed build the secret's hash: %w", err)
-		}
+	if !secretExists {
+		return false, nil, fmt.Errorf("target secret not found: %w", err)
 	}
 
-	desired, err := desiredExternalDNSDeployment(namespace, image, secretName, secretHash, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
+	secretHash, err := buildSecretHash(secret.Data)
+	if err != nil {
+		return false, nil, fmt.Errorf("failed to build the secret's hash: %w", err)
+	}
+
+	desired, err := desiredExternalDNSDeployment(namespace, image, secret.Name, secretHash, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -129,37 +128,17 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	return true, current, nil
 }
 
-// buildSecretHash is a utility function to get a checksum of the resource data
-func buildSecretHash(data map[string][]byte) (string, error) {
-	keys := make([]string, 0, len(data))
-	for k := range data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	hash := sha1.New()
-	for _, k := range keys {
-		_, err := hash.Write([]byte(k))
-		if err != nil {
-			return "", err
-		}
-		_, err = hash.Write(data[k])
-		if err != nil {
-			return "", err
-		}
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
 // currentExternalDNSSecret gets the current externalDNS secret resource.
-func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.NamespacedName, secretName string) (bool, *corev1.Secret, error) {
+func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.NamespacedName) (bool, *corev1.Secret, error) {
 	secret := &corev1.Secret{}
-	if err := r.client.Get(ctx, nsName, currentSecret); err != nil {
+	if err := r.client.Get(ctx, nsName, secret); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil, nil
 		}
 		return false, nil, err
 	}
-	return true, currentSecret, nil
+
+	return true, secret, nil
 }
 
 // currentExternalDNSDeployment gets the current externalDNS deployment resource.
@@ -202,16 +181,13 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 		},
 	}
 
-	annotations := map[string]string{
-	    // would be good to make a constant out of the annotation name
-	    "externaldns.olm.openshift.io/credentials-secret-hash": secretHash,
-	}
-
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        controller.ExternalDNSResourceName(externalDNS),
-			Namespace:   namespace,
-			Annotations: secretHashAnnotation,
+			Name:      controller.ExternalDNSResourceName(externalDNS),
+			Namespace: namespace,
+			Annotations: map[string]string{
+				credentialsAnnotation: secretHash,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -326,6 +302,7 @@ func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *
 // externalDNSSecretChanged returns true if the current secret annotation differ from the expected
 func externalDNSSecretChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
+
 	for expected_key, expected_val := range expected.Annotations {
 		if current_val, ok := current.Annotations[expected_key]; ok {
 			if current_val != expected_val {
@@ -399,4 +376,25 @@ func equalStringSliceContent(sl1, sl2 []string) bool {
 	sort.Strings(copy1)
 	sort.Strings(copy2)
 	return cmp.Equal(copy1, copy2)
+}
+
+// buildSecretHash is a utility function to get a checksum of the resource data
+func buildSecretHash(data map[string][]byte) (string, error) {
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	hash := sha256.New()
+	for _, k := range keys {
+		_, err := hash.Write([]byte(k))
+		if err != nil {
+			return "", err
+		}
+		_, err = hash.Write(data[k])
+		if err != nil {
+			return "", err
+		}
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
