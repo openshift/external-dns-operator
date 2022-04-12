@@ -57,6 +57,8 @@ var (
 	}
 )
 
+const testSecretHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
 func TestDesiredExternalDNSDeployment(t *testing.T) {
 	secretHash := "f17bceb5a060e33473c68229903ef5c517d9a172"
 	testCases := []struct {
@@ -2416,6 +2418,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
+						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2480,6 +2483,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2549,6 +2553,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
+						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2614,6 +2619,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2808,7 +2814,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: "da39a3ee5e6b4b0d3255bfef95601890afd80709"},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2879,6 +2885,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
+						Annotations: map[string]string{credentialsAnnotation: secretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2945,6 +2952,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
+					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -3446,7 +3454,7 @@ func TestBuildSecretHash(t *testing.T) {
 		{
 			name:            "empty data",
 			inputSecretData: map[string][]byte{},
-			expectedHash:    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			expectedHash:    testSecretHash,
 			errExpected:     false,
 		},
 	}

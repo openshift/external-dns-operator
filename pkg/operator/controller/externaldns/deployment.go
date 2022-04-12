@@ -302,11 +302,14 @@ func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *
 // externalDNSSecretChanged returns true if the current secret annotation differ from the expected
 func externalDNSSecretChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
-	for expected_key, expected_val := range expected.Annotations {
-		current_val, ok := current.Annotations[expected_key]
-		if current_val != expected_val || !ok {
-			updated.Annotations[expected_key] = expected_val
-			return true
+	expectedVal, expectedExists := expected.Annotations[credentialsAnnotation]
+	if expectedExists {
+		currentVal, currentExists := current.Annotations[credentialsAnnotation]
+		if currentExists {
+			if currentVal != expectedVal || !currentExists {
+				updated.Annotations[credentialsAnnotation] = expectedVal
+				return true
+			}
 		}
 	}
 	return changed
