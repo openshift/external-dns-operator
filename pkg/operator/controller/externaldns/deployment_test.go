@@ -3207,34 +3207,9 @@ func testDeployment() *appsv1.Deployment {
 }
 
 func testDeploymentWithoutAnnotations() *appsv1.Deployment {
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "testns",
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"testlbl": "yes",
-				},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"testlbl": "yes",
-					},
-				},
-				Spec: corev1.PodSpec{
-					ServiceAccountName: "testsa",
-					NodeSelector: map[string]string{
-						"testlbl": "yes",
-					},
-					Containers: []corev1.Container{testContainer()},
-				},
-			},
-		},
-	}
+	depl := testDeployment()
+	depl.Annotations = nil
+	return depl
 }
 
 func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deployment {
