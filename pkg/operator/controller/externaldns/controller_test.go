@@ -44,7 +44,11 @@ import (
 )
 
 const (
-	testSecretName = "testsecret"
+	testSecretName             = "testsecret"
+	deploymentResource         = "deployment"
+	externalDNSResource        = "externaldns"
+	serviceAccountResource     = "serviceaccount"
+	credentialsrequestResource = "credentialsrequest"
 )
 
 func TestReconcile(t *testing.T) {
@@ -75,23 +79,23 @@ func TestReconcile(t *testing.T) {
 			expectedEvents: []test.Event{
 				{
 					EventType: watch.Added,
-					ObjType:   "deployment",
+					ObjType:   deploymentResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Added,
-					ObjType:   "serviceaccount",
+					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Modified,
-					ObjType:   "externaldns",
+					ObjType:   externalDNSResource,
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -107,30 +111,30 @@ func TestReconcile(t *testing.T) {
 			expectedEvents: []test.Event{
 				{
 					EventType: watch.Added,
-					ObjType:   "credentialsrequest",
+					ObjType:   credentialsrequestResource,
 					NamespacedName: types.NamespacedName{
 						Name: "externaldns-credentials-request-" + strings.ToLower(string(testExtDNSInstance().Spec.Provider.Type)),
 					},
 				},
 				{
 					EventType: watch.Added,
-					ObjType:   "deployment",
+					ObjType:   deploymentResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Added,
-					ObjType:   "serviceaccount",
+					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Modified,
-					ObjType:   "externaldns",
+					ObjType:   externalDNSResource,
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -146,23 +150,23 @@ func TestReconcile(t *testing.T) {
 			expectedEvents: []test.Event{
 				{
 					EventType: watch.Added,
-					ObjType:   "deployment",
+					ObjType:   deploymentResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Added,
-					ObjType:   "serviceaccount",
+					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      "external-dns-test",
+						Name:      test.OperandName,
 					},
 				},
 				{
 					EventType: watch.Modified,
-					ObjType:   "externaldns",
+					ObjType:   externalDNSResource,
 					NamespacedName: types.NamespacedName{
 						Name: test.Name,
 					},
@@ -289,7 +293,7 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 func testSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testSecretName,
+			Name:      test.OperandSecretName,
 			Namespace: test.OperandNamespace,
 		},
 	}
