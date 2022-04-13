@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
@@ -285,7 +286,7 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 func testSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      test.OperandName,
+			Name:      "external-dns-credentials-test",
 			Namespace: test.OperandNamespace,
 		},
 	}

@@ -301,7 +301,6 @@ func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *
 
 // externalDNSAnnotationsChanged returns true if the current secret annotation differ from the expected
 func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment) bool {
-	changed := false
 	if current.Annotations == nil {
 		updated.Annotations = expected.Annotations
 		return true
