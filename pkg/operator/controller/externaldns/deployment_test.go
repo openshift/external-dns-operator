@@ -3171,6 +3171,48 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 	}
 }
 
+func TestBuildSecretHash(t *testing.T) {
+	testCases := []struct {
+		name            string
+		inputSecretData map[string][]byte
+		expectedHash    string
+		errExpected     bool
+	}{
+		{
+			name: "correct hash",
+			inputSecretData: map[string][]byte{
+				"aws_access_key_id":     []byte("aws_access_key_id"),
+				"aws_secret_access_key": []byte("aws_secret_access_key"),
+			},
+			expectedHash: "93fd56cba8fc84aba59b5f6743b2ea34aca7690fa829aa98b8cdcbf42808d213",
+			errExpected:  false,
+		},
+		{
+			name:            "empty data",
+			inputSecretData: map[string][]byte{},
+			expectedHash:    testSecretHash,
+			errExpected:     false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotHash, err := buildSecretHash(tc.inputSecretData)
+			if err != nil {
+				if !tc.errExpected {
+					t.Fatalf("unexpected error received: %v", err)
+				}
+				return
+			}
+			if tc.errExpected {
+				t.Fatalf("Error expected but wasn't received")
+			}
+			if gotHash != tc.expectedHash {
+				t.Errorf("unexpected secret hash: %s", gotHash)
+			}
+		})
+	}
+}
+
 func testDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -3437,47 +3479,5 @@ func testPlatformStatusGCP(projectID string) *configv1.PlatformStatus {
 		GCP: &configv1.GCPPlatformStatus{
 			ProjectID: projectID,
 		},
-	}
-}
-
-func TestBuildSecretHash(t *testing.T) {
-	testCases := []struct {
-		name            string
-		inputSecretData map[string][]byte
-		expectedHash    string
-		errExpected     bool
-	}{
-		{
-			name: "correct hash",
-			inputSecretData: map[string][]byte{
-				"aws_access_key_id":     []byte("aws_access_key_id"),
-				"aws_secret_access_key": []byte("aws_secret_access_key"),
-			},
-			expectedHash: "93fd56cba8fc84aba59b5f6743b2ea34aca7690fa829aa98b8cdcbf42808d213",
-			errExpected:  false,
-		},
-		{
-			name:            "empty data",
-			inputSecretData: map[string][]byte{},
-			expectedHash:    testSecretHash,
-			errExpected:     false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotHash, err := buildSecretHash(tc.inputSecretData)
-			if err != nil {
-				if !tc.errExpected {
-					t.Fatalf("unexpected error received: %v", err)
-				}
-				return
-			}
-			if tc.errExpected {
-				t.Fatalf("Error expected but wasn't received")
-			}
-			if gotHash != tc.expectedHash {
-				t.Errorf("unexpected secret hash: %s", gotHash)
-			}
-		})
 	}
 }
