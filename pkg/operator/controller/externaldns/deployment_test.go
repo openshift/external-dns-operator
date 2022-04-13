@@ -2313,7 +2313,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		name               string
 		existingObjects    []runtime.Object
 		expectedExist      bool
-		ExpectedSecret     corev1.Secret
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
 		extDNS             operatorv1alpha1.ExternalDNS
@@ -2322,14 +2321,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		{
 			name:            "Does not exist",
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
-			existingObjects: []runtime.Object{},
+			existingObjects: []runtime.Object{testSecret()},
 			expectedExist:   true,
-			ExpectedSecret: corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "external-dns-credentials-" + test.OperandName,
-					Namespace: test.OperandNamespace,
-				},
-			},
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      test.OperandName,
@@ -2394,7 +2387,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
-			errExpected: true,
 		},
 		{
 			name:   "Exist as expected",
@@ -3128,6 +3120,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name:            "Secret does not exist",
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			existingObjects: []runtime.Object{},
+			expectedExist:   false,
+			errExpected:     true,
 		},
 	}
 
