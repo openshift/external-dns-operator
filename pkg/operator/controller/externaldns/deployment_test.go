@@ -57,7 +57,22 @@ var (
 	}
 )
 
-const testSecretHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+const (
+	testSecretHash              = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	awsSecret                   = "awssecret"
+	azureSecret                 = "azuresecret"
+	gcpSecret                   = "gcpsecret"
+	infobloxsecret              = "infobloxsecret"
+	bluecatsecret               = "bluecatsecret"
+	ExternalDNSContainerName    = "external-dns-nfbh54h648h6q"
+	ExternalDNSContainerNoZones = "external-dns-n56fh6dh59ch5fcq"
+	httpProxy                   = "http://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128"
+	httpsProxy                  = "https://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128"
+	noProxy                     = ".cluster.local,.svc,.us-east-2.compute.internal,10.0.0.0/16,127.0.0.1,100.200.300.400"
+	externalDNSKind             = "ExternalDNS"
+	ExternalDNSBaseName         = "external-dns"
+	testName                    = "test"
+)
 
 func TestDesiredExternalDNSDeployment(t *testing.T) {
 	testCases := []struct {
@@ -72,7 +87,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 	}{
 		{
 			name:             "Nominal AWS",
-			inputSecretName:  "awssecret",
+			inputSecretName:  awsSecret,
 			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -89,8 +104,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -111,24 +126,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: "AWS_ACCESS_KEY_ID",
+								Name: awsAccessKeyIDEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_access_key_id",
+										Key: awsAccessKeyIDKey,
 									},
 								},
 							},
 							{
-								Name: "AWS_SECRET_ACCESS_KEY",
+								Name: awsAccessKeySecretEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_secret_access_key",
+										Key: awsAccessKeySecretKey,
 									},
 								},
 							},
@@ -155,8 +170,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -216,8 +231,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -255,7 +270,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Azure",
-			inputSecretName:  "azuresecret",
+			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -272,14 +287,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "azure-config-file",
+						Name: azureConfigVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
+								SecretName: azureSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "azure.json",
-										Path: "azure.json",
+										Key:  azureConfigFileName,
+										Path: azureConfigFileName,
 									},
 								},
 							},
@@ -288,8 +303,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -311,9 +326,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -322,7 +337,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Private Zone Azure",
-			inputSecretName:  "azuresecret",
+			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNSPrivateZones([]string{test.AzurePrivateDNSZone}, operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -339,14 +354,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "azure-config-file",
+						Name: azureConfigVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
+								SecretName: azureSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "azure.json",
-										Path: "azure.json",
+										Key:  azureConfigFileName,
+										Path: azureConfigFileName,
 									},
 								},
 							},
@@ -356,7 +371,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				Containers: []corev1.Container{
 					{
 						Name:  "external-dns-n64ch5cch658h64bq",
-						Image: "quay.io/test/external-dns:latest",
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -378,9 +393,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -405,8 +420,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -431,7 +446,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No Zones Azure",
-			inputSecretName:  "azuresecret",
+			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -448,14 +463,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "azure-config-file",
+						Name: azureConfigVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
+								SecretName: azureSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "azure.json",
-										Path: "azure.json",
+										Key:  azureConfigFileName,
+										Path: azureConfigFileName,
 									},
 								},
 							},
@@ -464,8 +479,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -486,15 +501,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7980",
 							"--txt-owner-id=external-dns-test",
@@ -515,9 +530,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -527,7 +542,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 
 		{
 			name:             "Nominal GCP",
-			inputSecretName:  "gcpsecret",
+			inputSecretName:  gcpSecret,
 			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -544,14 +559,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "gcp-credentials-file",
+						Name: gcpCredentialsVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "gcpsecret",
+								SecretName: gcpSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "gcp-credentials.json",
-										Path: "gcp-credentials.json",
+										Key:  gcpCredentialsFileKey,
+										Path: gcpCredentialsFileKey,
 									},
 								},
 							},
@@ -560,8 +575,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -583,15 +598,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+								Name:  gcpAppCredentialsEnvVar,
 								Value: "/etc/kubernetes/gcp-credentials.json",
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "gcp-credentials-file",
+								Name:      gcpCredentialsVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -616,8 +631,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -660,8 +675,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -687,7 +702,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Bluecat",
-			inputSecretName:  "bluecatsecret",
+			inputSecretName:  bluecatsecret,
 			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -707,11 +722,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Name: "bluecat-config-file",
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "bluecatsecret",
+								SecretName: bluecatsecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "bluecat.json",
-										Path: "bluecat.json",
+										Key:  blueCatConfigFileName,
+										Path: blueCatConfigFileName,
 									},
 								},
 							},
@@ -720,8 +735,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -745,7 +760,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							{
 								Name:      "bluecat-config-file",
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -770,8 +785,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -796,7 +811,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Infoblox",
-			inputSecretName:  "infobloxsecret",
+			inputSecretName:  infobloxsecret,
 			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -813,8 +828,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -838,24 +853,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME",
+								Name: infobloxWAPIUsernameEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "infobloxsecret",
+											Name: infobloxsecret,
 										},
-										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME",
+										Key: infobloxWAPIUsernameEnvVar,
 									},
 								},
 							},
 							{
-								Name: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
+								Name: infobloxWAPIPasswordEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "infobloxsecret",
+											Name: infobloxsecret,
 										},
-										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
+										Key: infobloxWAPIPasswordEnvVar,
 									},
 								},
 							},
@@ -882,8 +897,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -923,8 +938,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -959,8 +974,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -997,8 +1012,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1020,7 +1035,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					},
 					{
 						Name:  "external-dns-n656hcdh5d9hf6q",
-						Image: "quay.io/test/external-dns:latest",
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7980",
 							"--txt-owner-id=external-dns-test",
@@ -1061,8 +1076,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1104,8 +1119,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1145,8 +1160,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--domain-filter=abc.com",
 							"--metrics-address=127.0.0.1:7979",
@@ -1187,8 +1202,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--domain-filter=abc.com",
 							"--zone-id-filter=my-dns-public-zone",
@@ -1215,7 +1230,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		// OCP Route Source
 		{
 			name:             "Nominal AWS Route",
-			inputSecretName:  "awssecret",
+			inputSecretName:  awsSecret,
 			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1232,8 +1247,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1249,24 +1264,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: "AWS_ACCESS_KEY_ID",
+								Name: awsAccessKeyIDEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_access_key_id",
+										Key: awsAccessKeyIDKey,
 									},
 								},
 							},
 							{
-								Name: "AWS_SECRET_ACCESS_KEY",
+								Name: awsAccessKeySecretEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_secret_access_key",
+										Key: awsAccessKeySecretKey,
 									},
 								},
 							},
@@ -1293,8 +1308,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1314,7 +1329,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "FQDNTemplate set AWS Route",
-			inputSecretName:  "awssecret",
+			inputSecretName:  awsSecret,
 			inputExternalDNS: testAWSExternalDNSFQDNTemplate(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1331,8 +1346,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1348,24 +1363,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: "AWS_ACCESS_KEY_ID",
+								Name: awsAccessKeyIDEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_access_key_id",
+										Key: awsAccessKeyIDKey,
 									},
 								},
 							},
 							{
-								Name: "AWS_SECRET_ACCESS_KEY",
+								Name: awsAccessKeySecretEnvVar,
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "awssecret",
+											Name: awsSecret,
 										},
-										Key: "aws_secret_access_key",
+										Key: awsAccessKeySecretKey,
 									},
 								},
 							},
@@ -1376,7 +1391,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Azure Route",
-			inputSecretName:  "azuresecret",
+			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1393,14 +1408,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "azure-config-file",
+						Name: azureConfigVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
+								SecretName: azureSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "azure.json",
-										Path: "azure.json",
+										Key:  azureConfigFileName,
+										Path: azureConfigFileName,
 									},
 								},
 							},
@@ -1409,8 +1424,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1427,9 +1442,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -1454,8 +1469,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1475,7 +1490,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones Azure Route",
-			inputSecretName:  "azuresecret",
+			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1492,14 +1507,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "azure-config-file",
+						Name: azureConfigVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "azuresecret",
+								SecretName: azureSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "azure.json",
-										Path: "azure.json",
+										Key:  azureConfigFileName,
+										Path: azureConfigFileName,
 									},
 								},
 							},
@@ -1508,8 +1523,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1525,15 +1540,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7980",
 							"--txt-owner-id=external-dns-test",
@@ -1549,9 +1564,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "azure-config-file",
+								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -1560,7 +1575,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal GCP Route",
-			inputSecretName:  "gcpsecret",
+			inputSecretName:  gcpSecret,
 			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1577,14 +1592,14 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Volumes: []corev1.Volume{
 					{
-						Name: "gcp-credentials-file",
+						Name: gcpCredentialsVolumeName,
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "gcpsecret",
+								SecretName: gcpSecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "gcp-credentials.json",
-										Path: "gcp-credentials.json",
+										Key:  gcpCredentialsFileKey,
+										Path: gcpCredentialsFileKey,
 									},
 								},
 							},
@@ -1593,8 +1608,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1611,15 +1626,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+								Name:  gcpAppCredentialsEnvVar,
 								Value: "/etc/kubernetes/gcp-credentials.json",
 							},
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name:      "gcp-credentials-file",
+								Name:      gcpCredentialsVolumeName,
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -1644,8 +1659,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1665,7 +1680,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Bluecat Route",
-			inputSecretName:  "bluecatsecret",
+			inputSecretName:  bluecatsecret,
 			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1685,11 +1700,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Name: "bluecat-config-file",
 						VolumeSource: corev1.VolumeSource{
 							Secret: &corev1.SecretVolumeSource{
-								SecretName: "bluecatsecret",
+								SecretName: bluecatsecret,
 								Items: []corev1.KeyToPath{
 									{
-										Key:  "bluecat.json",
-										Path: "bluecat.json",
+										Key:  blueCatConfigFileName,
+										Path: blueCatConfigFileName,
 									},
 								},
 							},
@@ -1698,8 +1713,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1718,7 +1733,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							{
 								Name:      "bluecat-config-file",
 								ReadOnly:  true,
-								MountPath: "/etc/kubernetes",
+								MountPath: defaultConfigMountPath,
 							},
 						},
 					},
@@ -1743,8 +1758,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1764,7 +1779,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Nominal Infoblox Route",
-			inputSecretName:  "infobloxsecret",
+			inputSecretName:  infobloxsecret,
 			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -1781,8 +1796,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1805,7 +1820,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "infobloxsecret",
+											Name: infobloxsecret,
 										},
 										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME",
 									},
@@ -1816,7 +1831,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								ValueFrom: &corev1.EnvVarSource{
 									SecretKeyRef: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: "infobloxsecret",
+											Name: infobloxsecret,
 										},
 										Key: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
 									},
@@ -1845,8 +1860,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1881,8 +1896,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1916,8 +1931,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -1934,7 +1949,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					},
 					{
 						Name:  "external-dns-n656hcdh5d9hf6q",
-						Image: "quay.io/test/external-dns:latest",
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7980",
 							"--txt-owner-id=external-dns-test",
@@ -1970,8 +1985,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -2008,8 +2023,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -2044,8 +2059,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-n56fh6dh59ch5fcq",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerNoZones,
+						Image: test.OperandImage,
 						Args: []string{
 							"--domain-filter=abc.com",
 							"--metrics-address=127.0.0.1:7979",
@@ -2081,8 +2096,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--domain-filter=abc.com",
 							"--zone-id-filter=my-dns-public-zone",
@@ -2105,9 +2120,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			name:             "Propagate proxy settings",
 			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
 			inputEnvVars: map[string]string{
-				"HTTP_PROXY":  "http://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
-				"HTTPS_PROXY": "https://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
-				"NO_PROXY":    ".cluster.local,.svc,.us-east-2.compute.internal,10.0.0.0/16,127.0.0.1,100.200.300.400",
+				"HTTP_PROXY":  httpProxy,
+				"HTTPS_PROXY": httpsProxy,
+				"NO_PROXY":    noProxy,
 			},
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -2124,8 +2139,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				},
 				Containers: []corev1.Container{
 					{
-						Name:  "external-dns-nfbh54h648h6q",
-						Image: "quay.io/test/external-dns:latest",
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
 						Args: []string{
 							"--metrics-address=127.0.0.1:7979",
 							"--txt-owner-id=external-dns-test",
@@ -2142,15 +2157,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Env: []corev1.EnvVar{
 							{
 								Name:  "HTTP_PROXY",
-								Value: "http://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+								Value: httpProxy,
 							},
 							{
 								Name:  "HTTPS_PROXY",
-								Value: "https://proxy-user1:XXXYYYZZZ@ec2-3-100-200-30.us-east-2.compute.amazonaws.com:3128",
+								Value: httpsProxy,
 							},
 							{
 								Name:  "NO_PROXY",
-								Value: ".cluster.local,.svc,.us-east-2.compute.internal,10.0.0.0/16,127.0.0.1,100.200.300.400",
+								Value: noProxy,
 							},
 						},
 					},
@@ -2339,7 +2354,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2351,15 +2366,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2377,8 +2392,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -2409,7 +2424,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         operatorv1alpha1.GroupVersion.String(),
-								Kind:               "ExternalDNS",
+								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
 								BlockOwnerDeletion: &test.TrueVar,
@@ -2421,15 +2436,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Replicas: &replicas,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									"app.kubernetes.io/instance": "test",
-									"app.kubernetes.io/name":     "external-dns",
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2447,8 +2462,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-nfbh54h648h6q",
-										Image: "quay.io/test/external-dns:latest",
+										Name:  ExternalDNSContainerName,
+										Image: test.OperandImage,
 										Args: []string{
 											"--metrics-address=127.0.0.1:7979",
 											"--txt-owner-id=external-dns-test",
@@ -2474,7 +2489,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2486,15 +2501,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2512,8 +2527,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -2544,7 +2559,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         operatorv1alpha1.GroupVersion.String(),
-								Kind:               "ExternalDNS",
+								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
 								BlockOwnerDeletion: &test.TrueVar,
@@ -2556,15 +2571,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Replicas: &replicas,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									"app.kubernetes.io/instance": "test",
-									"app.kubernetes.io/name":     "external-dns",
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2582,8 +2597,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-nfbh54h648h6q",
-										Image: "quay.io/test/external-dns:latest",
+										Name:  ExternalDNSContainerName,
+										Image: test.OperandImage,
 										Args: []string{
 											"--metrics-address=127.0.0.1:7979",
 											"--txt-owner-id=external-dns-test",
@@ -2610,7 +2625,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2622,15 +2637,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2648,8 +2663,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -2681,7 +2696,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         operatorv1alpha1.GroupVersion.String(),
-								Kind:               "ExternalDNS",
+								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
 								BlockOwnerDeletion: &test.TrueVar,
@@ -2693,15 +2708,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Replicas: &replicas,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									"app.kubernetes.io/instance": "test",
-									"app.kubernetes.io/name":     "external-dns",
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2720,7 +2735,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								Containers: []corev1.Container{
 									{
 										Name:  "external-dns-unexpected",
-										Image: "quay.io/test/external-dns:latest",
+										Image: test.OperandImage,
 									},
 								},
 							},
@@ -2736,7 +2751,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2748,15 +2763,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2774,8 +2789,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -2807,7 +2822,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2819,15 +2834,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2845,8 +2860,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -2878,7 +2893,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         operatorv1alpha1.GroupVersion.String(),
-								Kind:               "ExternalDNS",
+								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
 								BlockOwnerDeletion: &test.TrueVar,
@@ -2890,15 +2905,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Replicas: &replicas,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									"app.kubernetes.io/instance": "test",
-									"app.kubernetes.io/name":     "external-dns",
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2916,8 +2931,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-nfbh54h648h6q",
-										Image: "quay.io/test/external-dns:latest",
+										Name:  ExternalDNSContainerName,
+										Image: test.OperandImage,
 										Args: []string{
 											"--metrics-address=127.0.0.1:7979",
 											"--txt-owner-id=external-dns-test",
@@ -2945,7 +2960,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -2957,15 +2972,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -2983,8 +2998,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -3016,7 +3031,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         operatorv1alpha1.GroupVersion.String(),
-								Kind:               "ExternalDNS",
+								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
 								BlockOwnerDeletion: &test.TrueVar,
@@ -3028,15 +3043,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Replicas: &replicas,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									"app.kubernetes.io/instance": "test",
-									"app.kubernetes.io/name":     "external-dns",
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -3055,7 +3070,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								Containers: []corev1.Container{
 									{
 										Name:  "external-dns-unexpected",
-										Image: "quay.io/test/external-dns:latest",
+										Image: test.OperandImage,
 									},
 								},
 							},
@@ -3071,7 +3086,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion:         operatorv1alpha1.GroupVersion.String(),
-							Kind:               "ExternalDNS",
+							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
 							BlockOwnerDeletion: &test.TrueVar,
@@ -3083,15 +3098,15 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Replicas: &replicas,
 					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": "test",
-							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
 						},
 					},
 					Template: corev1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/instance": "test",
-								"app.kubernetes.io/name":     "external-dns",
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
 						},
 						Spec: corev1.PodSpec{
@@ -3109,8 +3124,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							},
 							Containers: []corev1.Container{
 								{
-									Name:  "external-dns-nfbh54h648h6q",
-									Image: "quay.io/test/external-dns:latest",
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
 									Args: []string{
 										"--metrics-address=127.0.0.1:7979",
 										"--txt-owner-id=external-dns-test",
@@ -3190,8 +3205,8 @@ func TestBuildSecretHash(t *testing.T) {
 		{
 			name: "correct hash",
 			inputSecretData: map[string][]byte{
-				"aws_access_key_id":     []byte("aws_access_key_id"),
-				"aws_secret_access_key": []byte("aws_secret_access_key"),
+				awsAccessKeyIDKey:     []byte(awsAccessKeyIDKey),
+				awsAccessKeySecretKey: []byte(awsAccessKeySecretKey),
 			},
 			expectedHash: "93fd56cba8fc84aba59b5f6743b2ea34aca7690fa829aa98b8cdcbf42808d213",
 			errExpected:  false,
@@ -3225,7 +3240,7 @@ func TestBuildSecretHash(t *testing.T) {
 func testDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
+			Name:      testName,
 			Namespace: "testns",
 			Annotations: map[string]string{
 				credentialsAnnotation: testSecretHash,
