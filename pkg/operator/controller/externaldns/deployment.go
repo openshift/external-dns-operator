@@ -256,7 +256,6 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	}
-
 	return depl, nil
 }
 

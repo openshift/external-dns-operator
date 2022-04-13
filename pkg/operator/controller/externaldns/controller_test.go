@@ -40,7 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
