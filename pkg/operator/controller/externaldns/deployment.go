@@ -81,7 +81,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
 	}
 
-	secretExists, secret, err := r.currentExternalDNSSecret(ctx, nsName)
+	secretExists, secret, err := r.currentExternalDNSSecret(ctx, controller.ExternalDNSDestCredentialsSecretName(namespace, externalDNS.Name))
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get the target secret: %w", err)
 	}
@@ -313,7 +313,7 @@ func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment
 			return true
 		}
 	}
-	return changed
+	return false
 }
 
 // externalDNSContainersChanged returns true if the current containers differ from the expected
