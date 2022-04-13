@@ -35,6 +35,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
+	"github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
@@ -72,9 +73,22 @@ var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
 	operatorv1alpha1.SourceTypeService: "service",
 }
 
+type Deployment struct {
+	namespace              string
+	image                  string
+	serviceAccount         *corev1.ServiceAccount
+	externalDNS            *v1alpha1.ExternalDNS
+	isOpenShift            bool
+	platformStatus         *configv1.PlatformStatus
+	secret                 string
+	secretHash             string
+	trustedCAConfigMapName string
+}
+
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
+
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 	configMapName := ""
 	if r.config.InjectTrustedCA {
@@ -94,7 +108,17 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		return false, nil, fmt.Errorf("failed to build the secret's hash: %w", err)
 	}
 
-	desired, err := desiredExternalDNSDeployment(namespace, image, secret.Name, secretHash, serviceAccount, externalDNS, r.config.IsOpenShift, r.config.PlatformStatus, configMapName)
+	desired, err := desiredExternalDNSDeployment(&Deployment{
+		namespace,
+		image,
+		serviceAccount,
+		externalDNS,
+		r.config.IsOpenShift,
+		r.config.PlatformStatus,
+		secret.Name,
+		secretHash,
+		configMapName,
+	})
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
 	}
@@ -154,18 +178,13 @@ func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName ty
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(namespace, image, secretName string, secretHash string,
-	serviceAccount *corev1.ServiceAccount,
-	externalDNS *operatorv1alpha1.ExternalDNS,
-	isOpenShift bool,
-	platformStatus *configv1.PlatformStatus,
-	trustedCAConfigMapName string) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, error) {
 
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
 		appNameLabel:     controller.ExternalDNSBaseName,
-		appInstanceLabel: externalDNS.Name,
+		appInstanceLabel: deployment.externalDNS.Name,
 	}
 
 	nodeSelectorLbl := map[string]string{
@@ -183,10 +202,10 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      controller.ExternalDNSResourceName(externalDNS),
-			Namespace: namespace,
+			Name:      controller.ExternalDNSResourceName(deployment.externalDNS),
+			Namespace: deployment.namespace,
 			Annotations: map[string]string{
-				credentialsAnnotation: secretHash,
+				credentialsAnnotation: deployment.secretHash,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -199,7 +218,7 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 					Labels: matchLbl,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: serviceAccount.Name,
+					ServiceAccountName: deployment.serviceAccount.Name,
 					NodeSelector:       nodeSelectorLbl,
 					Tolerations:        tolerations,
 				},
@@ -207,31 +226,31 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 		},
 	}
 
-	provider, ok := providerStringTable[externalDNS.Spec.Provider.Type]
+	provider, ok := providerStringTable[deployment.externalDNS.Spec.Provider.Type]
 	if !ok {
-		return nil, fmt.Errorf("unsupported provider: %q", externalDNS.Spec.Provider.Type)
+		return nil, fmt.Errorf("unsupported provider: %q", deployment.externalDNS.Spec.Provider.Type)
 	}
-	source, ok := sourceStringTable[externalDNS.Spec.Source.Type]
+	source, ok := sourceStringTable[deployment.externalDNS.Spec.Source.Type]
 	if !ok {
-		return nil, fmt.Errorf("unsupported source type: %q", externalDNS.Spec.Source.Type)
+		return nil, fmt.Errorf("unsupported source type: %q", deployment.externalDNS.Spec.Source.Type)
 	}
 
-	vbld := newExternalDNSVolumeBuilder(provider, secretName, trustedCAConfigMapName)
+	vbld := newExternalDNSVolumeBuilder(provider, deployment.secret, deployment.trustedCAConfigMapName)
 	volumes := vbld.build()
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 
 	cbld := &externalDNSContainerBuilder{
-		image:          image,
+		image:          deployment.image,
 		provider:       provider,
 		source:         source,
-		secretName:     secretName,
+		secretName:     deployment.secret,
 		volumes:        volumes,
-		externalDNS:    externalDNS,
-		isOpenShift:    isOpenShift,
-		platformStatus: platformStatus,
+		externalDNS:    deployment.externalDNS,
+		isOpenShift:    deployment.isOpenShift,
+		platformStatus: deployment.platformStatus,
 	}
 
-	if len(externalDNS.Spec.Zones) == 0 {
+	if len(deployment.externalDNS.Spec.Zones) == 0 {
 		// an empty list means publish to all zones
 		// this is a special case for Azure
 		// both public and private zones will need to be published to
@@ -248,7 +267,7 @@ func desiredExternalDNSDeployment(namespace, image, secretName string, secretHas
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	} else {
-		for _, zone := range externalDNS.Spec.Zones {
+		for _, zone := range deployment.externalDNS.Spec.Zones {
 			container, err := cbld.build(zone)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build container for zone %s: %w", zone, err)

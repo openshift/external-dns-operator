@@ -2173,7 +2173,16 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					}
 				}
 			}()
-			depl, err := desiredExternalDNSDeployment(test.OperandNamespace, test.OperandImage, tc.inputSecretName, testSecretHash, serviceAccount, tc.inputExternalDNS, tc.inputIsOpenShift, tc.inputPlatformStatus, tc.inputTrustedCAConfigMapName)
+			depl, err := desiredExternalDNSDeployment(&Deployment{
+				test.OperandNamespace,
+				test.OperandImage,
+				serviceAccount,
+				tc.inputExternalDNS,
+				tc.inputIsOpenShift,
+				tc.inputPlatformStatus,
+				tc.inputSecretName,
+				testSecretHash,
+				tc.inputTrustedCAConfigMapName})
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
