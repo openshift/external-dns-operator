@@ -313,7 +313,7 @@ func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment
 			return true
 		}
 	}
-	return changed
+	return false
 }
 
 // externalDNSContainersChanged returns true if the current containers differ from the expected
