@@ -33,6 +33,7 @@ const (
 	OperandName            = "external-dns-test"
 	OperandImage           = "quay.io/test/external-dns:latest"
 	OperatorNamespace      = "external-dns-operator"
+	OperandSecretName      = "external-dns-credentials-test"
 	PublicZone             = "my-dns-public-zone"
 	PrivateZone            = "my-dns-private-zone"
 	AzurePrivateDNSZone    = "/subscriptions/xxxx/resourceGroups/test-az-2f9kj-rg/providers/Microsoft.Network/privateDnsZones/test-az.example.com"
