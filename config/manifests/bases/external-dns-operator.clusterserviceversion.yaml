@@ -24,6 +24,13 @@ spec:
       kind: ExternalDNS
       name: externaldnses.externaldns.olm.openshift.io
       version: v1alpha1
+    - description: ExternalDNS describes a managed ExternalDNS controller instance
+        for a cluster. The controller is responsible for creating external DNS records
+        in supported DNS providers based off of instances of select Kubernetes resources.
+      displayName: External DNS
+      kind: ExternalDNS
+      name: externaldnses.externaldns.olm.openshift.io
+      version: v1beta1
   description: |-
     The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
 

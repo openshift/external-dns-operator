@@ -1,2 +1,3 @@
 resources:
+- operator_v1beta1_infoblox_openshift.yaml
 - operator_v1alpha1_infoblox_openshift.yaml

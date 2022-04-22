@@ -1,0 +1,24 @@
+apiVersion: externaldns.olm.openshift.io/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: sample-bluecat
+spec:
+  # DNS provider
+  provider:
+    type: BlueCat
+    blueCat:
+      configFile:
+        # secret should be in the operator namespace
+        name: bluecat-config
+  domains:
+  - filterType: Include
+    matchType: Exact
+    # domain of DNS zone must include the exact match of the given name
+    name: myzonedomain.com
+  source:
+    # Source Type is route resource of OpenShift
+    type: OpenShiftRoute
+    # In case you have multiple ingress controllers you must specify ingress controller name in the routerName
+    # so that the external dns will use the router canonical name correrponding to it to create a dns record.
+    openshiftRouteOptions:
+      routerName: default

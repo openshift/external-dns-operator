@@ -1,0 +1,20 @@
+apiVersion: externaldns.olm.openshift.io/v1beta1
+kind: ExternalDNS
+metadata:
+  name: sample-gcp
+spec:
+  domains:
+  - filterType: Include
+    matchType: Exact
+    name: test-gcp1.qe.gcp.devcluster.openshift.com
+  provider:
+    type: GCP
+  source:
+    # Source Type is route resource of OpenShift
+    type: OpenShiftRoute
+    # In case you have multiple ingress controllers you must specify ingress controller name in the routerName
+    # so that the external dns will use the router canonical name correrponding to it to create a dns record. 
+    openshiftRouteOptions:
+      routerName: default
+  zones:
+  - test-gcp1-q6m5v-private-zone

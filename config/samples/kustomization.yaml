@@ -4,4 +4,5 @@ resources:
 - azure
 - gcp
 - infoblox
+- bluecat
 #+kubebuilder:scaffold:manifestskustomizesamples

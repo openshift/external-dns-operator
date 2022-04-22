@@ -30,7 +30,7 @@ IMG ?= quay.io/openshift/origin-external-dns-operator:latest
 TLS_VERIFY ?= true
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd:preserveUnknownFields=false"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -44,9 +44,8 @@ SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
 K8S_ENVTEST_VERSION := 1.21.4
 
 PACKAGE=github.com/openshift/external-dns-operator
-MAIN_PACKAGE=$(PACKAGE)/cmd/external-dns-operator
 
-BIN=bin/$(lastword $(subst /, ,$(MAIN_PACKAGE)))
+BIN=bin/$(lastword $(subst /, ,$(PACKAGE)))
 BIN_DIR=$(shell pwd)/bin
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
@@ -131,12 +130,12 @@ verify: lint
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
 
 build-operator: ## Build operator binary, no additional checks or code generation
-	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(MAIN_PACKAGE)
+	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
 
 build: generate build-operator fmt vet ## Build operator binary.
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run $(MAIN_PACKAGE)
+	go run $(PACKAGE)
 
 image-build: test ## Build container image with the operator.
 	$(CONTAINER_ENGINE) build -t ${IMG} .
