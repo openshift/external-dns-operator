@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 // Event is a simplified representation of the watch event received from the controller runtime client.
@@ -72,7 +72,7 @@ func NewEvent(we watch.Event) Event {
 	case *corev1.Namespace:
 		te.ObjType = "namespace"
 		te.Name = obj.Name
-	case *operatorv1alpha1.ExternalDNS:
+	case *operatorv1beta1.ExternalDNS:
 		te.ObjType = "externaldns"
 		te.Name = obj.Name
 	case *cco.CredentialsRequest:

@@ -18,7 +18,7 @@ import (
 	"google.golang.org/api/option"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 type gcpTestHelper struct {
@@ -42,12 +42,12 @@ func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHel
 	return provider, nil
 }
 
-func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := defaultExternalDNS(name, zoneID, zoneDomain)
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeGCP,
-		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeGCP,
+		GCP: &operatorv1beta1.ExternalDNSGCPProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: credsSecret.Name,
 			},
 			Project: &g.gcpProjectId,
@@ -56,11 +56,11 @@ func (g *gcpTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
-func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeGCP,
-		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeGCP,
+		GCP: &operatorv1beta1.ExternalDNSGCPProviderOptions{
 			Project: &g.gcpProjectId,
 		},
 	}

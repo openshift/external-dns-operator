@@ -538,7 +538,7 @@ spec:
   links:
   - name: Source code
     url: https://github.com/openshift/external-dns-operator
-  maturity: alpha
+  maturity: beta
   minKubeVersion: 1.22.0
   provider:
     name: Red Hat, Inc.
@@ -556,6 +556,7 @@ spec:
       - externaldns.olm.openshift.io
       apiVersions:
       - v1alpha1
+      - v1beta1
       operations:
       - CREATE
       - UPDATE
@@ -564,4 +565,4 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-externaldns-olm-openshift-io-v1alpha1-externaldns
+    webhookPath: /validate-externaldns-olm-openshift-io-v1beta1-externaldns

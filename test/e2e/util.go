@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
@@ -42,8 +42,8 @@ type providerTestHelper interface {
 	deleteHostedZone(string, string) error
 	platform() string
 	makeCredentialsSecret(namespace string) *corev1.Secret
-	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
-	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
+	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS
+	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -159,17 +159,17 @@ func conditionsMatchExpected(expected, actual map[string]string) bool {
 	return reflect.DeepEqual(expected, filtered)
 }
 
-func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.ExternalDNS {
-	return operatorv1alpha1.ExternalDNS{
+func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1beta1.ExternalDNS {
+	return operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
+		Spec: operatorv1beta1.ExternalDNSSpec{
 			Zones: []string{zoneID},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeService,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type: operatorv1beta1.SourceTypeService,
+					Service: &operatorv1beta1.ExternalDNSServiceSourceOptions{
 						ServiceType: []corev1.ServiceType{
 							corev1.ServiceTypeLoadBalancer,
 							corev1.ServiceTypeClusterIP,
@@ -184,26 +184,26 @@ func defaultExternalDNS(name, zoneID, zoneDomain string) operatorv1alpha1.Extern
 	}
 }
 
-func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
-	extDns := operatorv1alpha1.ExternalDNS{
+func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1beta1.ExternalDNS {
+	extDns := operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
+		Spec: operatorv1beta1.ExternalDNSSpec{
 			Zones: []string{zoneID},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type:        operatorv1alpha1.SourceTypeRoute,
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type:        operatorv1beta1.SourceTypeRoute,
 					LabelFilter: utils.MustParseLabelSelector("external-dns.mydomain.org/publish=yes"),
 				},
-				HostnameAnnotationPolicy: operatorv1alpha1.HostnameAnnotationPolicyIgnore,
+				HostnameAnnotationPolicy: operatorv1beta1.HostnameAnnotationPolicyIgnore,
 			},
 		},
 	}
 	// this additional check can be removed with latest external-dns image (>v0.10.1)
 	// instantiate the route additional information at ExternalDNS initiation level.
 	if routerName != "" {
-		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1beta1.ExternalDNSOpenShiftRouteOptions{
 			RouterName: routerName,
 		}
 	}

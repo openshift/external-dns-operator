@@ -36,8 +36,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
-	"github.com/openshift/external-dns-operator/api/v1alpha1"
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
@@ -78,7 +77,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 	testCases := []struct {
 		name                        string
 		inputSecretName             string
-		inputExternalDNS            *operatorv1alpha1.ExternalDNS
+		inputExternalDNS            *operatorv1beta1.ExternalDNS
 		inputIsOpenShift            bool
 		inputPlatformStatus         *configv1.PlatformStatus
 		inputTrustedCAConfigMapName string
@@ -88,7 +87,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal AWS",
 			inputSecretName:  awsSecret,
-			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -159,7 +158,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials AWS",
-			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -201,7 +200,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:                        "Trusted CA AWS",
-			inputExternalDNS:            testAWSExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS:            testAWSExternalDNS(operatorv1beta1.SourceTypeService),
 			inputTrustedCAConfigMapName: test.TrustedCAConfigMapName,
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
@@ -276,7 +275,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Azure",
 			inputSecretName:  azureSecret,
-			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -343,7 +342,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Private Zone Azure",
 			inputSecretName:  azureSecret,
-			inputExternalDNS: testAzureExternalDNSPrivateZones([]string{test.AzurePrivateDNSZone}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAzureExternalDNSPrivateZones([]string{test.AzurePrivateDNSZone}, operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -409,7 +408,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Azure",
-			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -452,7 +451,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "No Zones Azure",
 			inputSecretName:  azureSecret,
-			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -548,7 +547,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal GCP",
 			inputSecretName:  gcpSecret,
-			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testGCPExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -620,7 +619,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No project GCP",
-			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -662,7 +661,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:                "Platform project GCP",
-			inputExternalDNS:    testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS:    testGCPExternalDNSNoProject(operatorv1beta1.SourceTypeService),
 			inputIsOpenShift:    true,
 			inputPlatformStatus: testPlatformStatusGCP("external-dns-gcp-project"),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -708,7 +707,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Bluecat",
 			inputSecretName:  bluecatsecret,
-			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -774,7 +773,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Bluecat",
-			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -817,7 +816,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Infoblox",
 			inputSecretName:  infobloxsecret,
-			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -886,7 +885,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Infoblox",
-			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -927,7 +926,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Hostname allowed, no clusterip type",
-			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
+			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1001,7 +1000,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Many zones",
-			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1065,7 +1064,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter",
-			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes,app in (web,external)"), operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes,app in (web,external)"), operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1108,7 +1107,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones && no domain filter",
-			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1149,7 +1148,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones + Domain filter",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1191,7 +1190,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Zone + Domain filter",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1alpha1.SourceTypeService),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1236,7 +1235,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal AWS Route",
 			inputSecretName:  awsSecret,
-			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1302,7 +1301,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials AWS Route",
-			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1340,7 +1339,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "FQDNTemplate set AWS Route",
 			inputSecretName:  awsSecret,
-			inputExternalDNS: testAWSExternalDNSFQDNTemplate(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSFQDNTemplate(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1407,7 +1406,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Azure Route",
 			inputSecretName:  azureSecret,
-			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1468,7 +1467,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Azure Route",
-			inputExternalDNS: testAzureExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1506,7 +1505,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "No zones Azure Route",
 			inputSecretName:  azureSecret,
-			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAzureExternalDNSNoZones(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1591,7 +1590,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal GCP Route",
 			inputSecretName:  gcpSecret,
-			inputExternalDNS: testGCPExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testGCPExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1658,7 +1657,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No project GCP Route",
-			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testGCPExternalDNSNoProject(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1696,7 +1695,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Bluecat Route",
 			inputSecretName:  bluecatsecret,
-			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1757,7 +1756,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Bluecat Route",
-			inputExternalDNS: testBlueCatExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testBlueCatExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1795,7 +1794,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		{
 			name:             "Nominal Infoblox Route",
 			inputSecretName:  infobloxsecret,
-			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1859,7 +1858,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No credentials Infoblox Route",
-			inputExternalDNS: testInfobloxExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1895,7 +1894,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Hostname allowed, no clusterip type",
-			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1930,7 +1929,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Many zones Route",
-			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSZones([]string{test.PublicZone, test.PrivateZone}, operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -1984,7 +1983,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Annotation filter Route",
-			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes"), operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSLabelFilter(utils.MustParseLabelSelector("testannotation=yes"), operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -2022,7 +2021,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones && no domain filter Route",
-			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSZones([]string{}, operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -2058,7 +2057,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "No zones + Domain filter Route",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{}, operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -2095,7 +2094,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Zone + Domain filter Route",
-			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNSDomainFilter([]string{test.PublicZone}, operatorv1beta1.SourceTypeRoute),
 			expectedTemplatePodSpec: corev1.PodSpec{
 				ServiceAccountName: test.OperandName,
 				NodeSelector: map[string]string{
@@ -2133,7 +2132,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:             "Propagate proxy settings",
-			inputExternalDNS: testAWSExternalDNS(operatorv1alpha1.SourceTypeRoute),
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeRoute),
 			inputEnvVars: map[string]string{
 				"HTTP_PROXY":  httpProxy,
 				"HTTPS_PROXY": httpsProxy,
@@ -2354,12 +2353,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		expectedExist      bool
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
-		extDNS             operatorv1alpha1.ExternalDNS
+		extDNS             operatorv1beta1.ExternalDNS
 		ocpRouterNames     []string
 	}{
 		{
 			name:            "Does not exist",
-			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{testSecret()},
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
@@ -2368,7 +2367,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -2452,7 +2451,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:   "Exist as expected",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
 				testSecret(),
 				&appsv1.Deployment{
@@ -2461,7 +2460,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
@@ -2526,7 +2525,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -2587,7 +2586,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:   "Exist as expected with one Router Names added as flag",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, "default"),
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "default"),
 			existingObjects: []runtime.Object{
 				testSecret(),
 				&appsv1.Deployment{
@@ -2596,7 +2595,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
@@ -2662,7 +2661,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -2724,7 +2723,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:   "Exist and drifted",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
 				testSecret(),
 				&appsv1.Deployment{
@@ -2733,7 +2732,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
@@ -2795,7 +2794,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -2865,7 +2864,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		{
 			name:            "Does not exist",
 			existingObjects: []runtime.Object{testSecret()},
-			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2873,7 +2872,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -2958,7 +2957,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:   "Exist as expected",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
 				testSecret(),
 				&appsv1.Deployment{
@@ -2967,7 +2966,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
@@ -3034,7 +3033,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -3096,7 +3095,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:   "Exist and drifted",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeService, ""),
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
 				testSecret(),
 				&appsv1.Deployment{
@@ -3105,7 +3104,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               externalDNSKind,
 								Name:               test.Name,
 								Controller:         &test.TrueVar,
@@ -3167,7 +3166,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               externalDNSKind,
 							Name:               test.Name,
 							Controller:         &test.TrueVar,
@@ -3236,7 +3235,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:            "Secret does not exist",
-			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1alpha1.SourceTypeRoute, ""),
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{},
 			expectedExist:   false,
 			errExpected:     true,
@@ -3409,17 +3408,17 @@ func testContainerWithArgs(args []string) corev1.Container {
 	return cont
 }
 
-func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
-	source operatorv1alpha1.ExternalDNSSourceType,
+func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,
+	source operatorv1beta1.ExternalDNSSourceType,
 	svcType []corev1.ServiceType,
 	labelFilter *metav1.LabelSelector,
-	hostnamePolicy operatorv1alpha1.HostnameAnnotationPolicy,
+	hostnamePolicy operatorv1beta1.HostnameAnnotationPolicy,
 	fqdnTemplate []string,
-	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
-	extDnsSource := &operatorv1alpha1.ExternalDNSSource{
-		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	extDnsSource := &operatorv1beta1.ExternalDNSSource{
+		ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
 			Type: source,
-			Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+			Service: &operatorv1beta1.ExternalDNSServiceSourceOptions{
 				ServiceType: svcType,
 			},
 			LabelFilter: labelFilter,
@@ -3428,115 +3427,115 @@ func testExternalDNSInstance(provider operatorv1alpha1.ExternalDNSProviderType,
 		FQDNTemplate:             fqdnTemplate,
 	}
 	// As FQDNTemplate: not needed for openshift-route source
-	extDnsSourceForRoute := &operatorv1alpha1.ExternalDNSSource{
-		ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+	extDnsSourceForRoute := &operatorv1beta1.ExternalDNSSource{
+		ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
 			Type: source,
-			OpenShiftRoute: &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+			OpenShiftRoute: &operatorv1beta1.ExternalDNSOpenShiftRouteOptions{
 				RouterName: routerName,
 			},
 			LabelFilter: labelFilter,
 		},
 		HostnameAnnotationPolicy: hostnamePolicy,
 	}
-	extDNS := &operatorv1alpha1.ExternalDNS{
+	extDNS := &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: test.Name,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Provider: operatorv1alpha1.ExternalDNSProvider{
+		Spec: operatorv1beta1.ExternalDNSSpec{
+			Provider: operatorv1beta1.ExternalDNSProvider{
 				Type: provider,
 			},
 
 			Zones: zones,
 		},
 	}
-	if source == operatorv1alpha1.SourceTypeRoute {
+	if source == operatorv1beta1.SourceTypeRoute {
 		extDNS.Spec.Source = *extDnsSourceForRoute
 		return extDNS
 	}
 
-	if source == operatorv1alpha1.SourceTypeService {
+	if source == operatorv1beta1.SourceTypeService {
 		extDNS.Spec.Source = *extDnsSource
 		return extDNS
 	}
 	return extDNS
 }
 
-func testExternalDNSHostnameIgnore(provider operatorv1alpha1.ExternalDNSProviderType,
-	source operatorv1alpha1.ExternalDNSSourceType,
+func testExternalDNSHostnameIgnore(provider operatorv1beta1.ExternalDNSProviderType,
+	source operatorv1beta1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones, routerName)
+	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1beta1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones, routerName)
 }
 
-func testExternalDNSHostnameAllow(provider operatorv1alpha1.ExternalDNSProviderType,
-	source operatorv1alpha1.ExternalDNSSourceType,
+func testExternalDNSHostnameAllow(provider operatorv1beta1.ExternalDNSProviderType,
+	source operatorv1beta1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1alpha1.HostnameAnnotationPolicyAllow, nil, zones, routerName)
+	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1beta1.HostnameAnnotationPolicyAllow, nil, zones, routerName)
 }
 
-func testAWSExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, nil, "")
+func testAWSExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAWS, nil, "")
 }
 
-func testAWSExternalDNSZones(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, zones, "")
+func testAWSExternalDNSZones(zones []string, source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAWS, zones, "")
 }
 
-func testAWSExternalDNSHostnameAllow(source operatorv1alpha1.ExternalDNSSourceType, routerName string) *operatorv1alpha1.ExternalDNS {
+func testAWSExternalDNSHostnameAllow(source operatorv1beta1.ExternalDNSSourceType, routerName string) *operatorv1beta1.ExternalDNS {
 	switch source {
-	case operatorv1alpha1.SourceTypeService:
-		return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, source, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, routerName)
+	case operatorv1beta1.SourceTypeService:
+		return testExternalDNSHostnameAllow(operatorv1beta1.ProviderTypeAWS, source, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, routerName)
 
-	case operatorv1alpha1.SourceTypeRoute:
-		return testExternalDNSHostnameAllow(operatorv1alpha1.ProviderTypeAWS, source, nil, []string{test.PublicZone}, routerName)
+	case operatorv1beta1.SourceTypeRoute:
+		return testExternalDNSHostnameAllow(operatorv1beta1.ProviderTypeAWS, source, nil, []string{test.PublicZone}, routerName)
 	}
 	return nil
 }
 
-func testAWSExternalDNSFQDNTemplate(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
+func testAWSExternalDNSFQDNTemplate(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
 	extDNS := testAWSExternalDNS(source)
 	extDNS.Spec.Source.FQDNTemplate = []string{"{{.Name}}.test.com"}
 	return extDNS
 }
 
-func testAWSExternalDNSManyFQDN() *operatorv1alpha1.ExternalDNS {
-	extdns := testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, "")
+func testAWSExternalDNSManyFQDN() *operatorv1beta1.ExternalDNS {
+	extdns := testExternalDNSHostnameIgnore(operatorv1beta1.ProviderTypeAWS, operatorv1beta1.SourceTypeService, []corev1.ServiceType{corev1.ServiceTypeLoadBalancer}, []string{test.PublicZone}, "")
 	extdns.Spec.Source.FQDNTemplate = append(extdns.Spec.Source.FQDNTemplate, "{{.Name}}.{{.Namespace}}.example.com")
 	return extdns
 }
 
-func testAWSExternalDNSLabelFilter(selector *metav1.LabelSelector, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, nil, "")
+func testAWSExternalDNSLabelFilter(selector *metav1.LabelSelector, source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAWS, nil, "")
 	extdns.Spec.Source.LabelFilter = selector
 	return extdns
 }
 
-func testAzureExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAzure, nil, "")
+func testAzureExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAzure, nil, "")
 }
 
-func testAzureExternalDNSNoZones(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testExternalDNSHostnameIgnore(operatorv1alpha1.ProviderTypeAzure, source, allSvcTypes, nil, "")
+func testAzureExternalDNSNoZones(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testExternalDNSHostnameIgnore(operatorv1beta1.ProviderTypeAzure, source, allSvcTypes, nil, "")
 }
 
-func testAzureExternalDNSPrivateZones(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAzure, zones, "")
+func testAzureExternalDNSPrivateZones(zones []string, source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAzure, zones, "")
 }
 
-func testGCPExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeGCP, nil, "")
+func testGCPExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeGCP, nil, "")
 	project := "external-dns-gcp-project"
-	extdns.Spec.Provider.GCP = &operatorv1alpha1.ExternalDNSGCPProviderOptions{
+	extdns.Spec.Provider.GCP = &operatorv1beta1.ExternalDNSGCPProviderOptions{
 		Project: &project,
 	}
 	return extdns
 }
 
-func testCreateDNSFromSourceWRTCloudProvider(source operatorv1alpha1.ExternalDNSSourceType, providerType operatorv1alpha1.ExternalDNSProviderType, zones []string, routerName string) *operatorv1alpha1.ExternalDNS {
+func testCreateDNSFromSourceWRTCloudProvider(source operatorv1beta1.ExternalDNSSourceType, providerType operatorv1beta1.ExternalDNSProviderType, zones []string, routerName string) *operatorv1beta1.ExternalDNS {
 	switch source {
-	case operatorv1alpha1.SourceTypeService:
+	case operatorv1beta1.SourceTypeService:
 		//we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
 		//then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
 		if zones != nil {
@@ -3544,7 +3543,7 @@ func testCreateDNSFromSourceWRTCloudProvider(source operatorv1alpha1.ExternalDNS
 		} else {
 			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, []string{test.PublicZone}, routerName)
 		}
-	case operatorv1alpha1.SourceTypeRoute:
+	case operatorv1beta1.SourceTypeRoute:
 		if zones != nil {
 			return testExternalDNSHostnameIgnore(providerType, source, nil, zones, routerName)
 		} else {
@@ -3554,17 +3553,17 @@ func testCreateDNSFromSourceWRTCloudProvider(source operatorv1alpha1.ExternalDNS
 	return nil
 }
 
-func testGCPExternalDNSNoProject(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeGCP, nil, "")
+func testGCPExternalDNSNoProject(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeGCP, nil, "")
 }
 
-func testBlueCatExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeBlueCat, nil, "")
+func testBlueCatExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	return testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeBlueCat, nil, "")
 }
 
-func testInfobloxExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeInfoblox, nil, "")
-	extdns.Spec.Provider.Infoblox = &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{
+func testInfobloxExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeInfoblox, nil, "")
+	extdns.Spec.Provider.Infoblox = &operatorv1beta1.ExternalDNSInfobloxProviderOptions{
 		GridHost:    "gridhost.example.com",
 		WAPIPort:    443,
 		WAPIVersion: "2.3.1",
@@ -3572,15 +3571,15 @@ func testInfobloxExternalDNS(source operatorv1alpha1.ExternalDNSSourceType) *ope
 	return extdns
 }
 
-func testAWSExternalDNSDomainFilter(zones []string, source operatorv1alpha1.ExternalDNSSourceType) *operatorv1alpha1.ExternalDNS {
-	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1alpha1.ProviderTypeAWS, zones, "")
-	extdns.Spec.Domains = []v1alpha1.ExternalDNSDomain{
+func testAWSExternalDNSDomainFilter(zones []string, source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAWS, zones, "")
+	extdns.Spec.Domains = []operatorv1beta1.ExternalDNSDomain{
 		{
-			ExternalDNSDomainUnion: v1alpha1.ExternalDNSDomainUnion{
-				MatchType: v1alpha1.DomainMatchTypeExact,
+			ExternalDNSDomainUnion: operatorv1beta1.ExternalDNSDomainUnion{
+				MatchType: operatorv1beta1.DomainMatchTypeExact,
 				Name:      pointer.StringPtr("abc.com"),
 			},
-			FilterType: v1alpha1.FilterTypeInclude,
+			FilterType: operatorv1beta1.FilterTypeInclude,
 		},
 	}
 	return extdns

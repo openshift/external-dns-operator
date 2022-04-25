@@ -13,7 +13,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-externaldns-olm-openshift-io-v1alpha1-externaldns
+      path: /validate-externaldns-olm-openshift-io-v1beta1-externaldns
   failurePolicy: Fail
   name: vexternaldns.kb.io
   rules:
@@ -21,6 +21,7 @@ webhooks:
     - externaldns.olm.openshift.io
     apiVersions:
     - v1alpha1
+    - v1beta1
     operations:
     - CREATE
     - UPDATE

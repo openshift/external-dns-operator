@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	extdnscontroller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
@@ -227,7 +227,7 @@ func TestReconcile(t *testing.T) {
 func TestGetExternalDNSCredentialsSecretName(t *testing.T) {
 	testCases := []struct {
 		name             string
-		inputExtDNS      *operatorv1alpha1.ExternalDNS
+		inputExtDNS      *operatorv1beta1.ExternalDNS
 		inputIsOpenShift bool
 		expected         string
 	}{
@@ -372,16 +372,16 @@ func testRequest() ctrl.Request {
 	}
 }
 
-func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
-	return &operatorv1alpha1.ExternalDNS{
+func testExtDNSInstance() *operatorv1beta1.ExternalDNS {
+	return &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testExtDNSName,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeService,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+		Spec: operatorv1beta1.ExternalDNSSpec{
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type: operatorv1beta1.SourceTypeService,
+					Service: &operatorv1beta1.ExternalDNSServiceSourceOptions{
 						ServiceType: []corev1.ServiceType{
 							corev1.ServiceTypeLoadBalancer,
 						},
@@ -393,15 +393,15 @@ func testExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	}
 }
 
-func testExtDNSInstanceforOCPRouteSource() *operatorv1alpha1.ExternalDNS {
-	return &operatorv1alpha1.ExternalDNS{
+func testExtDNSInstanceforOCPRouteSource() *operatorv1beta1.ExternalDNS {
+	return &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testExtDNSName,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeRoute,
+		Spec: operatorv1beta1.ExternalDNSSpec{
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type: operatorv1beta1.SourceTypeRoute,
 				},
 			},
 			Zones: []string{"public-zone"},
@@ -410,12 +410,12 @@ func testExtDNSInstanceforOCPRouteSource() *operatorv1alpha1.ExternalDNS {
 }
 
 // AWS
-func testAWSExtDNSInstance() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
+		AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -423,20 +423,20 @@ func testAWSExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
-func testAWSExtDNSInstanceRouteSource() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstanceRouteSource() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
 	}
 	return extDNS
 }
 
-func testAWSExtDNSInstanceRouteSourceWithSecret() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstanceRouteSourceWithSecret() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
+		AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -444,21 +444,21 @@ func testAWSExtDNSInstanceRouteSourceWithSecret() *operatorv1alpha1.ExternalDNS 
 	return extDNS
 }
 
-func testAWSExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstanceNoSecret() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
 	}
 	return extDNS
 }
 
 // Azure
-func testAzureExtDNSInstance() *operatorv1alpha1.ExternalDNS {
+func testAzureExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAzure,
-		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{
-			ConfigFile: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAzure,
+		Azure: &operatorv1beta1.ExternalDNSAzureProviderOptions{
+			ConfigFile: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -466,21 +466,21 @@ func testAzureExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
-func testAzureExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
+func testAzureExtDNSInstanceNoSecret() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAzure,
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAzure,
 	}
 	return extDNS
 }
 
 // BlueCat
-func testBlueCatExtDNSInstance() *operatorv1alpha1.ExternalDNS {
+func testBlueCatExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeBlueCat,
-		BlueCat: &operatorv1alpha1.ExternalDNSBlueCatProviderOptions{
-			ConfigFile: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeBlueCat,
+		BlueCat: &operatorv1beta1.ExternalDNSBlueCatProviderOptions{
+			ConfigFile: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -489,12 +489,12 @@ func testBlueCatExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 }
 
 // InfoBlox
-func testInfobloxExtDNSInstance() *operatorv1alpha1.ExternalDNS {
+func testInfobloxExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeInfoblox,
-		Infoblox: &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeInfoblox,
+		Infoblox: &operatorv1beta1.ExternalDNSInfobloxProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -504,12 +504,12 @@ func testInfobloxExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 
 // GCP
 
-func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
+func testGCPExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeGCP,
-		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeGCP,
+		GCP: &operatorv1beta1.ExternalDNSGCPProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: testSrcSecretName,
 			},
 		},
@@ -517,10 +517,10 @@ func testGCPExtDNSInstance() *operatorv1alpha1.ExternalDNS {
 	return extDNS
 }
 
-func testGCPExtDNSInstanceNoSecret() *operatorv1alpha1.ExternalDNS {
+func testGCPExtDNSInstanceNoSecret() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeGCP,
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeGCP,
 	}
 	return extDNS
 }

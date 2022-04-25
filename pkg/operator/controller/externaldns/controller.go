@@ -35,7 +35,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controlleroperator "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
 )
@@ -80,20 +80,20 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &operatorv1alpha1.ExternalDNS{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &operatorv1beta1.ExternalDNS{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}
 
 	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.ExternalDNS{},
+		OwnerType:    &operatorv1beta1.ExternalDNS{},
 	}); err != nil {
 		return nil, err
 	}
 
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.ExternalDNS{},
+		OwnerType:    &operatorv1beta1.ExternalDNS{},
 	}); err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	reqLogger := r.log.WithValues("externaldns", req.NamespacedName)
 	reqLogger.Info("reconciling externalDNS")
 
-	externalDNS := &operatorv1alpha1.ExternalDNS{}
+	externalDNS := &operatorv1beta1.ExternalDNS{}
 	if err := r.client.Get(ctx, req.NamespacedName, externalDNS); err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("externalDNS not found; reconciliation will be skipped")

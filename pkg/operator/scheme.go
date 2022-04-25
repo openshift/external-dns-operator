@@ -23,7 +23,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 var (
@@ -40,7 +40,7 @@ func init() {
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
-	if err := operatorv1alpha1.AddToScheme(scheme); err != nil {
+	if err := operatorv1beta1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
 	if err := cco.AddToScheme(scheme); err != nil {

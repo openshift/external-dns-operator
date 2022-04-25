@@ -67,7 +67,7 @@ spec:
   links:
   - name: Source code
     url: https://github.com/openshift/external-dns-operator
-  maturity: alpha
+  maturity: beta
   minKubeVersion: 1.22.0
   provider:
     name: Red Hat, Inc.

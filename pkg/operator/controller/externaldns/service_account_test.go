@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
@@ -52,7 +52,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               "ExternalDNS",
 							Name:               test.ExternalDNS.Name,
 							Controller:         &test.TrueVar,
@@ -71,7 +71,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
-								APIVersion:         operatorv1alpha1.GroupVersion.String(),
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
 								Kind:               "ExternalDNS",
 								Name:               test.ExternalDNS.Name,
 								Controller:         &test.TrueVar,
@@ -88,7 +88,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
-							APIVersion:         operatorv1alpha1.GroupVersion.String(),
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
 							Kind:               "ExternalDNS",
 							Name:               test.ExternalDNS.Name,
 							Controller:         &test.TrueVar,

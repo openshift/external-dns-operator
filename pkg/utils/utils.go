@@ -19,22 +19,22 @@ package utils
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 // ManagedCredentialsProvider returns true if the credentials of the ExternalDNS provider can be managed by the platform
-func ManagedCredentialsProvider(e *operatorv1alpha1.ExternalDNS) bool {
+func ManagedCredentialsProvider(e *operatorv1beta1.ExternalDNS) bool {
 	switch e.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.ProviderTypeAzure:
+	case operatorv1beta1.ProviderTypeAWS, operatorv1beta1.ProviderTypeGCP, operatorv1beta1.ProviderTypeAzure:
 		return true
 	}
 	return false
 }
 
 // EnvProxySupportedProvider returns true if the ExternalDNS provider supports the proxy settings via environment variables HTTP(S)_PROXY, NO_PROXY
-func EnvProxySupportedProvider(e *operatorv1alpha1.ExternalDNS) bool {
+func EnvProxySupportedProvider(e *operatorv1beta1.ExternalDNS) bool {
 	switch e.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS, operatorv1alpha1.ProviderTypeAzure, operatorv1alpha1.ProviderTypeGCP, operatorv1alpha1.ProviderTypeInfoblox:
+	case operatorv1beta1.ProviderTypeAWS, operatorv1beta1.ProviderTypeAzure, operatorv1beta1.ProviderTypeGCP, operatorv1beta1.ProviderTypeInfoblox:
 		return true
 	}
 	return false

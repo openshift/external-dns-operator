@@ -31,14 +31,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
 // ensureExternalCredentialsRequest ensures that the externalDNS credential request exists.
 // Returns a boolean if the credential request exists, its current state if it exists
 // and an error if it cannot be created or updated.
-func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *cco.CredentialsRequest, error) {
+func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, externalDNS *operatorv1beta1.ExternalDNS) (bool, *cco.CredentialsRequest, error) {
 	name := controller.ExternalDNSCredentialsRequestName(externalDNS)
 
 	exists, current, err := r.currentExternalDNSCredentialsRequest(ctx, name)
@@ -73,7 +73,7 @@ func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, exter
 }
 
 // updateExternalDNSClusterRole updates the cluster role with the desired state if the rules differ
-func (r *reconciler) updateExternalDNSCredentialsRequest(ctx context.Context, current, desired *cco.CredentialsRequest, externalDNS *operatorv1alpha1.ExternalDNS) (bool, error) {
+func (r *reconciler) updateExternalDNSCredentialsRequest(ctx context.Context, current, desired *cco.CredentialsRequest, externalDNS *operatorv1beta1.ExternalDNS) (bool, error) {
 	var updated *cco.CredentialsRequest
 	changed, err := externalDNSCredentialsRequestChanged(current, desired, externalDNS)
 	if err != nil {
@@ -93,7 +93,7 @@ func (r *reconciler) updateExternalDNSCredentialsRequest(ctx context.Context, cu
 	return true, nil
 }
 
-func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsRequest, externalDNS *operatorv1alpha1.ExternalDNS) (bool, error) {
+func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsRequest, externalDNS *operatorv1beta1.ExternalDNS) (bool, error) {
 
 	if current.Name != desired.Name {
 		return true, nil
@@ -103,7 +103,7 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 		return true, nil
 	}
 
-	if externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS {
+	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
 		codec, _ := cco.NewCodec()
 		currentAwsSpec := cco.AWSProviderSpec{}
 		err := codec.DecodeProviderSpec(current.Spec.ProviderSpec, &currentAwsSpec)
@@ -122,7 +122,7 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 		}
 	}
 
-	if externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure {
+	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAzure {
 		codec, _ := cco.NewCodec()
 		currentAzureSpec := cco.AzureProviderSpec{}
 		err := codec.DecodeProviderSpec(desired.Spec.ProviderSpec, &currentAzureSpec)
@@ -141,7 +141,7 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 		}
 	}
 
-	if externalDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP {
+	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeGCP {
 		codec, _ := cco.NewCodec()
 		currentGcpSpec := cco.GCPProviderSpec{}
 		err := codec.DecodeProviderSpec(current.Spec.ProviderSpec, &currentGcpSpec)
@@ -162,9 +162,9 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 	return false, nil
 }
 
-func createProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
+func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
 	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
+	case operatorv1beta1.ProviderTypeAWS:
 		return codec.EncodeProviderSpec(
 			&cco.AWSProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -189,7 +189,7 @@ func createProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.
 					},
 				},
 			})
-	case operatorv1alpha1.ProviderTypeGCP:
+	case operatorv1beta1.ProviderTypeGCP:
 		return codec.EncodeProviderSpec(
 			&cco.GCPProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -200,7 +200,7 @@ func createProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.
 				},
 			})
 
-	case operatorv1alpha1.ProviderTypeAzure:
+	case operatorv1beta1.ProviderTypeAzure:
 		return codec.EncodeProviderSpec(
 			&cco.AzureProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -215,7 +215,7 @@ func createProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.
 }
 
 // desiredCredentialsRequestName returns the desired credentials request definition for externalDNS
-func desiredCredentialsRequest(name, secretName types.NamespacedName, externalDNS *operatorv1alpha1.ExternalDNS) (*cco.CredentialsRequest, error) {
+func desiredCredentialsRequest(name, secretName types.NamespacedName, externalDNS *operatorv1beta1.ExternalDNS) (*cco.CredentialsRequest, error) {
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CredentialsRequest",

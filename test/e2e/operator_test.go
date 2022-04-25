@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/version"
 )
 
@@ -65,7 +65,7 @@ func init() {
 	if err := configv1.Install(scheme); err != nil {
 		panic(err)
 	}
-	if err := operatorv1alpha1.AddToScheme(scheme); err != nil {
+	if err := operatorv1beta1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
 	if err := operatorv1.Install(scheme); err != nil {

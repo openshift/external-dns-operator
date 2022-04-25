@@ -35,8 +35,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
-	"github.com/openshift/external-dns-operator/api/v1alpha1"
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
@@ -58,26 +57,26 @@ const (
 
 // providerStringTable maps ExternalDNSProviderType values from the
 // ExternalDNS operator API to the provider string argument expected by ExternalDNS.
-var providerStringTable = map[operatorv1alpha1.ExternalDNSProviderType]string{
-	operatorv1alpha1.ProviderTypeAWS:      externalDNSProviderTypeAWS,
-	operatorv1alpha1.ProviderTypeGCP:      externalDNSProviderTypeGCP,
-	operatorv1alpha1.ProviderTypeAzure:    externalDNSProviderTypeAzure,
-	operatorv1alpha1.ProviderTypeBlueCat:  externalDNSProviderTypeBlueCat,
-	operatorv1alpha1.ProviderTypeInfoblox: externalDNSProviderTypeInfoblox,
+var providerStringTable = map[operatorv1beta1.ExternalDNSProviderType]string{
+	operatorv1beta1.ProviderTypeAWS:      externalDNSProviderTypeAWS,
+	operatorv1beta1.ProviderTypeGCP:      externalDNSProviderTypeGCP,
+	operatorv1beta1.ProviderTypeAzure:    externalDNSProviderTypeAzure,
+	operatorv1beta1.ProviderTypeBlueCat:  externalDNSProviderTypeBlueCat,
+	operatorv1beta1.ProviderTypeInfoblox: externalDNSProviderTypeInfoblox,
 }
 
 // sourceStringTable maps ExternalDNSSourceType values from the
 // ExternalDNS operator API to the source string argument expected by ExternalDNS.
-var sourceStringTable = map[operatorv1alpha1.ExternalDNSSourceType]string{
-	operatorv1alpha1.SourceTypeRoute:   "openshift-route",
-	operatorv1alpha1.SourceTypeService: "service",
+var sourceStringTable = map[operatorv1beta1.ExternalDNSSourceType]string{
+	operatorv1beta1.SourceTypeRoute:   "openshift-route",
+	operatorv1beta1.SourceTypeService: "service",
 }
 
 type Deployment struct {
 	namespace              string
 	image                  string
 	serviceAccount         *corev1.ServiceAccount
-	externalDNS            *v1alpha1.ExternalDNS
+	externalDNS            *operatorv1beta1.ExternalDNS
 	isOpenShift            bool
 	platformStatus         *configv1.PlatformStatus
 	secret                 string
@@ -87,7 +86,7 @@ type Deployment struct {
 
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
-func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *appsv1.Deployment, error) {
+func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1beta1.ExternalDNS) (bool, *appsv1.Deployment, error) {
 
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 	configMapName := ""
