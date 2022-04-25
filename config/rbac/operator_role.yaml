@@ -28,3 +28,11 @@ rules:
       - list
       - update
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
