@@ -462,9 +462,11 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	}
 
 	openshiftRouterName := "external-dns"
-	name := types.NamespacedName{Namespace: testIngressNamespace, Name: openshiftRouterName}
+	// ingress controllers are supposed to be created in the ingress operator namespace
+	name := types.NamespacedName{Namespace: "openshift-ingress-operator", Name: openshiftRouterName}
+	ingDomain := fmt.Sprintf("%s.%s", name.Name, hostedZoneDomain)
 	t.Log("Create custom ingress controller")
-	ing := newHostNetworkController(name, name.Name+"."+hostedZoneDomain)
+	ing := newHostNetworkController(name, ingDomain)
 	if err = kubeClient.Create(context.TODO(), ing); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("Failed to create ingresscontroller %s/%s: %v", name.Namespace, name.Name, err)
 	}
@@ -492,7 +494,7 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	}()
 
 	routeName := types.NamespacedName{Namespace: testIngressNamespace, Name: "external-dns-route"}
-	host := fmt.Sprintf("app.%s", hostedZoneDomain)
+	host := fmt.Sprintf("app.%s", ingDomain)
 	route := testRoute(routeName.Name, routeName.Namespace, host, testServiceName)
 	t.Log("Creating test route")
 	if err = kubeClient.Create(context.TODO(), route); err != nil {
@@ -502,7 +504,7 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 		_ = kubeClient.Delete(context.TODO(), route)
 	}()
 
-	canonicalName, err := fetchRouterCanonicalHostname(t, routeName)
+	canonicalName, err := fetchRouterCanonicalHostname(t, routeName, ingDomain)
 	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
@@ -537,7 +539,7 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 	}
 }
 
-func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName) (string, error) {
+func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName, routerDomain string) (string, error) {
 	route := routev1.Route{}
 	canonicalName := ""
 	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
@@ -554,9 +556,13 @@ func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName) 
 		}
 
 		for _, ingress := range route.Status.Ingress {
-			if strings.Contains(ingress.RouterCanonicalHostname, hostedZoneDomain) {
-				canonicalName = ingress.RouterCanonicalHostname
-				return true, nil
+			if strings.Contains(ingress.RouterCanonicalHostname, routerDomain) {
+				if ingressConditionHasStatus(ingress, routev1.RouteAdmitted, corev1.ConditionTrue) {
+					canonicalName = ingress.RouterCanonicalHostname
+					return true, nil
+				}
+				t.Logf("Router didn't admit the route, retrying..")
+				return false, nil
 			}
 		}
 		t.Logf("Unable to fetch the canonicalHostname, retrying..")
@@ -565,4 +571,13 @@ func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName) 
 		return "", err
 	}
 	return canonicalName, nil
+}
+
+func ingressConditionHasStatus(ingress routev1.RouteIngress, condition routev1.RouteIngressConditionType, status corev1.ConditionStatus) bool {
+	for _, c := range ingress.Conditions {
+		if condition == c.Type {
+			return c.Status == status
+		}
+	}
+	return false
 }
