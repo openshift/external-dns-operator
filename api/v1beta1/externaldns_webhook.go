@@ -41,7 +41,7 @@ func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) 
 
 // The single validating webhook is kept for all the versions, its version matches the storage version.
 // This should not be a problem since the conversion happens before the validation.
-//+kubebuilder:webhook:path=/validate-externaldns-olm-openshift-io-v1beta1-externaldns,mutating=false,failurePolicy=fail,sideEffects=None,groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=create;update,versions=v1alpha1;v1beta1,name=vexternaldns.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/validate-externaldns-olm-openshift-io-v1beta1-externaldns,mutating=false,failurePolicy=fail,sideEffects=None,groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=create;update,versions=v1beta1,name=vexternaldns.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &ExternalDNS{}
 

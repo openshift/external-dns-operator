@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
@@ -44,6 +45,7 @@ type providerTestHelper interface {
 	makeCredentialsSecret(namespace string) *corev1.Secret
 	buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS
 	buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routeName string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS
+	buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routeName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS
 }
 
 func randomString(n int) string {
@@ -204,6 +206,32 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1bet
 	// instantiate the route additional information at ExternalDNS initiation level.
 	if routerName != "" {
 		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1beta1.ExternalDNSOpenShiftRouteOptions{
+			RouterName: routerName,
+		}
+	}
+	return extDns
+}
+
+func routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string) operatorv1alpha1.ExternalDNS {
+	extDns := operatorv1alpha1.ExternalDNS{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: operatorv1alpha1.ExternalDNSSpec{
+			Zones: []string{zoneID},
+			Source: operatorv1alpha1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
+					Type:        operatorv1alpha1.SourceTypeRoute,
+					LabelFilter: utils.MustParseLabelSelector("external-dns.mydomain.org/publish=yes"),
+				},
+				HostnameAnnotationPolicy: operatorv1alpha1.HostnameAnnotationPolicyIgnore,
+			},
+		},
+	}
+	// this additional check can be removed with latest external-dns image (>v0.10.1)
+	// instantiate the route additional information at ExternalDNS initiation level.
+	if routerName != "" {
+		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
 			RouterName: routerName,
 		}
 	}

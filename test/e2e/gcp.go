@@ -18,6 +18,7 @@ import (
 	"google.golang.org/api/option"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
@@ -61,6 +62,17 @@ func (g *gcpTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, rout
 	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
 		Type: operatorv1beta1.ProviderTypeGCP,
 		GCP: &operatorv1beta1.ExternalDNSGCPProviderOptions{
+			Project: &g.gcpProjectId,
+		},
+	}
+	return resource
+}
+
+func (g *gcpTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeGCP,
+		GCP: &operatorv1alpha1.ExternalDNSGCPProviderOptions{
 			Project: &g.gcpProjectId,
 		},
 	}

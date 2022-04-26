@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
@@ -146,6 +147,14 @@ func (a *azureTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, ro
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
 		Type: operatorv1beta1.ProviderTypeAzure,
+	}
+	return resource
+}
+
+func (a *azureTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName)
+	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
+		Type: operatorv1alpha1.ProviderTypeAzure,
 	}
 	return resource
 }

@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
+	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/version"
 )
@@ -63,6 +64,9 @@ var (
 func init() {
 	scheme = kscheme.Scheme
 	if err := configv1.Install(scheme); err != nil {
+		panic(err)
+	}
+	if err := operatorv1alpha1.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
 	if err := operatorv1beta1.AddToScheme(scheme); err != nil {
@@ -511,6 +515,97 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 	t.Logf("CanonicalName: %s for the route: %s", canonicalName, routeName.Name)
 
 	verifyCNAMERecordForOpenshiftRoute(t, canonicalName, host)
+}
+
+func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
+	t.Log("Ensuring test namespace")
+	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
+	if err != nil && !errors.IsAlreadyExists(err) {
+		t.Fatalf("Failed to ensure namespace %s: %v", testNamespace, err)
+	}
+
+	// secret is needed only for DNS providers which cannot get their credentials from CCO
+	// namely Infobox, BlueCat
+	t.Log("Creating credentials secret")
+	credSecret := helper.makeCredentialsSecret(operatorNamespace)
+	err = kubeClient.Create(context.TODO(), credSecret)
+	if err != nil {
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+
+	t.Log("Creating external dns instance with source type route")
+	extDNS := helper.buildOpenShiftExternalDNSV1Alpha1(testExtDNSName, hostedZoneID, hostedZoneDomain, "", credSecret)
+	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
+		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
+	}
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), &extDNS)
+	}()
+
+	// create a route with the annotation targeted by the ExternalDNS resource
+	t.Log("Creating source route")
+	testRouteHost := "myroute." + hostedZoneDomain
+	route := testRoute(testRouteName, testNamespace, testRouteHost, testServiceName)
+	if err := kubeClient.Create(context.Background(), route); err != nil {
+		t.Fatalf("Failed to create test route %s/%s: %v", testNamespace, testRouteName, err)
+	}
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), route)
+	}()
+	t.Logf("Created Route Host is %v", testRouteHost)
+
+	// get the router canonical name
+	var targetRoute routev1.Route
+	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		t.Log("Waiting for the route to be acknowledged by the router")
+		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+			Namespace: testNamespace,
+			Name:      testRouteName,
+		}, &targetRoute)
+		if err != nil {
+			return false, err
+		}
+
+		// if the status ingress slice is not populated by the ingress controller, try later
+		if len(targetRoute.Status.Ingress) < 1 {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		t.Fatalf("Failed to retrieve the created route %s/%s: %v", testNamespace, testRouteName, err)
+	}
+
+	t.Logf("Target route ingress is %v", targetRoute.Status.Ingress)
+
+	targetRouterCName := targetRoute.Status.Ingress[0].RouterCanonicalHostname
+	if targetRouterCName == "" {
+		t.Fatalf("Router's canonical name is empty %v", err)
+	}
+	t.Logf("Target router's CNAME is %v", targetRouterCName)
+
+	// try all nameservers and fail only if all failed
+	for _, nameSrv := range nameServers {
+		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
+
+		// verify dns records has been created for the route host.
+		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			cNameHost, err := lookupCNAME(testRouteHost, nameSrv)
+			if err != nil {
+				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
+				return false, nil
+			}
+			if equalFQDN(cNameHost, targetRouterCName) {
+				t.Log("DNS record found")
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			t.Logf("Failed to verify that DNS has been correctly set.")
+		} else {
+			return
+		}
+	}
+	t.Fatalf("All nameservers failed to verify that DNS has been correctly set.")
 }
 
 func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
