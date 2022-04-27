@@ -165,17 +165,6 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - ""
-          resources:
-          - endpoints
-          - nodes
-          - pods
-          - services
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
           - cloudcredential.openshift.io
           resources:
           - credentialsrequests
@@ -223,14 +212,6 @@ spec:
           - get
           - patch
           - update
-        - apiGroups:
-          - networking.k8s.io
-          resources:
-          - ingresses
-          verbs:
-          - get
-          - list
-          - watch
         - apiGroups:
           - route.openshift.io
           resources:
@@ -343,6 +324,14 @@ spec:
           - get
           - list
           - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
           - watch
         serviceAccountName: external-dns-operator
     strategy: deployment
