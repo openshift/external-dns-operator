@@ -101,7 +101,7 @@ func (r *reconciler) createCredentialsSecret(ctx context.Context, secret *corev1
 }
 
 // desiredCredentialsSecret returns the desired destination secret.
-func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1beta1.ExternalDNS, isOpenShift, fromCR bool) *corev1.Secret {
+func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1beta1.ExternalDNS, isOpenShift, fromCR bool) (*corev1.Secret, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      destName.Name,
@@ -134,7 +134,7 @@ func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.Namesp
 	// copy all the keys from the source secret
 	secret.Data = sourceSecret.Data
 
-	if extDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS {
+	if extDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
 		// Add credentials keys if doesn't exist
 		if creds, exists := secret.Data["credentials"]; !exists || len(creds) == 0 {
 			if len(sourceSecret.Data["aws_access_key_id"]) > 0 && len(sourceSecret.Data["aws_secret_access_key"]) > 0 {

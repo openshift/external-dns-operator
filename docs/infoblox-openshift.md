@@ -35,10 +35,10 @@ openshift-console          downloads           downloads-openshift-console.apps.
     - Add Grid Primary as nameserver (`+` button on top of the table)
     - `Save & Close`
 
-5. Create a [ExternalDNS CR](../../config/samples/infoblox/operator_v1alpha1_infoblox_detailed.yaml) as follows:
+5. Create a [ExternalDNS CR](../../config/samples/infoblox/operator_v1beta1_infoblox_openshift.yaml) as follows:
     ```sh
     cat <<EOF | oc create -f -
-    apiVersion: externaldns.olm.openshift.io/v1alpha1
+    apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
       name: sample-infoblox
