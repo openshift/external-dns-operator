@@ -154,7 +154,7 @@ Prepare your environment for the installation commands.
       name: external-dns-operator
       namespace: external-dns-operator
     spec:
-      channel: alpha
+      channel: stable-v1.0
       name: external-dns-operator
       source: external-dns-operator
       sourceNamespace: openshift-marketplace
