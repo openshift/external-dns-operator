@@ -16,8 +16,6 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
-- operator_role.yaml
-- operator_rolebinding.yaml
 - operand_role.yaml
 - operand_rolebinding.yaml
 - externaldns_viewer_role.yaml
