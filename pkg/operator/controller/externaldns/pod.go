@@ -56,10 +56,12 @@ const (
 	//
 	// AWS
 	//
-	awsAccessKeyIDEnvVar     = "AWS_ACCESS_KEY_ID"
-	awsAccessKeySecretEnvVar = "AWS_SECRET_ACCESS_KEY"
-	awsAccessKeyIDKey        = "aws_access_key_id"
-	awsAccessKeySecretKey    = "aws_secret_access_key"
+	awsCredentialEnvVarName  = "AWS_SHARED_CREDENTIALS_FILE"
+	awsCredentialsVolumeName = "aws-credentials"
+	awsCredentialsMountPath  = defaultConfigMountPath
+	awsCredentialsFileKey    = "credentials"
+	awsCredentialsFileName   = "aws-credentials"
+	awsCredentialsFilePath   = awsCredentialsMountPath + "/" + awsCredentialsFileName
 	//
 	// Azure
 	//
@@ -323,32 +325,17 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 		return
 	}
 
-	env := []corev1.EnvVar{
-		{
-			Name: awsAccessKeyIDEnvVar,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: b.secretName,
-					},
-					Key: awsAccessKeyIDKey,
-				},
+	for _, v := range b.volumes {
+		if v.Name == awsCredentialsVolumeName {
+			container.Env = append(container.Env, corev1.EnvVar{Name: awsCredentialEnvVarName, Value: awsCredentialsFilePath})
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      v.Name,
+				MountPath: awsCredentialsMountPath,
+				ReadOnly:  true,
 			},
-		},
-		{
-			Name: awsAccessKeySecretEnvVar,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: b.secretName,
-					},
-					Key: awsAccessKeySecretKey,
-				},
-			},
-		},
+			)
+		}
 	}
-
-	container.Env = append(container.Env, env...)
 }
 
 // fillAzureFields fills the given container with the data specific to Azure provider
@@ -534,6 +521,8 @@ func (b *externalDNSVolumeBuilder) providerAgnosticVolumes() []corev1.Volume {
 // providerSpecificVolumes returns the volumes specific to the provider of given External DNS
 func (b *externalDNSVolumeBuilder) providerSpecificVolumes() []corev1.Volume {
 	switch b.provider {
+	case externalDNSProviderTypeAWS:
+		return b.awsVolumes()
 	case externalDNSProviderTypeAzure:
 		return b.azureVolumes()
 	case externalDNSProviderTypeGCP:
@@ -542,6 +531,29 @@ func (b *externalDNSVolumeBuilder) providerSpecificVolumes() []corev1.Volume {
 		return b.bluecatVolumes()
 	}
 	return nil
+}
+
+// awsVolumes returns volumes needed for AWS provider
+func (b *externalDNSVolumeBuilder) awsVolumes() []corev1.Volume {
+	if len(b.secretName) == 0 {
+		return nil
+	}
+	return []corev1.Volume{
+		{
+			Name: awsCredentialsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: b.secretName,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  awsCredentialsFileKey,
+							Path: awsCredentialsFileName,
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 // azureVolumes returns volumes needed for Azure provider

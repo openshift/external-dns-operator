@@ -102,6 +102,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
+				Volumes: []corev1.Volume{
+					{
+						Name: awsCredentialsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "awssecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  awsCredentialsFileKey,
+										Path: awsCredentialsFileName,
+									},
+								},
+							},
+						},
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						Name:  ExternalDNSContainerName,
@@ -126,26 +142,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: awsAccessKeyIDEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeyIDKey,
-									},
-								},
+								Name:  awsCredentialEnvVarName,
+								Value: awsCredentialsFilePath,
 							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name: awsAccessKeySecretEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeySecretKey,
-									},
-								},
+								Name:      awsCredentialsVolumeName,
+								MountPath: awsCredentialsMountPath,
+								ReadOnly:  true,
 							},
 						},
 					},
@@ -1245,6 +1250,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
+				Volumes: []corev1.Volume{
+					{
+						Name: awsCredentialsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "awssecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  awsCredentialsFileKey,
+										Path: awsCredentialsFileName,
+									},
+								},
+							},
+						},
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						Name:  ExternalDNSContainerName,
@@ -1264,26 +1285,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: awsAccessKeyIDEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeyIDKey,
-									},
-								},
+								Name:  awsCredentialEnvVarName,
+								Value: awsCredentialsFilePath,
 							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name: awsAccessKeySecretEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeySecretKey,
-									},
-								},
+								Name:      awsCredentialsVolumeName,
+								MountPath: awsCredentialsMountPath,
+								ReadOnly:  true,
 							},
 						},
 					},
@@ -1344,6 +1354,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						Effect:   corev1.TaintEffectNoSchedule,
 					},
 				},
+				Volumes: []corev1.Volume{
+					{
+						Name: awsCredentialsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "awssecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  awsCredentialsFileKey,
+										Path: awsCredentialsFileName,
+									},
+								},
+							},
+						},
+					},
+				},
 				Containers: []corev1.Container{
 					{
 						Name:  ExternalDNSContainerName,
@@ -1363,26 +1389,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 						},
 						Env: []corev1.EnvVar{
 							{
-								Name: awsAccessKeyIDEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeyIDKey,
-									},
-								},
+								Name:  awsCredentialEnvVarName,
+								Value: awsCredentialsFilePath,
 							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
 							{
-								Name: awsAccessKeySecretEnvVar,
-								ValueFrom: &corev1.EnvVarSource{
-									SecretKeyRef: &corev1.SecretKeySelector{
-										LocalObjectReference: corev1.LocalObjectReference{
-											Name: awsSecret,
-										},
-										Key: awsAccessKeySecretKey,
-									},
-								},
+								Name:      awsCredentialsVolumeName,
+								MountPath: awsCredentialsMountPath,
+								ReadOnly:  true,
 							},
 						},
 					},
@@ -2390,6 +2405,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									Effect:   corev1.TaintEffectNoSchedule,
 								},
 							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
@@ -2404,6 +2435,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--registry=txt",
 										"--log-level=debug",
 										"--txt-prefix=external-dns-",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
 									},
 								},
 							},
@@ -2736,6 +2774,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									{
 										Name:  "external-dns-unexpected",
 										Image: test.OperandImage,
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      awsCredentialsVolumeName,
+												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+										},
 									},
 								},
 							},
@@ -2802,6 +2847,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--txt-prefix=external-dns-",
 									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
 								},
 							},
 						},
@@ -2858,6 +2910,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									Effect:   corev1.TaintEffectNoSchedule,
 								},
 							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
@@ -2873,6 +2941,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--service-type-filter=LoadBalancer",
 										"--txt-prefix=external-dns-",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
 									},
 								},
 							},
@@ -3071,6 +3146,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									{
 										Name:  "external-dns-unexpected",
 										Image: test.OperandImage,
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      awsCredentialsVolumeName,
+												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+										},
 									},
 								},
 							},
@@ -3137,6 +3219,13 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--service-type-filter=LoadBalancer",
 										"--txt-prefix=external-dns-",
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
 									},
 								},
 							},
@@ -3205,8 +3294,8 @@ func TestBuildSecretHash(t *testing.T) {
 		{
 			name: "correct hash",
 			inputSecretData: map[string][]byte{
-				awsAccessKeyIDKey:     []byte(awsAccessKeyIDKey),
-				awsAccessKeySecretKey: []byte(awsAccessKeySecretKey),
+				"aws_access_key_id":     []byte("aws_access_key_id"),
+				"aws_secret_access_key": []byte("aws_secret_access_key"),
 			},
 			expectedHash: "93fd56cba8fc84aba59b5f6743b2ea34aca7690fa829aa98b8cdcbf42808d213",
 			errExpected:  false,

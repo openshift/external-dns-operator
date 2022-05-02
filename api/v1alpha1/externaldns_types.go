@@ -244,7 +244,8 @@ type ExternalDNSProvider struct {
 
 type ExternalDNSAWSProviderOptions struct {
 	// Credentials is a reference to a secret containing
-	// the following keys (with corresponding values):
+	// the shared credentials file (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+	// under `credentials` key or following keys (with corresponding values):
 	//
 	// * aws_access_key_id
 	// * aws_secret_access_key

@@ -17,6 +17,7 @@ limitations under the License.
 package credentials_secret
 
 import (
+	"bytes"
 	"context"
 
 	"encoding/json"
@@ -46,7 +47,10 @@ func (r *reconciler) ensureCredentialsSecret(ctx context.Context, sourceName typ
 
 	destName := controller.ExternalDNSDestCredentialsSecretName(r.config.TargetNamespace, extDNS.Name)
 	// desired is created from source
-	desired := desiredCredentialsSecret(source, destName, extDNS, r.config.IsOpenShift, fromCR)
+	desired, err := desiredCredentialsSecret(source, destName, extDNS, r.config.IsOpenShift, fromCR)
+	if err != nil {
+		return false, nil, err
+	}
 
 	if err := controllerutil.SetControllerReference(extDNS, desired, r.scheme); err != nil {
 		return false, nil, fmt.Errorf("failed to set the controller reference for credentials secret: %w", err)
@@ -97,7 +101,7 @@ func (r *reconciler) createCredentialsSecret(ctx context.Context, secret *corev1
 }
 
 // desiredCredentialsSecret returns the desired destination secret.
-func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1alpha1.ExternalDNS, isOpenShift, fromCR bool) *corev1.Secret {
+func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.NamespacedName, extDNS *operatorv1alpha1.ExternalDNS, isOpenShift, fromCR bool) (*corev1.Secret, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      destName.Name,
@@ -124,11 +128,27 @@ func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.Namesp
 		case operatorv1alpha1.ProviderTypeAWS:
 			secret.Data = sourceSecret.Data
 		}
-	} else {
-		secret.Data = sourceSecret.Data
+		return secret, nil
 	}
 
-	return secret
+	// copy all the keys from the source secret
+	secret.Data = sourceSecret.Data
+
+	if extDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS {
+		// Add credentials keys if doesn't exist
+		if creds, exists := secret.Data["credentials"]; !exists || len(creds) == 0 {
+			if len(sourceSecret.Data["aws_access_key_id"]) > 0 && len(sourceSecret.Data["aws_secret_access_key"]) > 0 {
+				secret.Data["credentials"] = newConfigForStaticCreds(
+					string(sourceSecret.Data["aws_access_key_id"]),
+					string(sourceSecret.Data["aws_secret_access_key"]),
+				)
+			} else {
+				return nil, fmt.Errorf("invalid secret for aws credentials")
+			}
+		}
+	}
+
+	return secret, nil
 }
 
 // updateCredentialsSecret updates the destination secret with the desired content if update is needed.
@@ -151,4 +171,11 @@ func (r *reconciler) updateCredentialsSecret(ctx context.Context, current, desir
 // whether an update is necessary, false otherwise.
 func secretsEqual(a, b *corev1.Secret) bool {
 	return reflect.DeepEqual(a.Data, b.Data)
+}
+func newConfigForStaticCreds(accessKey string, accessSecret string) []byte {
+	buf := &bytes.Buffer{}
+	fmt.Fprint(buf, "[default]\n")
+	fmt.Fprintf(buf, "aws_access_key_id = %s\n", accessKey)
+	fmt.Fprintf(buf, "aws_secret_access_key = %s", accessSecret)
+	return buf.Bytes()
 }

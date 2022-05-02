@@ -108,6 +108,30 @@ func TestReconcile(t *testing.T) {
 			expectedResult:  reconcile.Result{},
 		},
 		{
+			name:            "Target secret doesn't have credentials key",
+			existingObjects: []runtime.Object{testAWSExtDNSInstance(), testSrcSecret(), testTargetSecretWithoutCredentialsKey()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			expectedEvents: []test.Event{
+				{
+					EventType: watch.Modified,
+					ObjType:   "secret",
+					NamespacedName: types.NamespacedName{
+						Namespace: testOperandNamespace,
+						Name:      testTargetSecretName,
+					},
+				},
+			},
+		},
+		{
+			name:            "Target secret didn't change. Credentials key only",
+			existingObjects: []runtime.Object{testAWSExtDNSInstance(), testSrcSecretWithCredentialsKey(), testTargetSecretWithCredentialsKey()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+		},
+		{
 			name: "Bootstrap when platform is OCP and it provided the credentials secret",
 			// externaldns without credentials specified + secret provided by OCP
 			existingObjects: []runtime.Object{testAWSExtDNSInstanceRouteSource(), testSrcSecretWhenPlatformOCP()},
@@ -508,8 +532,20 @@ func testSrcSecret() *corev1.Secret {
 			Namespace: testOperatorNamespace,
 		},
 		Data: map[string][]byte{
-			"key1": []byte("val1"),
-			"key2": []byte("val2"),
+			"aws_access_key_id":     []byte("val1"),
+			"aws_secret_access_key": []byte("val2"),
+		},
+	}
+}
+
+func testSrcSecretWithCredentialsKey() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("[default]\naws_access_key_id = val1\naws_secret_access_key = val2"),
 		},
 	}
 }
@@ -534,8 +570,9 @@ func testTargetSecret() *corev1.Secret {
 			Namespace: testOperandNamespace,
 		},
 		Data: map[string][]byte{
-			"key1": []byte("val1"),
-			"key2": []byte("val2"),
+			"aws_access_key_id":     []byte("val1"),
+			"aws_secret_access_key": []byte("val2"),
+			"credentials":           []byte("[default]\naws_access_key_id = val1\naws_secret_access_key = val2"),
 		},
 	}
 }
@@ -547,8 +584,34 @@ func testDriftedTargetSecret() *corev1.Secret {
 			Namespace: testOperandNamespace,
 		},
 		Data: map[string][]byte{
-			"key1": []byte("otherval1"),
-			"key2": []byte("otherval2"),
+			"aws_access_key_id":     []byte("otherval1"),
+			"aws_secret_access_key": []byte("otherval2"),
+			"credentials":           []byte("[default]\naws_access_key_id = otherval1\naws_secret_access_key = otherval2"),
+		},
+	}
+}
+
+func testTargetSecretWithCredentialsKey() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"credentials": []byte("[default]\naws_access_key_id = val1\naws_secret_access_key = val2"),
+		},
+	}
+}
+
+func testTargetSecretWithoutCredentialsKey() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"aws_access_key_id":     []byte("val1"),
+			"aws_secret_access_key": []byte("val2"),
 		},
 	}
 }
