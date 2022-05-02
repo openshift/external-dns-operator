@@ -229,3 +229,7 @@ $(GOLANGCI_LINT_BIN):
 $(OPERATOR_SDK_BIN):
 	mkdir -p $(BIN_DIR)
 	hack/operator-sdk.sh $(OPERATOR_SDK_BIN)
+
+clean:
+	$(GO) clean
+	rm -f $(BIN)
