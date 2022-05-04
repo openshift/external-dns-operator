@@ -23,9 +23,11 @@ kind: Secret
 metadata:
   name: aws-access-key
   namespace: #operator namespace
-data:
-  aws_access_key_id: # Base-64 encoded access key id
-  aws_secret_access_key: # Base-64 encoded access key secret
+stringData:
+  credentials: |-
+    [default]
+    aws_access_key_id = " <AWS_ACCESS_KEY_ID>"
+    aws_secret_access_key = "<AWS_SECRET_ACCESS_KEY>"
 ```
 
 Then create an `ExternalDNS` resource as follows:

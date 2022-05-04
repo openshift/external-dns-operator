@@ -106,8 +106,10 @@ spec:
                     properties:
                       credentials:
                         description: "Credentials is a reference to a secret containing
-                          the following keys (with corresponding values): \n * aws_access_key_id
-                          * aws_secret_access_key \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
+                          the shared credentials file (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+                          under `credentials` key or following keys (with corresponding
+                          values): \n * aws_access_key_id * aws_secret_access_key
+                          \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
                           for more information."
                         properties:
                           name:
