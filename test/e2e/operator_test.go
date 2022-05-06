@@ -676,3 +676,147 @@ func ingressConditionHasStatus(ingress routev1.RouteIngress, condition routev1.R
 	}
 	return false
 }
+
+// TestExternalDNSSecretCredentialUpdate verifies that at first DNS records are not created when wrong secret is supplied.
+// When the wrong secret is updated with the right values, DNS records are created.
+func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
+	t.Log("Ensuring test namespace")
+	testService := fmt.Sprintf("%s-credential-update", testServiceName)
+	err := kubeClient.Create(context.TODO(), &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
+	if err != nil && !errors.IsAlreadyExists(err) {
+		t.Fatalf("Failed to ensure namespace %s: %v", testNamespace, err)
+	}
+
+	t.Log("Creating wrong credentials secret")
+	credSecret := makeWrongCredentialsSecret(operatorNamespace)
+	err = kubeClient.Create(context.TODO(), credSecret)
+	if err != nil {
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+
+	t.Log("Creating external dns instance")
+	extDNS := helper.buildExternalDNS(testExtDNSName, hostedZoneID, hostedZoneDomain, credSecret)
+	if err := kubeClient.Create(context.TODO(), &extDNS); err != nil {
+		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
+	}
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), &extDNS)
+	}()
+
+	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
+	t.Log("Creating source service")
+	service := defaultService(testService, testNamespace)
+	if err := kubeClient.Create(context.Background(), service); err != nil {
+		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testService, err)
+	}
+	defer func() {
+		_ = kubeClient.Delete(context.TODO(), service)
+	}()
+
+	serviceIPs := make(map[string]struct{})
+	// get the IPs of the loadbalancer which is created for the service
+	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		t.Log("Getting IPs of service's load balancer")
+		var service corev1.Service
+		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+			Namespace: testNamespace,
+			Name:      testService,
+		}, &service)
+		if err != nil {
+			return false, err
+		}
+
+		// if there is no associated loadbalancer then retry later
+		if len(service.Status.LoadBalancer.Ingress) < 1 {
+			return false, nil
+		}
+
+		// get the IPs of the loadbalancer
+		if service.Status.LoadBalancer.Ingress[0].IP != "" {
+			serviceIPs[service.Status.LoadBalancer.Ingress[0].IP] = struct{}{}
+		} else if service.Status.LoadBalancer.Ingress[0].Hostname != "" {
+			lbHostname := service.Status.LoadBalancer.Ingress[0].Hostname
+			ips, err := lookupARecord(lbHostname, googleDNSServer)
+			if err != nil {
+				t.Logf("Waiting for IP of loadbalancer %s", lbHostname)
+				// if the hostname cannot be resolved currently then retry later
+				return false, nil
+			}
+			for _, ip := range ips {
+				serviceIPs[ip] = struct{}{}
+			}
+		} else {
+			t.Logf("Waiting for loadbalancer details for service %s", testService)
+			return false, nil
+		}
+		t.Logf("Loadbalancer's IP(s): %v", serviceIPs)
+		return true, nil
+	}); err != nil {
+		t.Fatalf("Failed to get loadbalancer IPs for service %s/%s: %v", testNamespace, testService, err)
+	}
+
+	dnsCheck := make(chan bool)
+	go func() {
+		// try all nameservers and fail only if all failed
+		for _, nameSrv := range nameServers {
+			t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
+			// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
+			if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+				expectedHost := fmt.Sprintf("%s.%s", testService, hostedZoneDomain)
+				ips, err := lookupARecord(expectedHost, nameSrv)
+				if err != nil {
+					t.Logf("Waiting for dns record: %s", expectedHost)
+					return false, nil
+				}
+				gotIPs := make(map[string]struct{})
+				for _, ip := range ips {
+					gotIPs[ip] = struct{}{}
+				}
+				t.Logf("Got IPs: %v", gotIPs)
+
+				// If all IPs of the loadbalancer are not present query again.
+				if len(gotIPs) < len(serviceIPs) {
+					return false, nil
+				}
+				// all expected IPs should be in the received IPs
+				// but these 2 sets are not necessary equal
+				for ip := range serviceIPs {
+					if _, found := gotIPs[ip]; !found {
+						return false, nil
+					}
+				}
+				return true, nil
+			}); err != nil {
+				t.Logf("Failed to verify that DNS has been correctly set.")
+			} else {
+				dnsCheck <- true
+				return
+			}
+		}
+		dnsCheck <- false
+	}()
+
+	t.Logf("Updating credentials secret")
+	credSecret.Data = helper.makeCredentialsSecret(operatorNamespace).Data
+	err = kubeClient.Update(context.TODO(), credSecret)
+	if err != nil {
+		t.Fatalf("Failed to update credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+	t.Logf("Credentials secret updated successfully")
+
+	if resolved := <-dnsCheck; !resolved {
+		t.Fatal("All nameservers failed to verify that DNS has been correctly set.")
+	}
+}
+
+func makeWrongCredentialsSecret(namespace string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("wrong-credentials-%s", randomString(16)),
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			"wrong_credentials": []byte("wrong_access"),
+		},
+	}
+}
