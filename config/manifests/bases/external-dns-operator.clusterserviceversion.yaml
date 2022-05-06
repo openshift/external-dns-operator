@@ -34,12 +34,6 @@ spec:
   description: |-
     The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
 
-    ## Prerequisites and Requirements
-     The ExternalDNS Operator has minimal cluster level permissions. Unfortunately OLM doesn't allow the local role creation in the operand namespace yet.
-     Therefore make sure the following commands are run against your cluster before the installation of the operator:
-     * Create the operand namespace: `oc create ns external-dns`
-     * Grant the operator access to manage operand resources: `oc apply -f https://raw.githubusercontent.com/openshift/external-dns-operator/main/config/rbac/extra-roles.yaml`
-
     ## How it works
      Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
   displayName: ExternalDNS Operator

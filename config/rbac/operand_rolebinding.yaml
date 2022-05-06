@@ -11,3 +11,6 @@ subjects:
   - kind: Group
     name: system:serviceaccounts:external-dns
     namespace: external-dns
+  - kind: Group
+    name: system:serviceaccounts:external-dns-operator
+    namespace: external-dns-operator

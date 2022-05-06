@@ -13,7 +13,7 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
 The following procedure describes how to deploy the `ExternalDNS` Operator for AWS.     
 
 ### Preparing the environment
-Prepare your environment for the installation commands. 
+Prepare your environment for the installation commands.
 
 - Select the container runtime you want to build the images with (`podman` or `docker`):
     ```sh
@@ -37,13 +37,7 @@ Prepare your environment for the installation commands.
    make image-build image-push
    ```
 
-2. Prepare the operand namespace:
-   ```sh
-   kubectl create ns external-dns
-   kubectl apply -f config/rbac/extra-roles.yaml
-   ```
-
-3. You may need to link the registry secret to `external-dns-operator` service account if the image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
+2. You may need to link the registry secret to `external-dns-operator` service account if the image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
 
     a. Create a secret with authentication details of your image registry:
     ```sh
@@ -54,12 +48,12 @@ Prepare your environment for the installation commands.
     oc -n external-dns-operator secrets link external-dns-operator extdns-pull-secret --for=pull
     ````
 
-4. Run the following command to deploy the `ExternalDNS` Operator:
+3. Run the following command to deploy the `ExternalDNS` Operator:
     ```sh
     make deploy
     ```
 
-5. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
+4. The previous step deploys the validation webhook, which requires TLS authentication for the webhook server. The
    manifests deployed through the `make deploy` command do not contain a valid certificate and key. You must provision a valid certificate and key through other tools.
    You can use a convenience script, `hack/generate-certs.sh` to generate the certificate bundle and patch the validation webhook config.   
    _Important_: Do not use the hack/generate-certs.sh script in a production environment.   
@@ -69,7 +63,7 @@ Prepare your environment for the installation commands.
    --secret webhook-server-cert --namespace external-dns-operator
    ```
 
-6. Now you can deploy an instance of ExternalDNS:
+5. Now you can deploy an instance of ExternalDNS:
     * Run the following command to create the credentials secret for AWS:
         ```sh
         kubectl -n external-dns-operator create secret generic aws-access-key \
@@ -107,13 +101,7 @@ Prepare your environment for the installation commands.
    make index-image-build index-image-push
    ```
 
-4. Prepare the operand namespace:
-   ```sh
-   oc create ns external-dns
-   oc apply -f config/rbac/extra-roles.yaml
-   ```
-
-5. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
+4. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
 
     a. Create a secret with authentication details of your image registry:
     ```sh
@@ -124,7 +112,7 @@ Prepare your environment for the installation commands.
     oc -n openshift-marketplace secrets link default extdns-olm-secret --for=pull
     ````
 
-6. Create the `CatalogSource` object:
+5. Create the `CatalogSource` object:
    ```sh
    cat <<EOF | oc apply -f -
    apiVersion: operators.coreos.com/v1alpha1
@@ -138,12 +126,12 @@ Prepare your environment for the installation commands.
    EOF
    ```
 
-7. Create the operator namespace:
+6. Create the operator namespace:
     ```sh
     oc create namespace external-dns-operator
     ```
 
-8. Create the `OperatorGroup` object to scope the operator to `external-dns-operator` namespace:
+7. Create the `OperatorGroup` object to scope the operator to `external-dns-operator` namespace:
     ```sh
     cat <<EOF | oc apply -f -
     apiVersion: operators.coreos.com/v1
@@ -157,7 +145,7 @@ Prepare your environment for the installation commands.
     EOF
     ```
 
-9. Create the `Subscription` object:
+8. Create the `Subscription` object:
     ```sh
     cat <<EOF | oc apply -f -
     apiVersion: operators.coreos.com/v1alpha1
@@ -173,7 +161,7 @@ Prepare your environment for the installation commands.
     EOF
     ```
 
-**Note**: The steps starting from the 7th can be replaced with the following actions in the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS Operator`,  and install it in the `external-dns-operator` namespace.
+**Note**: The steps starting from the 6th can be replaced with the following actions in the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS Operator`,  and install it in the `external-dns-operator` namespace.
 
 ## Running end-to-end tests manually
 
