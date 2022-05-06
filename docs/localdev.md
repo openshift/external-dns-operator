@@ -67,7 +67,7 @@ CRC is a pre-built Container Development Environment based on Red Hat Enterprise
     $ make deploy
     ```
 8. Create the `credentials` secret for AWS:
-Note: Ensure you have your AWS credentials set up in  `~/.aws/credentials`. For other providers, see `api/v1alpha1/externaldns_types.go`.
+Note: Ensure you have your AWS credentials set up in  `~/.aws/credentials`. For other providers, see `api/v1beta1/externaldns_types.go`.
 Examples:
 `ExternalDNSAzureProviderOptions` structure for Azure
 `ExternalDNSGCPProviderOptions`  structure for GCP

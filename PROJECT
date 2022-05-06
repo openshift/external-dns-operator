@@ -15,4 +15,12 @@ resources:
   webhooks:
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: openshift.io
+  group: externaldns.olm
+  kind: ExternalDNS
+  path: github.com/openshift/external-dns-operator/api/v1beta1
+  version: v1beta1
 version: "3"

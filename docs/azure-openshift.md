@@ -40,10 +40,10 @@ openshift-console          downloads           downloads-openshift-console.apps.
 $ az network dns zone list --resource-group "${RESOURCE_GROUP}"
 ```
 
-7. Create [ExternalDNS CR](https://github.com/openshift/external-dns-operator/blob/main/config/samples/azure/operator_v1alpha1_externaldns_openshift.yaml) as follows:
+7. Create [ExternalDNS CR](https://github.com/openshift/external-dns-operator/blob/main/config/samples/azure/operator_v1beta1_externaldns_openshift.yaml) as follows:
 ```bash
 $ cat <<EOF | oc create -f -
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: sample-azure

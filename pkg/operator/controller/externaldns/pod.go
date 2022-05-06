@@ -29,7 +29,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	"github.com/openshift/external-dns-operator/pkg/utils"
 )
@@ -100,7 +100,7 @@ type externalDNSContainerBuilder struct {
 	source         string
 	volumes        []corev1.Volume
 	secretName     string
-	externalDNS    *operatorv1alpha1.ExternalDNS
+	externalDNS    *operatorv1beta1.ExternalDNS
 	isOpenShift    bool
 	platformStatus *configv1.PlatformStatus
 	counter        int
@@ -175,7 +175,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		}
 	}
 
-	if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1alpha1.HostnameAnnotationPolicyIgnore {
+	if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1beta1.HostnameAnnotationPolicyIgnore {
 		args = append(args, "--ignore-hostname-annotation")
 	}
 
@@ -185,8 +185,8 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		// ExternalDNS needs FQDNTemplate if the hostname annotation is ignored even for Route source.
 		// However it doesn't make much sense as the hostname is retrieved from the route's spec.
 		// Feeding ExternalDNS with some dummy template just to pass the validation.
-		if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1alpha1.HostnameAnnotationPolicyIgnore &&
-			b.externalDNS.Spec.Source.Type == operatorv1alpha1.SourceTypeRoute {
+		if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1beta1.HostnameAnnotationPolicyIgnore &&
+			b.externalDNS.Spec.Source.Type == operatorv1beta1.SourceTypeRoute {
 			args = append(args, "--fqdn-template={{\"\"}}")
 		}
 	}
@@ -241,14 +241,14 @@ func (b *externalDNSContainerBuilder) domainFilters() ([]string, error) {
 	var args, includePatterns, excludePatterns []string
 	for _, d := range b.externalDNS.Spec.Domains {
 		switch d.FilterType {
-		case operatorv1alpha1.FilterTypeInclude:
+		case operatorv1beta1.FilterTypeInclude:
 			switch d.MatchType {
-			case operatorv1alpha1.DomainMatchTypeExact:
+			case operatorv1beta1.DomainMatchTypeExact:
 				if d.Name == nil {
 					return nil, fmt.Errorf("name for domain cannot be empty")
 				}
 				args = append(args, fmt.Sprintf("--domain-filter=%s", *d.Name))
-			case operatorv1alpha1.DomainMatchTypeRegex:
+			case operatorv1beta1.DomainMatchTypeRegex:
 				if d.Pattern == nil {
 					return nil, fmt.Errorf("pattern for domain cannot be empty")
 				}
@@ -260,14 +260,14 @@ func (b *externalDNSContainerBuilder) domainFilters() ([]string, error) {
 			default:
 				return nil, fmt.Errorf("unknown match type in domains: %s", d.MatchType)
 			}
-		case operatorv1alpha1.FilterTypeExclude:
+		case operatorv1beta1.FilterTypeExclude:
 			switch d.MatchType {
-			case operatorv1alpha1.DomainMatchTypeExact:
+			case operatorv1beta1.DomainMatchTypeExact:
 				if d.Name == nil {
 					return nil, fmt.Errorf("name for domain cannot be empty")
 				}
 				args = append(args, fmt.Sprintf("--exclude-domains=%s", *d.Name))
-			case operatorv1alpha1.DomainMatchTypeRegex:
+			case operatorv1beta1.DomainMatchTypeRegex:
 				if d.Pattern == nil {
 					return nil, fmt.Errorf("pattern for domain cannot be empty")
 				}

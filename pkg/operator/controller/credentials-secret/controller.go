@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	extdnscontroller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	ctrlutils "github.com/openshift/external-dns-operator/pkg/operator/controller/utils"
 	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
@@ -86,7 +86,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// Enqueue if ExternalDNS references a secret or if the secret name changes
 	if err := c.Watch(
-		&source.Kind{Type: &operatorv1alpha1.ExternalDNS{}},
+		&source.Kind{Type: &operatorv1beta1.ExternalDNS{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
@@ -96,8 +96,8 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 				return hasSecret(e.Object, config.IsOpenShift)
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
-				oldED := e.ObjectOld.(*operatorv1alpha1.ExternalDNS)
-				newED := e.ObjectNew.(*operatorv1alpha1.ExternalDNS)
+				oldED := e.ObjectOld.(*operatorv1beta1.ExternalDNS)
+				newED := e.ObjectNew.(*operatorv1beta1.ExternalDNS)
 				oldName := getExternalDNSCredentialsSecretName(oldED, config.IsOpenShift)
 				newName := getExternalDNSCredentialsSecretName(newED, config.IsOpenShift)
 				return oldName != newName || oldED.DeletionTimestamp != newED.DeletionTimestamp
@@ -114,10 +114,10 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// so that we can look up ExternalDNS when the secret is changed.
 	if err := mgr.GetFieldIndexer().IndexField(
 		context.Background(),
-		&operatorv1alpha1.ExternalDNS{},
+		&operatorv1beta1.ExternalDNS{},
 		credentialsSecretIndexFieldName,
 		client.IndexerFunc(func(o client.Object) []string {
-			ed := o.(*operatorv1alpha1.ExternalDNS)
+			ed := o.(*operatorv1beta1.ExternalDNS)
 			name := getExternalDNSCredentialsSecretName(ed, config.IsOpenShift)
 			if len(name) == 0 {
 				return []string{}
@@ -130,7 +130,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// function to get all ExternalDNS resources which match the secret's index key
 	credSecretToExtDNS := func(o client.Object) []reconcile.Request {
-		externalDNSList := &operatorv1alpha1.ExternalDNSList{}
+		externalDNSList := &operatorv1beta1.ExternalDNSList{}
 		listOpts := client.MatchingFields{credentialsSecretIndexFieldName: o.GetName()}
 		requests := []reconcile.Request{}
 		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
@@ -151,10 +151,10 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	if err := mgr.GetFieldIndexer().IndexField(
 		context.Background(),
-		&operatorv1alpha1.ExternalDNS{},
+		&operatorv1beta1.ExternalDNS{},
 		credentialsSecretIndexFieldNameInOperand,
 		client.IndexerFunc(func(o client.Object) []string {
-			ed := o.(*operatorv1alpha1.ExternalDNS)
+			ed := o.(*operatorv1beta1.ExternalDNS)
 			name := extdnscontroller.ExternalDNSDestCredentialsSecretName("", ed.Name).Name
 			if len(name) == 0 {
 				return []string{}
@@ -166,7 +166,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	}
 
 	credSecretToExtDNSTargetNS := func(o client.Object) []reconcile.Request {
-		externalDNSList := &operatorv1alpha1.ExternalDNSList{}
+		externalDNSList := &operatorv1beta1.ExternalDNSList{}
 		listOpts := client.MatchingFields{credentialsSecretIndexFieldNameInOperand: o.GetName()}
 		requests := []reconcile.Request{}
 		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
@@ -217,7 +217,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	reqLogger := r.log.WithValues("externaldns", request.NamespacedName)
 	reqLogger.Info("reconciling credentials secret for externalDNS instance")
 
-	extDNS := &operatorv1alpha1.ExternalDNS{}
+	extDNS := &operatorv1beta1.ExternalDNS{}
 	if err := r.client.Get(ctx, request.NamespacedName, extDNS); err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("externalDNS not found; reconciliation will be skipped")
@@ -244,19 +244,19 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 // hasSecret returns true if ExternalDNS references a secret
 func hasSecret(o client.Object, isOpenShift bool) bool {
-	ed := o.(*operatorv1alpha1.ExternalDNS)
+	ed := o.(*operatorv1beta1.ExternalDNS)
 	return len(getExternalDNSCredentialsSecretName(ed, isOpenShift)) != 0
 }
 
 // getExternalDNSCredentialsSecretName returns the name of the credentials secret which should be used as source
-func getExternalDNSCredentialsSecretName(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) string {
+func getExternalDNSCredentialsSecretName(externalDNS *operatorv1beta1.ExternalDNS, isOpenShift bool) string {
 	name, _ := getExternalDNSCredentialsSecretNameWithTrace(externalDNS, isOpenShift)
 	return name
 }
 
 // getExternalDNSCredentialsSecretNameWithTrace returns the name of the credentials secret which should be used as source
 // second value is true if the secret came from the ExternalDNS' provider, false otherwise
-func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1alpha1.ExternalDNS, isOpenShift bool) (string, bool) {
+func getExternalDNSCredentialsSecretNameWithTrace(externalDNS *operatorv1beta1.ExternalDNS, isOpenShift bool) (string, bool) {
 	if name := extdnscontroller.ExternalDNSCredentialsSecretNameFromProvider(externalDNS); name != "" {
 		return name, true
 	}

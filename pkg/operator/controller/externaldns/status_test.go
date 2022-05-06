@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
@@ -437,9 +437,9 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 		name               string
 		existingDeployment appsv1.Deployment
 		existingObjects    []runtime.Object
-		existingExtDNS     *operatorv1alpha1.ExternalDNS
+		existingExtDNS     *operatorv1beta1.ExternalDNS
 		errExpected        bool
-		expectedResult     operatorv1alpha1.ExternalDNS
+		expectedResult     operatorv1beta1.ExternalDNS
 	}{
 		//nominal case
 		{
@@ -468,7 +468,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 			if err != nil {
 				t.Errorf("expected no error but got %v", err)
 			}
-			outputExtDNS := &operatorv1alpha1.ExternalDNS{}
+			outputExtDNS := &operatorv1beta1.ExternalDNS{}
 			if err := r.client.Get(context.TODO(), namespacedName, outputExtDNS); err != nil {
 				if errors.IsNotFound(err) {
 					t.Error("outputExtDNS not found")
@@ -547,24 +547,24 @@ func fakeDeployment(condType appsv1.DeploymentConditionType, isAvailable corev1.
 	}
 }
 
-func fakeExternalDNS() *operatorv1alpha1.ExternalDNS {
-	return &operatorv1alpha1.ExternalDNS{
+func fakeExternalDNS() *operatorv1beta1.ExternalDNS {
+	return &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: test.Name,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Provider: operatorv1alpha1.ExternalDNSProvider{
-				Type: operatorv1alpha1.ProviderTypeAWS,
-				AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-					Credentials: operatorv1alpha1.SecretReference{
+		Spec: operatorv1beta1.ExternalDNSSpec{
+			Provider: operatorv1beta1.ExternalDNSProvider{
+				Type: operatorv1beta1.ProviderTypeAWS,
+				AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+					Credentials: operatorv1beta1.SecretReference{
 						Name: testSecretName,
 					},
 				},
 			},
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeService,
-					Service: &operatorv1alpha1.ExternalDNSServiceSourceOptions{
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type: operatorv1beta1.SourceTypeService,
+					Service: &operatorv1beta1.ExternalDNSServiceSourceOptions{
 						ServiceType: []corev1.ServiceType{
 							corev1.ServiceTypeLoadBalancer,
 						},
@@ -576,7 +576,7 @@ func fakeExternalDNS() *operatorv1alpha1.ExternalDNS {
 	}
 }
 
-func fakeExternalDNSWithStatus() operatorv1alpha1.ExternalDNS {
+func fakeExternalDNSWithStatus() operatorv1beta1.ExternalDNS {
 	extDNS := fakeExternalDNS()
 	condDeploymentAvailable := metav1.Condition{
 		Type:    ExternalDNSDeploymentAvailableConditionType,

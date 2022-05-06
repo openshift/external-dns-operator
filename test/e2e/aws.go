@@ -7,19 +7,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/route53"
+	configv1 "github.com/openshift/api/config/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
-
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	configv1 "github.com/openshift/api/config/v1"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/route53"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 type awsTestHelper struct {
@@ -55,12 +53,12 @@ func (a *awsTestHelper) makeCredentialsSecret(namespace string) *corev1.Secret {
 	}
 }
 
-func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := defaultExternalDNS(name, zoneID, zoneDomain)
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS: &operatorv1alpha1.ExternalDNSAWSProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
+		AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: credsSecret.Name,
 			},
 		},
@@ -68,8 +66,16 @@ func (a *awsTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsS
 	return resource
 }
 
-func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (a *awsTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
+	}
+	return resource
+}
+
+func (a *awsTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string, _ *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeAWS,
 	}

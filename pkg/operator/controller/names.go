@@ -22,7 +22,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -38,7 +38,7 @@ const (
 	ServiceAccountName                 = "external-dns-operator"
 )
 
-func ExternalDNSCredentialsRequestName(externalDNS *operatorv1alpha1.ExternalDNS) types.NamespacedName {
+func ExternalDNSCredentialsRequestName(externalDNS *operatorv1beta1.ExternalDNS) types.NamespacedName {
 	return types.NamespacedName{
 		// CCO recommendation for the core operators (for which it was primarily designed for) is to use CCO namespace:
 		// https://github.com/openshift/cloud-credential-operator#for-openshift-second-level-operators
@@ -53,7 +53,7 @@ func ExternalDNSCredentialsRequestName(externalDNS *operatorv1alpha1.ExternalDNS
 }
 
 // ExternalDNSResourceName returns the name for the resources unique for the given ExternalDNS instance.
-func ExternalDNSResourceName(externalDNS *operatorv1alpha1.ExternalDNS) string {
+func ExternalDNSResourceName(externalDNS *operatorv1beta1.ExternalDNS) string {
 	return ExternalDNSBaseName + "-" + externalDNS.Name
 }
 
@@ -89,25 +89,25 @@ func ExternalDNSCredentialsSourceNamespace(cfg *operatorconfig.Config) string {
 }
 
 // ExternalDNSCredentialsSecretNameFromProvider returns the name of the credentials secret retrieved from externalDNS resource
-func ExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1alpha1.ExternalDNS) string {
+func ExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1beta1.ExternalDNS) string {
 	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
+	case operatorv1beta1.ProviderTypeAWS:
 		if externalDNS.Spec.Provider.AWS != nil {
 			return externalDNS.Spec.Provider.AWS.Credentials.Name
 		}
-	case operatorv1alpha1.ProviderTypeAzure:
+	case operatorv1beta1.ProviderTypeAzure:
 		if externalDNS.Spec.Provider.Azure != nil {
 			return externalDNS.Spec.Provider.Azure.ConfigFile.Name
 		}
-	case operatorv1alpha1.ProviderTypeGCP:
+	case operatorv1beta1.ProviderTypeGCP:
 		if externalDNS.Spec.Provider.GCP != nil {
 			return externalDNS.Spec.Provider.GCP.Credentials.Name
 		}
-	case operatorv1alpha1.ProviderTypeBlueCat:
+	case operatorv1beta1.ProviderTypeBlueCat:
 		if externalDNS.Spec.Provider.BlueCat != nil {
 			return externalDNS.Spec.Provider.BlueCat.ConfigFile.Name
 		}
-	case operatorv1alpha1.ProviderTypeInfoblox:
+	case operatorv1beta1.ProviderTypeInfoblox:
 		if externalDNS.Spec.Provider.Infoblox != nil {
 			return externalDNS.Spec.Provider.Infoblox.Credentials.Name
 		}

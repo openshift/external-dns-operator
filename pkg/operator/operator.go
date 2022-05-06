@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	apiv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 	operatorctrl "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	caconfigmapctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/ca-configmap"
@@ -99,7 +99,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	}
 
 	if opCfg.EnableWebhook {
-		if err = (&apiv1alpha1.ExternalDNS{}).SetupWebhookWithManager(mgr, opCfg.IsOpenShift); err != nil {
+		if err = (&operatorv1beta1.ExternalDNS{}).SetupWebhookWithManager(mgr, opCfg.IsOpenShift); err != nil {
 			return nil, fmt.Errorf("unable to setup webhook for ExternalDNS: %w", err)
 		}
 	}

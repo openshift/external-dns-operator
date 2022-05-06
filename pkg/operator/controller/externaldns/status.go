@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 const (
@@ -31,7 +31,7 @@ var clock utilclock.Clock = utilclock.RealClock{}
 
 // updateExternalDNSStatus recomputes all conditions given the current deployment and its status
 // and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
-func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1alpha1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
+func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1beta1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
 	extDNSWithStatus := externalDNS.DeepCopy()
 	if currentDeployment != nil {
 		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions,
@@ -266,7 +266,7 @@ func conditionChanged(a, b metav1.Condition) bool {
 	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
 }
 
-func externalDNSStatusesEqual(a, b operatorv1alpha1.ExternalDNSStatus) bool {
+func externalDNSStatusesEqual(a, b operatorv1beta1.ExternalDNSStatus) bool {
 	if a.ObservedGeneration != b.ObservedGeneration {
 		return false
 	}

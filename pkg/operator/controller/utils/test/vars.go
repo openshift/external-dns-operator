@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 const (
@@ -42,7 +42,7 @@ const (
 
 var (
 	TrueVar     = true
-	ExternalDNS = &operatorv1alpha1.ExternalDNS{
+	ExternalDNS = &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: Name,
 		},
@@ -54,7 +54,7 @@ func init() {
 	if err := clientgoscheme.AddToScheme(Scheme); err != nil {
 		panic(err)
 	}
-	if err := operatorv1alpha1.AddToScheme(Scheme); err != nil {
+	if err := operatorv1beta1.AddToScheme(Scheme); err != nil {
 		panic(err)
 	}
 	if err := cco.AddToScheme(Scheme); err != nil {

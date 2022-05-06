@@ -26,12 +26,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
 // ensureExternalDNSServiceAccount ensures that the externalDNS service account exists.
-func (r *reconciler) ensureExternalDNSServiceAccount(ctx context.Context, namespace string, externalDNS *operatorv1alpha1.ExternalDNS) (bool, *corev1.ServiceAccount, error) {
+func (r *reconciler) ensureExternalDNSServiceAccount(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) (bool, *corev1.ServiceAccount, error) {
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	desired := desiredExternalDNSServiceAccount(namespace, externalDNS)
@@ -68,7 +68,7 @@ func (r *reconciler) currentExternalDNSServiceAccount(ctx context.Context, nsNam
 }
 
 // desiredExternalDNSServiceAccount returns the desired serivce account resource.
-func desiredExternalDNSServiceAccount(namespace string, externalDNS *operatorv1alpha1.ExternalDNS) *corev1.ServiceAccount {
+func desiredExternalDNSServiceAccount(namespace string, externalDNS *operatorv1beta1.ExternalDNS) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,

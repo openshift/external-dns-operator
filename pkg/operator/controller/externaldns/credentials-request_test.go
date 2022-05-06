@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
@@ -32,7 +32,7 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 		expectedEvents            []test.Event
 		errExpected               bool
 		ocpPlatform               bool
-		inputExtDNS               *operatorv1alpha1.ExternalDNS
+		inputExtDNS               *operatorv1beta1.ExternalDNS
 		expectedCredentialRequest *cco.CredentialsRequest
 	}{
 		{
@@ -103,7 +103,7 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 				t.Errorf("Got namespace %v  but expected namespace is %v", got.Namespace, tc.expectedCredentialRequest.Namespace)
 			}
 
-			if tc.inputExtDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAWS {
+			if tc.inputExtDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
 				gotDecodedAWSSpec, expectedAWSSpec, err := decodeAWSProviderSpec(*got, *tc.expectedCredentialRequest)
 				if err != nil {
 					t.Errorf("Not able to decode AWS Provider Spec because of %v", err)
@@ -114,7 +114,7 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 
 			}
 
-			if tc.inputExtDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeGCP {
+			if tc.inputExtDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeGCP {
 				gotDecodedGCPSpec, expectedGCPSpec, err := decodeGCPProviderSpec(*got, *tc.expectedCredentialRequest)
 				if err != nil {
 					t.Errorf("Not able to decode GCP Provider Spec because of %v", err)
@@ -125,7 +125,7 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 
 			}
 
-			if tc.inputExtDNS.Spec.Provider.Type == operatorv1alpha1.ProviderTypeAzure {
+			if tc.inputExtDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAzure {
 				gotDecodedAzureSpec, expectedAzureSpec, err := decodeAzureProviderSpec(*got, *tc.expectedCredentialRequest)
 				if err != nil {
 					t.Errorf("Not able to decode Azure Provider Spec because of %v", err)
@@ -193,25 +193,25 @@ func decodeAzureProviderSpec(gotCrededentialrequest, expectedCredentialRequest c
 	return gotDecodedAzureSpec, expectedDecodedAzureSpec, err
 }
 
-func testGCPExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+func testGCPExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeGCP,
-		GCP:  &operatorv1alpha1.ExternalDNSGCPProviderOptions{},
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeGCP,
+		GCP:  &operatorv1beta1.ExternalDNSGCPProviderOptions{},
 	}
 	return extDNS
 }
 
-func testAzureExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1alpha1.ExternalDNS {
+func testAzureExtDNSInstanceWhenSourceIsOCPRoute() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type:  operatorv1alpha1.ProviderTypeAzure,
-		Azure: &operatorv1alpha1.ExternalDNSAzureProviderOptions{},
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type:  operatorv1beta1.ProviderTypeAzure,
+		Azure: &operatorv1beta1.ExternalDNSAzureProviderOptions{},
 	}
 	return extDNS
 }
 
-func getUnDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
+func getUnDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1beta1.ExternalDNS) *cco.CredentialsRequest {
 	name := controller.ExternalDNSCredentialsRequestName(externalDNS)
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -248,9 +248,9 @@ func getUnDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.E
 
 }
 
-func createUnDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
+func createUnDesiredProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
 	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
+	case operatorv1beta1.ProviderTypeAWS:
 		return codec.EncodeProviderSpec(
 			&cco.AWSProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -271,7 +271,7 @@ func createUnDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, co
 					},
 				},
 			})
-	case operatorv1alpha1.ProviderTypeGCP:
+	case operatorv1beta1.ProviderTypeGCP:
 		return codec.EncodeProviderSpec(
 			&cco.GCPProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -282,7 +282,7 @@ func createUnDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, co
 				},
 			})
 
-	case operatorv1alpha1.ProviderTypeAzure:
+	case operatorv1beta1.ProviderTypeAzure:
 		return codec.EncodeProviderSpec(
 			&cco.AzureProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -296,7 +296,7 @@ func createUnDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, co
 	return nil, nil
 }
 
-func getDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.ExternalDNS) *cco.CredentialsRequest {
+func getDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1beta1.ExternalDNS) *cco.CredentialsRequest {
 	name := controller.ExternalDNSCredentialsRequestName(externalDNS)
 	credentialsRequest := &cco.CredentialsRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -333,9 +333,9 @@ func getDesiredCredentialRequest(t *testing.T, externalDNS *operatorv1alpha1.Ext
 
 }
 
-func createDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
+func createDesiredProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
 	switch externalDNS.Spec.Provider.Type {
-	case operatorv1alpha1.ProviderTypeAWS:
+	case operatorv1beta1.ProviderTypeAWS:
 		return codec.EncodeProviderSpec(
 			&cco.AWSProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -360,7 +360,7 @@ func createDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, code
 					},
 				},
 			})
-	case operatorv1alpha1.ProviderTypeGCP:
+	case operatorv1beta1.ProviderTypeGCP:
 		return codec.EncodeProviderSpec(
 			&cco.GCPProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -371,7 +371,7 @@ func createDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, code
 				},
 			})
 
-	case operatorv1alpha1.ProviderTypeAzure:
+	case operatorv1beta1.ProviderTypeAzure:
 		return codec.EncodeProviderSpec(
 			&cco.AzureProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -385,24 +385,24 @@ func createDesiredProviderConfig(externalDNS *operatorv1alpha1.ExternalDNS, code
 	return nil, nil
 }
 
-func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided() *operatorv1alpha1.ExternalDNS {
+func testAWSExtDNSInstanceWhenOCPRouteSourceWhenAWSCredentialsNotProvided() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstanceforOCPRouteSource()
-	extDNS.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeAWS,
-		AWS:  &operatorv1alpha1.ExternalDNSAWSProviderOptions{},
+	extDNS.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeAWS,
+		AWS:  &operatorv1beta1.ExternalDNSAWSProviderOptions{},
 	}
 	return extDNS
 }
 
-func testExtDNSInstanceforOCPRouteSource() *operatorv1alpha1.ExternalDNS {
-	return &operatorv1alpha1.ExternalDNS{
+func testExtDNSInstanceforOCPRouteSource() *operatorv1beta1.ExternalDNS {
+	return &operatorv1beta1.ExternalDNS{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: test.Name,
 		},
-		Spec: operatorv1alpha1.ExternalDNSSpec{
-			Source: operatorv1alpha1.ExternalDNSSource{
-				ExternalDNSSourceUnion: operatorv1alpha1.ExternalDNSSourceUnion{
-					Type: operatorv1alpha1.SourceTypeRoute,
+		Spec: operatorv1beta1.ExternalDNSSpec{
+			Source: operatorv1beta1.ExternalDNSSource{
+				ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+					Type: operatorv1beta1.SourceTypeRoute,
 				},
 			},
 			Zones: []string{"public-zone"},

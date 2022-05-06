@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
+	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 const (
@@ -139,13 +140,13 @@ func (h *infobloxTestHelper) makeCredentialsSecret(namespace string) *corev1.Sec
 	}
 }
 
-func (h *infobloxTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (h *infobloxTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := defaultExternalDNS(name, zoneID, zoneDomain)
 	wapiPort, _ := strconv.Atoi(defaultWAPIPort)
-	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
-		Type: operatorv1alpha1.ProviderTypeInfoblox,
-		Infoblox: &operatorv1alpha1.ExternalDNSInfobloxProviderOptions{
-			Credentials: operatorv1alpha1.SecretReference{
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeInfoblox,
+		Infoblox: &operatorv1beta1.ExternalDNSInfobloxProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
 				Name: credsSecret.Name,
 			},
 			GridHost:    h.gridHost,
@@ -156,8 +157,25 @@ func (h *infobloxTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, c
 	return resource
 }
 
-func (h *infobloxTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+func (h *infobloxTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName string, credsSecret *corev1.Secret) operatorv1beta1.ExternalDNS {
 	resource := routeExternalDNS(name, zoneID, zoneDomain, routerName)
+	wapiPort, _ := strconv.Atoi(defaultWAPIPort)
+	resource.Spec.Provider = operatorv1beta1.ExternalDNSProvider{
+		Type: operatorv1beta1.ProviderTypeInfoblox,
+		Infoblox: &operatorv1beta1.ExternalDNSInfobloxProviderOptions{
+			Credentials: operatorv1beta1.SecretReference{
+				Name: credsSecret.Name,
+			},
+			GridHost:    h.gridHost,
+			WAPIPort:    wapiPort,
+			WAPIVersion: defaultWAPIVersion,
+		},
+	}
+	return resource
+}
+
+func (h *infobloxTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
+	resource := routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName)
 	wapiPort, _ := strconv.Atoi(defaultWAPIPort)
 	resource.Spec.Provider = operatorv1alpha1.ExternalDNSProvider{
 		Type: operatorv1alpha1.ProviderTypeInfoblox,

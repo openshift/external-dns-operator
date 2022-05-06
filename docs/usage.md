@@ -33,7 +33,7 @@ stringData:
 Then create an `ExternalDNS` resource as follows:
 
 ```yaml
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: aws-example
@@ -81,7 +81,7 @@ data:
 Then create an `ExternalDNS` resource as follows:
 
 ```yaml
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: infoblox-example
@@ -145,7 +145,7 @@ Finally, create an `ExternalDNS` resource as shown below:
 
 ```yaml
 
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: bluecat-example
@@ -178,7 +178,7 @@ Before creating an ExternalDNS resource for GCP, the following is required:
 2. sample ExternalDNS CR for GCP
 
 ```yaml
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: sample-gcp
@@ -229,7 +229,7 @@ The contents of `azure.json` should be similar to this:
 2. sample ExternalDNS CR for Azure
 
 ```yaml
-apiVersion: externaldns.olm.openshift.io/v1alpha1
+apiVersion: externaldns.olm.openshift.io/v1beta1
 kind: ExternalDNS
 metadata:
   name: sample-azure
