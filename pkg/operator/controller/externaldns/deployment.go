@@ -20,8 +20,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-
 	"fmt"
+	"reflect"
 	"sort"
 
 	"github.com/google/go-cmp/cmp"
@@ -313,13 +313,19 @@ func (r *reconciler) updateExternalDNSDeployment(ctx context.Context, current, d
 // Returns a boolean if an update is necessary, and the deployment resource to update to.
 func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *appsv1.Deployment) {
 	updated := current.DeepCopy()
-	return externalDNSAnnotationsChanged(current, expected, updated) || externalDNSContainersChanged(current, expected, updated), updated
+	annotationChanged := externalDNSAnnotationsChanged(current, expected, updated)
+	containersChanged := externalDNSContainersChanged(current, expected, updated)
+	volumesChanged := externalDNSVolumesChanged(current, expected, updated)
+	return annotationChanged || containersChanged || volumesChanged, updated
 }
 
 // externalDNSAnnotationsChanged returns true if any annotation from the podspec differs from the expected.```
 func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
-	if current.Spec.Template.Annotations == nil {
+	if len(current.Spec.Template.Annotations) == 0 {
+		if len(expected.Spec.Template.Annotations) == 0 {
+			return false
+		}
 		updated.Spec.Template.Annotations = expected.Spec.Template.Annotations
 		return true
 	}
@@ -333,7 +339,7 @@ func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment
 	return changed
 }
 
-// externalDNSContainersChanged returns true if the current containers differ from the expected
+// externalDNSContainersChanged returns true if the current containers differ from the expected.
 func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
 
@@ -358,6 +364,14 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 				updated.Spec.Template.Spec.Containers[currCont.Index].Args = expCont.Args
 				changed = true
 			}
+			if !equalEnvVars(currCont.Env, expCont.Env) {
+				updated.Spec.Template.Spec.Containers[currCont.Index].Env = expCont.Env
+				changed = true
+			}
+			if vmChanged, updatedVolumeMounts := volumeMountsChanged(currCont.VolumeMounts, expCont.VolumeMounts, updated.Spec.Template.Spec.Containers[currCont.Index].VolumeMounts); vmChanged {
+				updated.Spec.Template.Spec.Containers[currCont.Index].VolumeMounts = updatedVolumeMounts
+				changed = true
+			}
 		} else {
 			// if the current container is not expected: let's not dig deeper - reset all
 			updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
@@ -368,15 +382,95 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 	return changed
 }
 
+// externalDNSVolumesChanged returns true if the current volumes differ from the expected.
+func externalDNSVolumesChanged(current, expected, updated *appsv1.Deployment) bool {
+	if len(current.Spec.Template.Spec.Volumes) == 0 {
+		if len(expected.Spec.Template.Spec.Volumes) == 0 {
+			return false
+		}
+		updated.Spec.Template.Spec.Volumes = expected.Spec.Template.Spec.Volumes
+		return true
+	}
+
+	changed := false
+
+	currentVolumeMap := buildIndexedVolumeMap(current.Spec.Template.Spec.Volumes)
+	expectedVolumeMap := buildIndexedVolumeMap(expected.Spec.Template.Spec.Volumes)
+
+	// ensure all expected volumes are present,
+	// unsolicited ones are kept (e.g. kube api token)
+	for expName, expVol := range expectedVolumeMap {
+		if currVol, currExists := currentVolumeMap[expName]; !currExists {
+			updated.Spec.Template.Spec.Volumes = append(updated.Spec.Template.Spec.Volumes, expVol.Volume)
+			changed = true
+		} else {
+			// deepequal is fine here as we don't have more than 1 item
+			// neither in the secret nor in the configmap
+			if !reflect.DeepEqual(currVol.Volume, expVol.Volume) {
+				updated.Spec.Template.Spec.Volumes[currVol.Index] = expVol.Volume
+				changed = true
+			}
+		}
+	}
+
+	return changed
+}
+
+// volumeMountsChanged checks that the current volume mounts have all expected ones,
+// returns true if the current volume mounts had to be changed to match the expected.
+func volumeMountsChanged(current, expected, updated []corev1.VolumeMount) (bool, []corev1.VolumeMount) {
+	if len(current) == 0 {
+		if len(expected) == 0 {
+			return false, updated
+		}
+		return true, expected
+	}
+
+	changed := false
+
+	currentVolumeMountMap := buildIndexedVolumeMountMap(current)
+	expectedVolumeMountMap := buildIndexedVolumeMountMap(expected)
+
+	// ensure all expected volume mounts are present,
+	// unsolicited ones are kept (e.g. kube api token)
+	for expName, expVol := range expectedVolumeMountMap {
+		if currVol, currExists := currentVolumeMountMap[expName]; !currExists {
+			updated = append(updated, expVol.VolumeMount)
+			changed = true
+		} else {
+			if !reflect.DeepEqual(currVol.VolumeMount, expVol.VolumeMount) {
+				updated[currVol.Index] = expVol.VolumeMount
+				changed = true
+			}
+		}
+	}
+
+	return changed, updated
+}
+
+// equalEnvVars returns true if 2 env variable slices have the same content (order doesn't matter).
+func equalEnvVars(current, expected []corev1.EnvVar) bool {
+	var currentSorted, expectedSorted []string
+	for _, env := range current {
+		currentSorted = append(currentSorted, env.Name+" "+env.Value)
+	}
+	for _, env := range expected {
+		expectedSorted = append(expectedSorted, env.Name+" "+env.Value)
+	}
+	sort.Strings(currentSorted)
+	sort.Strings(expectedSorted)
+	return cmp.Equal(currentSorted, expectedSorted)
+}
+
 // indexedContainer is the standard core POD's container with additional index field
 type indexedContainer struct {
 	corev1.Container
 	Index int
 }
 
-// buildIndexedContainerMap builds a map from the given list of containers
-// key is the container name
-// value is the indexed container with index being the sequence number of the given list
+// buildIndexedContainerMap builds a map from the given list of containers,
+// key is the container name,
+// value is the indexed container with the index being the sequence number of the given list.
 func buildIndexedContainerMap(containers []corev1.Container) map[string]indexedContainer {
 	m := map[string]indexedContainer{}
 	for i, cont := range containers {
@@ -388,7 +482,47 @@ func buildIndexedContainerMap(containers []corev1.Container) map[string]indexedC
 	return m
 }
 
-// equalStringSliceContent returns true if 2 string slices have the same content (order doesn't matter)
+// indexedVolume is the standard core POD's volume with additional index field
+type indexedVolume struct {
+	corev1.Volume
+	Index int
+}
+
+// buildIndexedVolumeMap builds a map from the given list of volumes,
+// key is the volume name,
+// value is the indexed volume with the index being the sequence number of the given list.
+func buildIndexedVolumeMap(volumes []corev1.Volume) map[string]indexedVolume {
+	m := map[string]indexedVolume{}
+	for i, vol := range volumes {
+		m[vol.Name] = indexedVolume{
+			Volume: vol,
+			Index:  i,
+		}
+	}
+	return m
+}
+
+// indexedVolumeMount is the standard core POD's voume mount with additional index field
+type indexedVolumeMount struct {
+	corev1.VolumeMount
+	Index int
+}
+
+// buildIndexedVolumeMountMap builds a map from the given list of volume mounts,
+// key is the volume name,
+// value is the indexed volume mount with the index being the sequence number of the given list.
+func buildIndexedVolumeMountMap(volumeMounts []corev1.VolumeMount) map[string]indexedVolumeMount {
+	m := map[string]indexedVolumeMount{}
+	for i, vol := range volumeMounts {
+		m[vol.Name] = indexedVolumeMount{
+			VolumeMount: vol,
+			Index:       i,
+		}
+	}
+	return m
+}
+
+// equalStringSliceContent returns true if 2 string slices have the same content (order doesn't matter).
 func equalStringSliceContent(sl1, sl2 []string) bool {
 	copy1 := append([]string{}, sl1...)
 	copy2 := append([]string{}, sl2...)
