@@ -2306,7 +2306,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 				testContainer(),
 			}),
 			mutate: func(dep1 *appsv1.Deployment) {
-				dep1.Annotations = updatedSecretHashAnnotation
+				dep1.Spec.Template.Annotations = updatedSecretHashAnnotation
 			},
 			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
@@ -2315,7 +2315,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			description:        "if externalDNS annotation is not present",
 			originalDeployment: testDeploymentWithoutAnnotations(),
 			mutate: func(dep1 *appsv1.Deployment) {
-				dep1.Annotations = updatedSecretHashAnnotation
+				dep1.Spec.Template.Annotations = updatedSecretHashAnnotation
 			},
 			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
@@ -2374,7 +2374,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2390,6 +2389,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -2467,7 +2467,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2483,6 +2482,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									"app.kubernetes.io/instance": testName,
 									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 							},
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
@@ -2532,7 +2532,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2548,6 +2547,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -2602,7 +2602,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2618,6 +2617,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									"app.kubernetes.io/instance": testName,
 									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 							},
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
@@ -2668,7 +2668,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2684,6 +2683,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -2739,7 +2739,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2755,6 +2754,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									"app.kubernetes.io/instance": testName,
 									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 							},
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
@@ -2801,7 +2801,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2817,6 +2816,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -2879,7 +2879,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -2895,6 +2894,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -2973,7 +2973,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -2989,6 +2988,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									"app.kubernetes.io/instance": testName,
 									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 							},
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
@@ -3040,7 +3040,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -3056,6 +3055,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -3111,7 +3111,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								BlockOwnerDeletion: &test.TrueVar,
 							},
 						},
-						Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &replicas,
@@ -3127,6 +3126,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									"app.kubernetes.io/instance": testName,
 									"app.kubernetes.io/name":     ExternalDNSBaseName,
 								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 							},
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
@@ -3173,7 +3173,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							BlockOwnerDeletion: &test.TrueVar,
 						},
 					},
-					Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: &replicas,
@@ -3189,6 +3188,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								"app.kubernetes.io/instance": testName,
 								"app.kubernetes.io/name":     ExternalDNSBaseName,
 							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
 						},
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
@@ -3330,9 +3330,6 @@ func testDeployment() *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: "testns",
-			Annotations: map[string]string{
-				credentialsAnnotation: testSecretHash,
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -3345,6 +3342,9 @@ func testDeployment() *appsv1.Deployment {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"testlbl": "yes",
+					},
+					Annotations: map[string]string{
+						credentialsAnnotation: testSecretHash,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -3361,7 +3361,7 @@ func testDeployment() *appsv1.Deployment {
 
 func testDeploymentWithoutAnnotations() *appsv1.Deployment {
 	depl := testDeployment()
-	depl.Annotations = nil
+	depl.Spec.Template.Annotations = nil
 	return depl
 }
 
@@ -3373,7 +3373,7 @@ func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deploym
 
 func testDeploymentWithAnnotations(annotations map[string]string) *appsv1.Deployment {
 	depl := testDeployment()
-	depl.Annotations = annotations
+	depl.Spec.Template.Annotations = annotations
 	return depl
 }
 

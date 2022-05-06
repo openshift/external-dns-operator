@@ -203,9 +203,6 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      controller.ExternalDNSResourceName(deployment.externalDNS),
 			Namespace: deployment.namespace,
-			Annotations: map[string]string{
-				credentialsAnnotation: deployment.secretHash,
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -215,6 +212,9 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: matchLbl,
+					Annotations: map[string]string{
+						credentialsAnnotation: deployment.secretHash,
+					},
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: deployment.serviceAccount.Name,
@@ -316,17 +316,17 @@ func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *
 	return externalDNSAnnotationsChanged(current, expected, updated) || externalDNSContainersChanged(current, expected, updated), updated
 }
 
-// externalDNSAnnotationsChanged returns true if the current secret annotation differ from the expected
+// externalDNSAnnotationsChanged returns true if any annotation from the podspec differs from the expected.```
 func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
-	if current.Annotations == nil {
-		updated.Annotations = expected.Annotations
+	if current.Spec.Template.Annotations == nil {
+		updated.Spec.Template.Annotations = expected.Spec.Template.Annotations
 		return true
 	}
-	for expectedKey, expectedValue := range expected.Annotations {
-		currentVal, currentExists := current.Annotations[expectedKey]
+	for expectedKey, expectedValue := range expected.Spec.Template.Annotations {
+		currentVal, currentExists := current.Spec.Template.Annotations[expectedKey]
 		if !currentExists || currentVal != expectedValue {
-			updated.Annotations[expectedKey] = expectedValue
+			updated.Spec.Template.Annotations[expectedKey] = expectedValue
 			changed = true
 		}
 	}
