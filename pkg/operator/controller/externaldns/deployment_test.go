@@ -2357,7 +2357,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		ocpRouterNames     []string
 	}{
 		{
-			name:            "Does not exist",
+			name:            "Does not exist with route source",
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{testSecret()},
 			expectedExist:   true,
@@ -2435,6 +2435,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--txt-prefix=external-dns-",
 									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
 											Name:      awsCredentialsVolumeName,
@@ -2450,7 +2456,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:   "Exist as expected",
+			name:   "Exist as expected with route source",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
 				testSecret(),
@@ -2497,139 +2503,20 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Effect:   corev1.TaintEffectNoSchedule,
 									},
 								},
-								Containers: []corev1.Container{
+								Volumes: []corev1.Volume{
 									{
-										Name:  ExternalDNSContainerName,
-										Image: test.OperandImage,
-										Args: []string{
-											"--metrics-address=127.0.0.1:7979",
-											"--txt-owner-id=external-dns-test",
-											"--zone-id-filter=my-dns-public-zone",
-											"--provider=aws",
-											"--source=openshift-route",
-											"--policy=sync",
-											"--registry=txt",
-											"--log-level=debug",
+										Name: awsCredentialsVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-credentials-test",
+												Items: []corev1.KeyToPath{
+													{
+														Key:  awsCredentialsFileKey,
+														Path: awsCredentialsFileName,
+													},
+												},
+											},
 										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedExist: true,
-			expectedDeployment: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      test.OperandName,
-					Namespace: test.OperandNamespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         operatorv1beta1.GroupVersion.String(),
-							Kind:               externalDNSKind,
-							Name:               test.Name,
-							Controller:         &test.TrueVar,
-							BlockOwnerDeletion: &test.TrueVar,
-						},
-					},
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: &replicas,
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": testName,
-							"app.kubernetes.io/name":     ExternalDNSBaseName,
-						},
-					},
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-						},
-						Spec: corev1.PodSpec{
-							ServiceAccountName: test.OperandName,
-							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
-							},
-							Tolerations: []corev1.Toleration{
-								{
-									Key:      masterNodeRoleLabel,
-									Operator: corev1.TolerationOpExists,
-									Effect:   corev1.TaintEffectNoSchedule,
-								},
-							},
-							Containers: []corev1.Container{
-								{
-									Name:  ExternalDNSContainerName,
-									Image: test.OperandImage,
-									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
-										"--txt-owner-id=external-dns-test",
-										"--zone-id-filter=my-dns-public-zone",
-										"--provider=aws",
-										"--source=openshift-route",
-										"--policy=sync",
-										"--registry=txt",
-										"--log-level=debug",
-										"--txt-prefix=external-dns-",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:   "Exist as expected with one Router Names added as flag",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "default"),
-			existingObjects: []runtime.Object{
-				testSecret(),
-				&appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      test.OperandName,
-						Namespace: test.OperandNamespace,
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         operatorv1beta1.GroupVersion.String(),
-								Kind:               externalDNSKind,
-								Name:               test.Name,
-								Controller:         &test.TrueVar,
-								BlockOwnerDeletion: &test.TrueVar,
-							},
-						},
-					},
-					Spec: appsv1.DeploymentSpec{
-						Replicas: &replicas,
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{
-									"app.kubernetes.io/instance": testName,
-									"app.kubernetes.io/name":     ExternalDNSBaseName,
-								},
-								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-							},
-							Spec: corev1.PodSpec{
-								ServiceAccountName: test.OperandName,
-								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
-								},
-								Tolerations: []corev1.Toleration{
-									{
-										Key:      masterNodeRoleLabel,
-										Operator: corev1.TolerationOpExists,
-										Effect:   corev1.TaintEffectNoSchedule,
 									},
 								},
 								Containers: []corev1.Container{
@@ -2645,134 +2532,14 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											"--policy=sync",
 											"--registry=txt",
 											"--log-level=debug",
+											"--txt-prefix=external-dns-",
 										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			ocpRouterNames: []string{"default"},
-			expectedExist:  true,
-			expectedDeployment: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      test.OperandName,
-					Namespace: test.OperandNamespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         operatorv1beta1.GroupVersion.String(),
-							Kind:               externalDNSKind,
-							Name:               test.Name,
-							Controller:         &test.TrueVar,
-							BlockOwnerDeletion: &test.TrueVar,
-						},
-					},
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: &replicas,
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": testName,
-							"app.kubernetes.io/name":     ExternalDNSBaseName,
-						},
-					},
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-						},
-						Spec: corev1.PodSpec{
-							ServiceAccountName: test.OperandName,
-							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
-							},
-							Tolerations: []corev1.Toleration{
-								{
-									Key:      masterNodeRoleLabel,
-									Operator: corev1.TolerationOpExists,
-									Effect:   corev1.TaintEffectNoSchedule,
-								},
-							},
-							Containers: []corev1.Container{
-								{
-									Name:  ExternalDNSContainerName,
-									Image: test.OperandImage,
-									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
-										"--txt-owner-id=external-dns-test",
-										"--zone-id-filter=my-dns-public-zone",
-										"--provider=aws",
-										"--source=openshift-route",
-										"--policy=sync",
-										"--registry=txt",
-										"--log-level=debug",
-										"--txt-prefix=external-dns-",
-										"--openshift-router-name=default",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:   "Exist and drifted",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
-			existingObjects: []runtime.Object{
-				testSecret(),
-				&appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      test.OperandName,
-						Namespace: test.OperandNamespace,
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         operatorv1beta1.GroupVersion.String(),
-								Kind:               externalDNSKind,
-								Name:               test.Name,
-								Controller:         &test.TrueVar,
-								BlockOwnerDeletion: &test.TrueVar,
-							},
-						},
-					},
-					Spec: appsv1.DeploymentSpec{
-						Replicas: &replicas,
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{
-									"app.kubernetes.io/instance": testName,
-									"app.kubernetes.io/name":     ExternalDNSBaseName,
-								},
-								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-							},
-							Spec: corev1.PodSpec{
-								ServiceAccountName: test.OperandName,
-								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
-								},
-								Tolerations: []corev1.Toleration{
-									{
-										Key:      masterNodeRoleLabel,
-										Operator: corev1.TolerationOpExists,
-										Effect:   corev1.TaintEffectNoSchedule,
-									},
-								},
-								Containers: []corev1.Container{
-									{
-										Name:  "external-dns-unexpected",
-										Image: test.OperandImage,
+										Env: []corev1.EnvVar{
+											{
+												Name:  awsCredentialEnvVarName,
+												Value: awsCredentialsFilePath,
+											},
+										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
 												Name:      awsCredentialsVolumeName,
@@ -2831,6 +2598,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									Effect:   corev1.TaintEffectNoSchedule,
 								},
 							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
@@ -2846,6 +2629,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--log-level=debug",
 										"--txt-prefix=external-dns-",
 									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
 											Name:      awsCredentialsVolumeName,
@@ -2860,7 +2649,355 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
-		//Source OCP Routes
+		{
+			name:   "Exist as expected with one Router Names added as flag",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "default"),
+			existingObjects: []runtime.Object{
+				testSecret(),
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
+								Kind:               externalDNSKind,
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
+								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Volumes: []corev1.Volume{
+									{
+										Name: awsCredentialsVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-credentials-test",
+												Items: []corev1.KeyToPath{
+													{
+														Key:  awsCredentialsFileKey,
+														Path: awsCredentialsFileName,
+													},
+												},
+											},
+										},
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  ExternalDNSContainerName,
+										Image: test.OperandImage,
+										Args: []string{
+											"--metrics-address=127.0.0.1:7979",
+											"--txt-owner-id=external-dns-test",
+											"--zone-id-filter=my-dns-public-zone",
+											"--provider=aws",
+											"--source=openshift-route",
+											"--policy=sync",
+											"--registry=txt",
+											"--log-level=debug",
+										},
+										Env: []corev1.EnvVar{
+											{
+												Name:  awsCredentialEnvVarName,
+												Value: awsCredentialsFilePath,
+											},
+										},
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      awsCredentialsVolumeName,
+												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ocpRouterNames: []string{"default"},
+			expectedExist:  true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--txt-prefix=external-dns-",
+										"--openshift-router-name=default",
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist and drifted with route source",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
+			existingObjects: []runtime.Object{
+				testSecret(),
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
+								Kind:               externalDNSKind,
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
+								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-unexpected",
+										Image: test.OperandImage,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--txt-prefix=external-dns-",
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		{
 			name:            "Does not exist",
 			existingObjects: []runtime.Object{testSecret()},
@@ -2941,6 +3078,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--service-type-filter=LoadBalancer",
 										"--txt-prefix=external-dns-",
 									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
 											Name:      awsCredentialsVolumeName,
@@ -3003,6 +3146,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Effect:   corev1.TaintEffectNoSchedule,
 									},
 								},
+								Volumes: []corev1.Volume{
+									{
+										Name: awsCredentialsVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-credentials-test",
+												Items: []corev1.KeyToPath{
+													{
+														Key:  awsCredentialsFileKey,
+														Path: awsCredentialsFileName,
+													},
+												},
+											},
+										},
+									},
+								},
 								Containers: []corev1.Container{
 									{
 										Name:  ExternalDNSContainerName,
@@ -3019,132 +3178,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											"--service-type-filter=LoadBalancer",
 											"--txt-prefix=external-dns-",
 										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedExist: true,
-			expectedDeployment: appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      test.OperandName,
-					Namespace: test.OperandNamespace,
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion:         operatorv1beta1.GroupVersion.String(),
-							Kind:               externalDNSKind,
-							Name:               test.Name,
-							Controller:         &test.TrueVar,
-							BlockOwnerDeletion: &test.TrueVar,
-						},
-					},
-				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: &replicas,
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app.kubernetes.io/instance": testName,
-							"app.kubernetes.io/name":     ExternalDNSBaseName,
-						},
-					},
-					Template: corev1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-						},
-						Spec: corev1.PodSpec{
-							ServiceAccountName: test.OperandName,
-							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
-							},
-							Tolerations: []corev1.Toleration{
-								{
-									Key:      masterNodeRoleLabel,
-									Operator: corev1.TolerationOpExists,
-									Effect:   corev1.TaintEffectNoSchedule,
-								},
-							},
-							Containers: []corev1.Container{
-								{
-									Name:  ExternalDNSContainerName,
-									Image: test.OperandImage,
-									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
-										"--txt-owner-id=external-dns-test",
-										"--zone-id-filter=my-dns-public-zone",
-										"--provider=aws",
-										"--source=service",
-										"--policy=sync",
-										"--registry=txt",
-										"--log-level=debug",
-										"--service-type-filter=LoadBalancer",
-										"--txt-prefix=external-dns-",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name:   "Exist and drifted",
-			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
-			existingObjects: []runtime.Object{
-				testSecret(),
-				&appsv1.Deployment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      test.OperandName,
-						Namespace: test.OperandNamespace,
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion:         operatorv1beta1.GroupVersion.String(),
-								Kind:               externalDNSKind,
-								Name:               test.Name,
-								Controller:         &test.TrueVar,
-								BlockOwnerDeletion: &test.TrueVar,
-							},
-						},
-					},
-					Spec: appsv1.DeploymentSpec{
-						Replicas: &replicas,
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/instance": testName,
-								"app.kubernetes.io/name":     ExternalDNSBaseName,
-							},
-						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{
-									"app.kubernetes.io/instance": testName,
-									"app.kubernetes.io/name":     ExternalDNSBaseName,
-								},
-								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
-							},
-							Spec: corev1.PodSpec{
-								ServiceAccountName: test.OperandName,
-								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
-								},
-								Tolerations: []corev1.Toleration{
-									{
-										Key:      masterNodeRoleLabel,
-										Operator: corev1.TolerationOpExists,
-										Effect:   corev1.TaintEffectNoSchedule,
-									},
-								},
-								Containers: []corev1.Container{
-									{
-										Name:  "external-dns-unexpected",
-										Image: test.OperandImage,
+										Env: []corev1.EnvVar{
+											{
+												Name:  awsCredentialEnvVarName,
+												Value: awsCredentialsFilePath,
+											},
+										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
 												Name:      awsCredentialsVolumeName,
@@ -3203,6 +3242,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									Effect:   corev1.TaintEffectNoSchedule,
 								},
 							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
@@ -3219,10 +3274,408 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										"--service-type-filter=LoadBalancer",
 										"--txt-prefix=external-dns-",
 									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
 									VolumeMounts: []corev1.VolumeMount{
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist and drifted",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
+			existingObjects: []runtime.Object{
+				testSecret(),
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
+								Kind:               externalDNSKind,
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
+								},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  "external-dns-unexpected",
+										Image: test.OperandImage,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=service",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--service-type-filter=LoadBalancer",
+										"--txt-prefix=external-dns-",
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "Exist and drifted on volumes and envs",
+			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
+			existingObjects: []runtime.Object{
+				testSecret(),
+				&appsv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      test.OperandName,
+						Namespace: test.OperandNamespace,
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         operatorv1beta1.GroupVersion.String(),
+								Kind:               externalDNSKind,
+								Name:               test.Name,
+								Controller:         &test.TrueVar,
+								BlockOwnerDeletion: &test.TrueVar,
+							},
+						},
+					},
+					Spec: appsv1.DeploymentSpec{
+						Replicas: &replicas,
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{
+									"app.kubernetes.io/instance": testName,
+									"app.kubernetes.io/name":     ExternalDNSBaseName,
+								},
+								Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+							},
+							Spec: corev1.PodSpec{
+								ServiceAccountName: test.OperandName,
+								NodeSelector: map[string]string{
+									osLabel:             linuxOS,
+									masterNodeRoleLabel: "",
+								},
+								Tolerations: []corev1.Toleration{
+									{
+										Key:      masterNodeRoleLabel,
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+								Volumes: []corev1.Volume{
+									{
+										Name: awsCredentialsVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-credentials-test",
+												Items: []corev1.KeyToPath{
+													{
+														Key:  "wrongkey",
+														Path: "wrongpath",
+													},
+												},
+											},
+										},
+									},
+									{
+										Name: "unsolicited-vol",
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "secretname",
+												Items: []corev1.KeyToPath{
+													{
+														Key:  "key",
+														Path: "path",
+													},
+												},
+											},
+										},
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name:  ExternalDNSContainerName,
+										Image: test.OperandImage,
+										Args: []string{
+											"--metrics-address=127.0.0.1:7979",
+											"--txt-owner-id=external-dns-test",
+											"--zone-id-filter=my-dns-public-zone",
+											"--provider=aws",
+											"--source=service",
+											"--policy=sync",
+											"--registry=txt",
+											"--log-level=debug",
+											"--service-type-filter=LoadBalancer",
+											"--txt-prefix=external-dns-",
+										},
+										Env: []corev1.EnvVar{
+											{
+												Name:  awsCredentialEnvVarName,
+												Value: "wrongvalue",
+											},
+											{
+												Name:  "unsolicited-env",
+												Value: "somevalue",
+											},
+										},
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      awsCredentialsVolumeName,
+												MountPath: "wrongpath",
+												ReadOnly:  true,
+											},
+											{
+												Name:      "unsolicited-vm",
+												MountPath: "somepath",
+												ReadOnly:  true,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedExist: true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{credentialsAnnotation: testSecretHash},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: awsCredentialsVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  awsCredentialsFileKey,
+													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "unsolicited-vol",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "secretname",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  "key",
+													Path: "path",
+												},
+											},
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=service",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--service-type-filter=LoadBalancer",
+										"--txt-prefix=external-dns-",
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  awsCredentialEnvVarName,
+											Value: awsCredentialsFilePath,
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      awsCredentialsVolumeName,
+											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "unsolicited-vm",
+											MountPath: "somepath",
 											ReadOnly:  true,
 										},
 									},
@@ -3265,7 +3718,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				t.Errorf("expected deployment's exist to be %t, got %t", tc.expectedExist, gotExist)
 			}
 			deplOpt := cmpopts.IgnoreFields(appsv1.Deployment{}, "ResourceVersion", "Kind", "APIVersion")
-			contOpt := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy", "Env")
+			contOpt := cmpopts.IgnoreFields(corev1.Container{}, "TerminationMessagePolicy", "ImagePullPolicy")
 			sortArgsOpt := cmp.Transformer("Sort", func(d appsv1.Deployment) appsv1.Deployment {
 				if len(d.Spec.Template.Spec.Containers) == 0 {
 					return d
