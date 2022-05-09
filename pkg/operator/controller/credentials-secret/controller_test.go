@@ -132,6 +132,66 @@ func TestReconcile(t *testing.T) {
 			expectedResult:  reconcile.Result{},
 		},
 		{
+			name:            "Target secret has expected keys for Infoblox provider",
+			existingObjects: []runtime.Object{testInfobloxExtDNSInstance(), testInfoBloxSrcSecret(), testInfoBloxTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+		},
+		{
+			name:            "Target secret doesn't have expected keys for Infoblox provider",
+			existingObjects: []runtime.Object{testInfobloxExtDNSInstance(), testInfobloxWrongSrcSecret(), testInfoBloxTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			errExpected:     true,
+		},
+		{
+			name:            "Target secret has expected keys for Azure provider",
+			existingObjects: []runtime.Object{testAzureExtDNSInstance(), testAzureSrcSecret(), testAzureTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+		},
+		{
+			name:            "Target secret doesn't have expected keys for Azure provider",
+			existingObjects: []runtime.Object{testAzureExtDNSInstance(), testAzureWrongSrcSecret(), testAzureTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			errExpected:     true,
+		},
+		{
+			name:            "Target secret has expected keys for GCP provider",
+			existingObjects: []runtime.Object{testGCPExtDNSInstance(), testGCPSrcSecret(), testGCPTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+		},
+		{
+			name:            "Target secret doesn't have expected keys for GCP provider",
+			existingObjects: []runtime.Object{testGCPExtDNSInstance(), testGCPWrongSecret(), testGCPTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			errExpected:     true,
+		},
+		{
+			name:            "Target secret has expected keys for Bluecat provider",
+			existingObjects: []runtime.Object{testBlueCatExtDNSInstance(), testBlueCatSrcSecret(), testBlueCatTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+		},
+		{
+			name:            "Target secret doesn't have expected keys for Bluecat provider",
+			existingObjects: []runtime.Object{testBlueCatExtDNSInstance(), testBlueCatWrongSecret(), testBlueCatTargetSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			errExpected:     true,
+		},
+		{
 			name: "Bootstrap when platform is OCP and it provided the credentials secret",
 			// externaldns without credentials specified + secret provided by OCP
 			existingObjects: []runtime.Object{testAWSExtDNSInstanceRouteSource(), testSrcSecretWhenPlatformOCP()},
@@ -474,6 +534,42 @@ func testAzureExtDNSInstanceNoSecret() *operatorv1beta1.ExternalDNS {
 	return extDNS
 }
 
+func testAzureSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"azure.json": []byte("val1"),
+		},
+	}
+}
+
+func testAzureWrongSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"wrong-azure-config.json": []byte("val1"),
+		},
+	}
+}
+
+func testAzureTargetSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"azure.json": []byte("val1"),
+		},
+	}
+}
+
 // BlueCat
 func testBlueCatExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
@@ -488,6 +584,42 @@ func testBlueCatExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	return extDNS
 }
 
+func testBlueCatSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"bluecat.json": []byte("val1"),
+		},
+	}
+}
+
+func testBlueCatWrongSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"wrong-bluecat-config.json": []byte("val1"),
+		},
+	}
+}
+
+func testBlueCatTargetSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"bluecat.json": []byte("val1"),
+		},
+	}
+}
+
 // InfoBlox
 func testInfobloxExtDNSInstance() *operatorv1beta1.ExternalDNS {
 	extDNS := testExtDNSInstance()
@@ -500,6 +632,45 @@ func testInfobloxExtDNSInstance() *operatorv1beta1.ExternalDNS {
 		},
 	}
 	return extDNS
+}
+
+func testInfoBloxSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME": []byte("val1"),
+			"EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD": []byte("val2"),
+		},
+	}
+}
+
+func testInfobloxWrongSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"WRONG_USERNAME": []byte("val1"),
+			"WRONG_PASSWORD": []byte("val2"),
+		},
+	}
+}
+
+func testInfoBloxTargetSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME": []byte("val1"),
+			"EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD": []byte("val2"),
+		},
+	}
 }
 
 // GCP
@@ -523,6 +694,42 @@ func testGCPExtDNSInstanceNoSecret() *operatorv1beta1.ExternalDNS {
 		Type: operatorv1beta1.ProviderTypeGCP,
 	}
 	return extDNS
+}
+
+func testGCPSrcSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"gcp-credentials.json": []byte("val1"),
+		},
+	}
+}
+
+func testGCPWrongSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSrcSecretName,
+			Namespace: testOperatorNamespace,
+		},
+		Data: map[string][]byte{
+			"wrong-gcp-config.json": []byte("val1"),
+		},
+	}
+}
+
+func testGCPTargetSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testTargetSecretName,
+			Namespace: testOperandNamespace,
+		},
+		Data: map[string][]byte{
+			"gcp-credentials.json": []byte("val1"),
+		},
+	}
 }
 
 func testSrcSecret() *corev1.Secret {
