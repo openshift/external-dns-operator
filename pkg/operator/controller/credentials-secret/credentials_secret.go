@@ -134,7 +134,8 @@ func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.Namesp
 	// copy all the keys from the source secret
 	secret.Data = sourceSecret.Data
 
-	if extDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+	switch extDNS.Spec.Provider.Type {
+	case operatorv1beta1.ProviderTypeAWS:
 		// Add credentials keys if doesn't exist
 		if creds, exists := secret.Data["credentials"]; !exists || len(creds) == 0 {
 			if len(sourceSecret.Data["aws_access_key_id"]) > 0 && len(sourceSecret.Data["aws_secret_access_key"]) > 0 {
@@ -145,6 +146,26 @@ func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.Namesp
 			} else {
 				return nil, fmt.Errorf("invalid secret for aws credentials")
 			}
+		}
+
+	case operatorv1beta1.ProviderTypeInfoblox:
+		if username, exists := sourceSecret.Data["EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME"]; !exists || len(username) == 0 {
+			return nil, fmt.Errorf("invalid credentials for infoblox: username not found")
+		}
+		if password, exists := sourceSecret.Data["EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD"]; !exists || len(password) == 0 {
+			return nil, fmt.Errorf("invalid credentials for infoblox: password not found")
+		}
+	case operatorv1beta1.ProviderTypeAzure:
+		if config, exists := sourceSecret.Data["azure.json"]; !exists || len(config) == 0 {
+			return nil, fmt.Errorf("invalid config for azure")
+		}
+	case operatorv1beta1.ProviderTypeGCP:
+		if creds, exists := sourceSecret.Data["gcp-credentials.json"]; !exists || len(creds) == 0 {
+			return nil, fmt.Errorf("invalid credentials for GCP")
+		}
+	case operatorv1beta1.ProviderTypeBlueCat:
+		if config, exists := sourceSecret.Data["bluecat.json"]; !exists || len(config) == 0 {
+			return nil, fmt.Errorf("invalid config for bluecat")
 		}
 	}
 
