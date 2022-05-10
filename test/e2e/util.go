@@ -134,7 +134,7 @@ func deploymentConditionMap(conditions ...appsv1.DeploymentCondition) map[string
 
 func waitForOperatorDeploymentStatusCondition(t *testing.T, cl client.Client, conditions ...appsv1.DeploymentCondition) error {
 	t.Helper()
-	return wait.PollImmediate(1*time.Second, 1*time.Minute, func() (bool, error) {
+	return wait.Poll(2*time.Second, 1*time.Minute, func() (bool, error) {
 		dep := &appsv1.Deployment{}
 		depNamespacedName := types.NamespacedName{
 			Name:      "external-dns-operator",
