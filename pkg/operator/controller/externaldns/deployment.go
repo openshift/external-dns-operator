@@ -53,6 +53,7 @@ const (
 	linuxOS                             = "linux"
 	azurePrivateDNSZonesResourceSubStr  = "privatednszones"
 	credentialsAnnotation               = "externaldns.olm.openshift.io/credentials-secret-hash"
+	trustedCAAnnotation                 = "externaldns.olm.openshift.io/trusted-ca-configmap-hash"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
@@ -72,7 +73,7 @@ var sourceStringTable = map[operatorv1beta1.ExternalDNSSourceType]string{
 	operatorv1beta1.SourceTypeService: "service",
 }
 
-type Deployment struct {
+type deploymentConfig struct {
 	namespace              string
 	image                  string
 	serviceAccount         *corev1.ServiceAccount
@@ -82,6 +83,7 @@ type Deployment struct {
 	secret                 string
 	secretHash             string
 	trustedCAConfigMapName string
+	trustedCAConfigMapHash string
 }
 
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
@@ -89,25 +91,42 @@ type Deployment struct {
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1beta1.ExternalDNS) (bool, *appsv1.Deployment, error) {
 
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
-	configMapName := ""
-	if r.config.InjectTrustedCA {
-		configMapName = controller.ExternalDNSDestTrustedCAConfigMapName("").Name
-	}
 
-	secretExists, secret, err := r.currentExternalDNSSecret(ctx, controller.ExternalDNSDestCredentialsSecretName(namespace, externalDNS.Name))
+	// build credentials secret's hash
+	secretNsName := controller.ExternalDNSDestCredentialsSecretName(namespace, externalDNS.Name)
+	secretExists, secret, err := r.currentExternalDNSSecret(ctx, secretNsName)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to get the target secret: %w", err)
 	}
 	if !secretExists {
-		return false, nil, fmt.Errorf("target secret not found: %w", err)
+		return false, nil, fmt.Errorf("target secret %q not found", secretNsName)
 	}
 
-	secretHash, err := buildSecretHash(secret.Data)
+	secretHash, err := buildMapHash(secret.Data)
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build the secret's hash: %w", err)
 	}
 
-	desired, err := desiredExternalDNSDeployment(&Deployment{
+	// build trusted CA configmap's hash
+	configMapName, configMapHash := "", ""
+	if r.config.InjectTrustedCA {
+		configMapNsName := controller.ExternalDNSDestTrustedCAConfigMapName(namespace)
+		configMapName = configMapNsName.Name
+		cmExists, cm, err := r.currentExternalDNSTrustedCAConfigMap(ctx, configMapNsName)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to get the target CA configmap: %w", err)
+		}
+		if !cmExists {
+			return false, nil, fmt.Errorf("target CA configmap %q not found", configMapNsName)
+		}
+
+		configMapHash, err = buildStringMapHash(cm.Data)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to build the CA configmap's hash: %w", err)
+		}
+	}
+
+	desired, err := desiredExternalDNSDeployment(&deploymentConfig{
 		namespace,
 		image,
 		serviceAccount,
@@ -117,6 +136,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		secret.Name,
 		secretHash,
 		configMapName,
+		configMapHash,
 	})
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
@@ -151,6 +171,18 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	return true, current, nil
 }
 
+// currentExternalDNSDeployment gets the current externalDNS deployment resource.
+func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName types.NamespacedName) (bool, *appsv1.Deployment, error) {
+	depl := &appsv1.Deployment{}
+	if err := r.client.Get(ctx, nsName, depl); err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil, nil
+		}
+		return false, nil, err
+	}
+	return true, depl, nil
+}
+
 // currentExternalDNSSecret gets the current externalDNS secret resource.
 func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.NamespacedName) (bool, *corev1.Secret, error) {
 	secret := &corev1.Secret{}
@@ -164,26 +196,27 @@ func (r *reconciler) currentExternalDNSSecret(ctx context.Context, nsName types.
 	return true, secret, nil
 }
 
-// currentExternalDNSDeployment gets the current externalDNS deployment resource.
-func (r *reconciler) currentExternalDNSDeployment(ctx context.Context, nsName types.NamespacedName) (bool, *appsv1.Deployment, error) {
-	depl := &appsv1.Deployment{}
-	if err := r.client.Get(ctx, nsName, depl); err != nil {
+// currentExternalDNSTrustedCAConfigMap gets the trusted CA configmap resource.
+func (r *reconciler) currentExternalDNSTrustedCAConfigMap(ctx context.Context, nsName types.NamespacedName) (bool, *corev1.ConfigMap, error) {
+	cm := &corev1.ConfigMap{}
+	if err := r.client.Get(ctx, nsName, cm); err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil, nil
 		}
 		return false, nil, err
 	}
-	return true, depl, nil
+
+	return true, cm, nil
 }
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
-func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, error) {
+func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, error) {
 
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
 		appNameLabel:     controller.ExternalDNSBaseName,
-		appInstanceLabel: deployment.externalDNS.Name,
+		appInstanceLabel: cfg.externalDNS.Name,
 	}
 
 	nodeSelectorLbl := map[string]string{
@@ -199,10 +232,18 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 		},
 	}
 
+	annotations := map[string]string{
+		credentialsAnnotation: cfg.secretHash,
+	}
+
+	if cfg.trustedCAConfigMapHash != "" {
+		annotations[trustedCAAnnotation] = cfg.trustedCAConfigMapHash
+	}
+
 	depl := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      controller.ExternalDNSResourceName(deployment.externalDNS),
-			Namespace: deployment.namespace,
+			Name:      controller.ExternalDNSResourceName(cfg.externalDNS),
+			Namespace: cfg.namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -211,13 +252,11 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: matchLbl,
-					Annotations: map[string]string{
-						credentialsAnnotation: deployment.secretHash,
-					},
+					Labels:      matchLbl,
+					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: deployment.serviceAccount.Name,
+					ServiceAccountName: cfg.serviceAccount.Name,
 					NodeSelector:       nodeSelectorLbl,
 					Tolerations:        tolerations,
 				},
@@ -225,31 +264,31 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 		},
 	}
 
-	provider, ok := providerStringTable[deployment.externalDNS.Spec.Provider.Type]
+	provider, ok := providerStringTable[cfg.externalDNS.Spec.Provider.Type]
 	if !ok {
-		return nil, fmt.Errorf("unsupported provider: %q", deployment.externalDNS.Spec.Provider.Type)
+		return nil, fmt.Errorf("unsupported provider: %q", cfg.externalDNS.Spec.Provider.Type)
 	}
-	source, ok := sourceStringTable[deployment.externalDNS.Spec.Source.Type]
+	source, ok := sourceStringTable[cfg.externalDNS.Spec.Source.Type]
 	if !ok {
-		return nil, fmt.Errorf("unsupported source type: %q", deployment.externalDNS.Spec.Source.Type)
+		return nil, fmt.Errorf("unsupported source type: %q", cfg.externalDNS.Spec.Source.Type)
 	}
 
-	vbld := newExternalDNSVolumeBuilder(provider, deployment.secret, deployment.trustedCAConfigMapName)
+	vbld := newExternalDNSVolumeBuilder(provider, cfg.secret, cfg.trustedCAConfigMapName)
 	volumes := vbld.build()
 	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, volumes...)
 
 	cbld := &externalDNSContainerBuilder{
-		image:          deployment.image,
+		image:          cfg.image,
 		provider:       provider,
 		source:         source,
-		secretName:     deployment.secret,
+		secretName:     cfg.secret,
 		volumes:        volumes,
-		externalDNS:    deployment.externalDNS,
-		isOpenShift:    deployment.isOpenShift,
-		platformStatus: deployment.platformStatus,
+		externalDNS:    cfg.externalDNS,
+		isOpenShift:    cfg.isOpenShift,
+		platformStatus: cfg.platformStatus,
 	}
 
-	if len(deployment.externalDNS.Spec.Zones) == 0 {
+	if len(cfg.externalDNS.Spec.Zones) == 0 {
 		// an empty list means publish to all zones
 		// this is a special case for Azure
 		// both public and private zones will need to be published to
@@ -266,7 +305,7 @@ func desiredExternalDNSDeployment(deployment *Deployment) (*appsv1.Deployment, e
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	} else {
-		for _, zone := range deployment.externalDNS.Spec.Zones {
+		for _, zone := range cfg.externalDNS.Spec.Zones {
 			container, err := cbld.build(zone)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build container for zone %s: %w", zone, err)
@@ -531,8 +570,8 @@ func equalStringSliceContent(sl1, sl2 []string) bool {
 	return cmp.Equal(copy1, copy2)
 }
 
-// buildSecretHash is a utility function to get a checksum of the resource data
-func buildSecretHash(data map[string][]byte) (string, error) {
+// buildMapHash is a utility function to get a checksum of a data map.
+func buildMapHash(data map[string][]byte) (string, error) {
 	keys := make([]string, 0, len(data))
 	for k := range data {
 		keys = append(keys, k)
@@ -550,4 +589,12 @@ func buildSecretHash(data map[string][]byte) (string, error) {
 		}
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func buildStringMapHash(data map[string]string) (string, error) {
+	m := map[string][]byte{}
+	for k, v := range data {
+		m[k] = []byte(v)
+	}
+	return buildMapHash(m)
 }

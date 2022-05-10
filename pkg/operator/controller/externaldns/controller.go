@@ -25,11 +25,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -37,6 +39,7 @@ import (
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controlleroperator "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	ctrlutils "github.com/openshift/external-dns-operator/pkg/operator/controller/utils"
 	operatorutils "github.com/openshift/external-dns-operator/pkg/utils"
 )
 
@@ -67,12 +70,13 @@ type reconciler struct {
 // New creates the externaldns controller from mgr and cfg. The controller will be pre-configured
 // to watch for ExternalDNS objects across all namespaces.
 func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
+	log := ctrl.Log.WithName(controlleroperator.ControllerName)
 
 	r := &reconciler{
 		config: cfg,
 		client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
-		log:    ctrl.Log.WithName(controlleroperator.ControllerName),
+		log:    log,
 	}
 
 	c, err := controller.New(controlleroperator.ControllerName, mgr, controller.Options{Reconciler: r})
@@ -95,6 +99,37 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		IsController: true,
 		OwnerType:    &operatorv1beta1.ExternalDNS{},
 	}); err != nil {
+		return nil, err
+	}
+
+	// enqueue all ExternalDNS instances if the trusted CA config map changed
+	// EnqueueRequestForOwner won't work here
+	// because the trusted CA configmap doesn't belong to any particular ExternalDNS instance
+	allExtDNSInstances := func(o client.Object) []reconcile.Request {
+		externalDNSList := &operatorv1beta1.ExternalDNSList{}
+		requests := []reconcile.Request{}
+		if err := mgr.GetCache().List(context.Background(), externalDNSList); err != nil {
+			log.Error(err, "failed to list externalDNS for trusted CA configmap")
+			return requests
+		}
+		for _, ed := range externalDNSList.Items {
+			log.Info("queueing externalDNS for trusted CA configmap", "name", ed.Name)
+			request := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name: ed.Name,
+				},
+			}
+			requests = append(requests, request)
+		}
+		return requests
+	}
+	if err := c.Watch(
+		&source.Kind{Type: &corev1.ConfigMap{}},
+		handler.EnqueueRequestsFromMapFunc(allExtDNSInstances),
+		// only the target trusted CA configmap
+		predicate.NewPredicateFuncs(ctrlutils.InNamespace(cfg.Namespace)),
+		predicate.NewPredicateFuncs(ctrlutils.HasName(controlleroperator.ExternalDNSDestTrustedCAConfigMapName(cfg.Namespace).Name)),
+	); err != nil {
 		return nil, err
 	}
 
@@ -139,6 +174,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
+
 	if err := r.updateExternalDNSStatus(ctx, externalDNS, currentDeployment); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to update externalDNS custom resource %s: %w", externalDNS.Name, err)
 	}

@@ -2202,7 +2202,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					}
 				}
 			}()
-			depl, err := desiredExternalDNSDeployment(&Deployment{
+			depl, err := desiredExternalDNSDeployment(&deploymentConfig{
 				test.OperandNamespace,
 				test.OperandImage,
 				serviceAccount,
@@ -2211,7 +2211,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				tc.inputPlatformStatus,
 				tc.inputSecretName,
 				testSecretHash,
-				tc.inputTrustedCAConfigMapName})
+				tc.inputTrustedCAConfigMapName, ""})
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2351,6 +2351,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		name               string
 		existingObjects    []runtime.Object
 		expectedExist      bool
+		injectTrustedCA    bool
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
 		extDNS             operatorv1beta1.ExternalDNS
@@ -2988,6 +2989,134 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "Does not exist with trusted CA configmap",
+			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
+			existingObjects: []runtime.Object{testSecret(), testTrustedCAConfigMap()},
+			injectTrustedCA: true,
+			expectedExist:   true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{
+								"externaldns.olm.openshift.io/credentials-secret-hash":   testSecretHash,
+								"externaldns.olm.openshift.io/trusted-ca-configmap-hash": "745c799ac442a05bf2ff97c75089850a00471d9dd51392ef9ff9f6ea610d1071",
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Volumes: []corev1.Volume{
+								{
+									Name: "trusted-ca",
+									VolumeSource: corev1.VolumeSource{
+										ConfigMap: &corev1.ConfigMapVolumeSource{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: test.TrustedCAConfigMapName,
+											},
+											Items: []corev1.KeyToPath{
+												{
+													Key:  "ca-bundle.crt",
+													Path: "tls-ca-bundle.pem",
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "aws-credentials",
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-credentials-test",
+											Items: []corev1.KeyToPath{
+												{
+													Key:  "credentials",
+													Path: "aws-credentials",
+												},
+											},
+										},
+									},
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--txt-prefix=external-dns-",
+									},
+									Env: []corev1.EnvVar{
+										{
+											Name:  "SSL_CERT_DIR",
+											Value: "/etc/pki/ca-trust/extracted/pem",
+										},
+										{
+											Name:  "AWS_SHARED_CREDENTIALS_FILE",
+											Value: "/etc/kubernetes/aws-credentials",
+										},
+									},
+									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      "trusted-ca",
+											MountPath: "/etc/pki/ca-trust/extracted/pem",
+											ReadOnly:  true,
+										},
+										{
+											Name:      "aws-credentials",
+											MountPath: "/etc/kubernetes",
 											ReadOnly:  true,
 										},
 									},
@@ -3702,6 +3831,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				client: cl,
 				scheme: test.Scheme,
 				log:    zap.New(zap.UseDevMode(true)),
+				config: Config{
+					InjectTrustedCA: tc.injectTrustedCA,
+				},
 			}
 
 			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, &tc.extDNS)
@@ -3761,7 +3893,7 @@ func TestBuildSecretHash(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotHash, err := buildSecretHash(tc.inputSecretData)
+			gotHash, err := buildMapHash(tc.inputSecretData)
 			if err != nil {
 				if !tc.errExpected {
 					t.Fatalf("unexpected error received: %v", err)
@@ -4043,6 +4175,18 @@ func testPlatformStatusGCP(projectID string) *configv1.PlatformStatus {
 		Type: configv1.GCPPlatformType,
 		GCP: &configv1.GCPPlatformStatus{
 			ProjectID: projectID,
+		},
+	}
+}
+
+func testTrustedCAConfigMap() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      test.TrustedCAConfigMapName,
+			Namespace: test.OperandNamespace,
+		},
+		Data: map[string]string{
+			"ca-bundle.crt": "--ca bundle--",
 		},
 	}
 }
