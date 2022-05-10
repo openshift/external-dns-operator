@@ -21,7 +21,7 @@ func makeExternalDNS(name string, domains []ExternalDNSDomain) *ExternalDNS {
 			},
 			Source: ExternalDNSSource{
 				ExternalDNSSourceUnion: ExternalDNSSourceUnion{
-					Type: SourceTypeCRD,
+					Type: SourceTypeService,
 				},
 				HostnameAnnotationPolicy: HostnameAnnotationPolicyIgnore,
 				FQDNTemplate:             []string{"{{.Name}}"},
@@ -269,12 +269,22 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 				},
 			)
 			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS}
-			resource.Spec.Source = ExternalDNSSource{HostnameAnnotationPolicy: HostnameAnnotationPolicyIgnore, ExternalDNSSourceUnion: ExternalDNSSourceUnion{Type: SourceTypeCRD}}
+			resource.Spec.Source = ExternalDNSSource{HostnameAnnotationPolicy: HostnameAnnotationPolicyIgnore, ExternalDNSSourceUnion: ExternalDNSSourceUnion{Type: SourceTypeService}}
 			err := k8sClient.Create(context.Background(), resource)
 			Expect(err).ShouldNot(Succeed())
 			Expect(err.Error()).Should(ContainSubstring(`"Pattern" cannot be empty when match type is "Pattern"`))
 			Expect(err.Error()).Should(ContainSubstring(`"fqdnTemplate" must be specified when "hostnameAnnotation" is "Ignore"`))
 			Expect(err.Error()).Should(ContainSubstring(`credentials secret must be specified when provider type is AWS`))
+		})
+	})
+
+	Context("resource with crd source", func() {
+		It("should be rejected as not implemented", func() {
+			resource := makeExternalDNS("test-crd-source", nil)
+			resource.Spec.Source.Type = SourceTypeCRD
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("CRD source is not implemented"))
 		})
 	})
 })
