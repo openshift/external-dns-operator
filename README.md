@@ -6,6 +6,7 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
     - [Preparing the environment](#preparing-the-environment)
     - [Installing the ExternalDNS Operator by building and pushing the Operator image to a registry](#installing-the-externaldns-operator-by-building-and-pushing-the-operator-image-to-a-registry)
     - [Installing the ExternalDNS Operator using a custom index image on OperatorHub](#installing-the-externaldns-operator-using-a-custom-index-image-on-operatorhub)
+- [Using custom operand image](#using-custom-operand-image)
 - [Running end-to-end tests manually](#running-end-to-end-tests-manually)
 - [Proxy support](#proxy-support)
 
@@ -37,7 +38,7 @@ Prepare your environment for the installation commands.
    make image-build image-push
    ```
 
-2. You may need to link the registry secret to `external-dns-operator` service account if the image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
+2. _Optional_: you may need to link the registry secret to `external-dns-operator` service account if the image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
 
     a. Create a secret with authentication details of your image registry:
     ```sh
@@ -62,6 +63,7 @@ Prepare your environment for the installation commands.
    hack/generate-certs.sh --service webhook-service --webhook validating-webhook-configuration \
    --secret webhook-server-cert --namespace external-dns-operator
    ```
+   *Note*: you may need to wait for the retry of the volume mount in the operator's POD
 
 5. Now you can deploy an instance of ExternalDNS:
     * Run the following command to create the credentials secret for AWS:
@@ -81,8 +83,6 @@ Prepare your environment for the installation commands.
 
 
 ### Installing the `ExternalDNS` Operator using a custom index image on OperatorHub
-**Note**: The below procedure works best with `podman` as container engine
-    
 1. Build and push the operator image to the registry:
     ```sh
     export IMG=${REGISTRY}/${REPOSITORY}/external-dns-operator:${VERSION}
@@ -101,7 +101,7 @@ Prepare your environment for the installation commands.
    make index-image-build index-image-push
    ```
 
-4. You may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
+4. _Optional_: you may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
 
     a. Create a secret with authentication details of your image registry:
     ```sh
@@ -110,7 +110,7 @@ Prepare your environment for the installation commands.
     b. Link the secret to `default` service account:
     ```sh
     oc -n openshift-marketplace secrets link default extdns-olm-secret --for=pull
-    ````
+    ```
 
 5. Create the `CatalogSource` object:
    ```sh
@@ -160,8 +160,42 @@ Prepare your environment for the installation commands.
       sourceNamespace: openshift-marketplace
     EOF
     ```
+    *Note*: The steps starting from the 7th can be replaced with the following actions in the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS Operator`,  and install it in the `external-dns-operator` namespace.
 
-**Note**: The steps starting from the 6th can be replaced with the following actions in the web console: Navigate to  `Operators` -> `OperatorHub`, search for the `ExternalDNS Operator`,  and install it in the `external-dns-operator` namespace.
+10. Now you can deploy an instance of ExternalDNS:
+    ```sh
+    # for AWS
+    oc apply -k config/samples/aws
+    ```
+    *Note*: For other providers, see `config/samples/`.
+
+## Using custom operand image
+1. _Optional_: you may need to link the registry secret to the operand's service account if your custom image is not public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)):
+
+    a. Create a secret with authentication details of your image registry:
+    ```sh
+    oc -n external-dns-operator create secret generic extdns-pull-secret --type=kubernetes.io/dockercfg --from-file=.dockercfg=${XDG_RUNTIME_DIR}/containers/auth.json
+    ```
+    b. Find the service account of your operand:
+    ```sh
+    oc -n external-dns-operator get sa | grep external-dns
+    ```
+    c. Link the secret to found service account:
+    ```sh
+    oc -n external-dns-operator secrets link external-dns-sample-aws extdns-pull-secret --for=pull
+    ```
+
+2. Patch `RELATED_IMAGE_EXTERNAL_DNS` environment variable's value with your custom operand image:
+    - In the operator's deployment:
+    ```sh
+    # "external-dns-operator" container has index 0
+    # "RELATED_IMAGE_EXTERNAL_DNS" environment variable has index 1
+    oc -n external-dns-operator patch deployment external-dns-operator --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/env/1/value", "value":"<CUSTOM_IMAGE_TAG>"}]'
+    ```
+    - Or in the operator's subscription:
+    ```sh
+    oc -n external-dns-operator patch subscription external-dns-operator --type='json' -p='[{"op": "add", "path": "/spec/config", "value":{"env":[{"name":"RELATED_IMAGE_EXTERNAL_DNS","value":"<CUSTOM_IMAGE_TAG>"}]}}]'
+    ```
 
 ## Running end-to-end tests manually
 
