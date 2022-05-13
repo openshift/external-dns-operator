@@ -48,13 +48,13 @@ var _ webhook.Validator = &ExternalDNS{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ExternalDNS) ValidateCreate() error {
 	webhookLog.Info("validate create", "name", r.Name)
-	return r.validate()
+	return r.validate(nil)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ExternalDNS) ValidateUpdate(_ runtime.Object) error {
+func (r *ExternalDNS) ValidateUpdate(old runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
-	return r.validate()
+	return r.validate(old)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -63,19 +63,31 @@ func (r *ExternalDNS) ValidateDelete() error {
 	return nil
 }
 
-func (r *ExternalDNS) validate() error {
-	var errs []error
-	if err := r.validateFilters(); err != nil {
-		errs = append(errs, err)
+func (r *ExternalDNS) validate(old runtime.Object) error {
+	return utilErrors.NewAggregate([]error{
+		r.validateFilters(),
+		r.validateSources(old),
+		r.validateHostnameAnnotationPolicy(),
+		r.validateProviderCredentials(),
+	})
+}
+
+func (r *ExternalDNS) validateSources(old runtime.Object) error {
+	if old != nil {
+		if oldR, ok := old.(*ExternalDNS); ok {
+			if oldR.Spec.Source.Type == SourceTypeCRD {
+				// allow the update if the resource was created
+				// before the CRD source validation was introduced
+				return nil
+			}
+		}
 	}
-	if err := r.validateHostnameAnnotationPolicy(); err != nil {
-		errs = append(errs, err)
+	switch r.Spec.Source.Type {
+	case SourceTypeCRD:
+		return errors.New("CRD source is not implemented")
 	}
 
-	if err := r.validateProviderCredentials(); err != nil {
-		errs = append(errs, err)
-	}
-	return utilErrors.NewAggregate(errs)
+	return nil
 }
 
 func (r *ExternalDNS) validateFilters() error {
