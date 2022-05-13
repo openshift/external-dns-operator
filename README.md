@@ -8,6 +8,7 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
     - [Installing the ExternalDNS Operator using a custom index image on OperatorHub](#installing-the-externaldns-operator-using-a-custom-index-image-on-operatorhub)
 - [Running end-to-end tests manually](#running-end-to-end-tests-manually)
 - [Proxy support](#proxy-support)
+- [Metrics](#metrics)
 
 ## Deploying the `ExternalDNS` Operator
 The following procedure describes how to deploy the `ExternalDNS` Operator for AWS.     
@@ -129,6 +130,7 @@ Prepare your environment for the installation commands.
 6. Create the operator namespace:
     ```sh
     oc create namespace external-dns-operator
+    oc label namespace external-dns-operator openshift.io/cluster-monitoring=true
     ```
 
 7. Create the `OperatorGroup` object to scope the operator to `external-dns-operator` namespace:
@@ -194,3 +196,20 @@ Prepare your environment for the installation commands.
 ## Proxy support
 
 [Configuring proxy support for ExternalDNS Operator](./docs/proxy.md)
+
+## Metrics
+
+The ExternalDNS Operator exposes [controller-runtime metrics](https://book.kubebuilder.io/reference/metrics.html) in the format expected by [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
+`ServiceMonitor` object is created in the operator's namespace (by default `external-dns-operator`), make sure that your instance of the Prometheus Operator is properly configured to find it.     
+You can check `.spec.serviceMonitorNamespaceSelector` and `.spec.serviceMonitorSelector` fields of `prometheus` resource and edit the operator's namespace or service monitor accordingly:
+```sh
+kubectl -n monitoring get prometheus k8s --template='{{.spec.serviceMonitorNamespaceSelector}}{{"\n"}}{{.spec.serviceMonitorSelector}}{{"\n"}}'
+map[matchLabels:map[openshift.io/cluster-monitoring:true]]
+map[]
+```
+For OpenShift:
+```sh
+oc -n openshift-monitoring get prometheus k8s --template='{{.spec.serviceMonitorNamespaceSelector}}{{"\n"}}{{.spec.serviceMonitorSelector}}{{"\n"}}'
+map[matchLabels:map[openshift.io/cluster-monitoring:true]]
+map[]
+```

@@ -20,3 +20,5 @@ resources:
 - operand_rolebinding.yaml
 - externaldns_viewer_role.yaml
 - externaldns_editor_role.yaml
+- prometheus_role.yaml
+- prometheus_role_binding.yaml

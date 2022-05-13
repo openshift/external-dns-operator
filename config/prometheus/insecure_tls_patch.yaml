@@ -1,3 +1,5 @@
+
+# Prometheus Monitor Service (Metrics)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -13,8 +15,7 @@ spec:
       interval: 30s
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
-        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-        serverName: external-dns-operator-metrics-service.external-dns-operator.svc
+        insecureSkipVerify: true
   namespaceSelector:
     matchNames:
     - external-dns-operator

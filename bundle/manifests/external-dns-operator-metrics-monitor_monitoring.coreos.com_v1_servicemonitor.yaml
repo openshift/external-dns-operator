@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    name: external-dns-operator
+  name: external-dns-operator-metrics-monitor
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    path: /metrics
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: external-dns-operator-metrics-service.external-dns-operator.svc
+  namespaceSelector:
+    matchNames:
+    - external-dns-operator
+  selector:
+    matchLabels:
+      name: external-dns-operator
