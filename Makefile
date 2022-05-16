@@ -156,6 +156,10 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=${IMG}
 	# webhook volume and service are added explicilty so that they don't land in the bundle where it's managed by OLM
 	cd config/default && $(KUSTOMIZE) edit add patch --path=manager_webhook_volume_patch.yaml
+	# disable tls config in service monitor
+	cd config/prometheus && $(KUSTOMIZE) edit add patch --path=insecure_tls_patch.yaml
+	# consume certificate from the service serving certificate
+	cd config/default && $(KUSTOMIZE) edit add patch --path=manager_insecure_tls_auth_proxy_patch.yaml
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.

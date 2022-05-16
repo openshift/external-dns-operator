@@ -3,6 +3,8 @@ kind: Service
 metadata:
   labels:
     name: external-dns-operator
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: external-dns-operator-metrics
   name: external-dns-operator-metrics-service
   namespace: external-dns-operator
 spec:

@@ -467,6 +467,8 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=10
+                - --tls-cert-file=/var/run/secrets/serving-cert/tls.crt
+                - --tls-private-key-file=/var/run/secrets/serving-cert/tls.key
                 image: quay.io/openshift/origin-kube-rbac-proxy:latest
                 name: kube-rbac-proxy
                 ports:
@@ -476,9 +478,18 @@ spec:
                   requests:
                     cpu: 100m
                     memory: 20Mi
+                volumeMounts:
+                - mountPath: /var/run/secrets/serving-cert
+                  name: metrics-cert
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: external-dns-operator
+              volumes:
+              - name: metrics-cert
+                secret:
+                  defaultMode: 420
+                  secretName: external-dns-operator-metrics
       permissions:
       - rules:
         - apiGroups:
