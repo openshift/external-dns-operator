@@ -54,7 +54,7 @@ qe-cvs4g-private-zone qe.gcp.devcluster.openshift.com
 10. Create [ExternalDNS CR](https://github.com/openshift/external-dns-operator/blob/main/config/samples/gcp/operator_v1beta1_externaldns_openshift.yaml) as follows:
 ```bash
 $ cat <<EOF | oc create -f -
-apiVersion: externaldns.olm.openshift.io/v1beta1
+apiVersion: externaldns.olm.openshift.io/v1alpha1
 kind: ExternalDNS
 metadata:
   name: sample-gcp
