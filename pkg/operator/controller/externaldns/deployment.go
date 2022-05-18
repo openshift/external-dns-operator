@@ -25,6 +25,7 @@ import (
 	"sort"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -89,7 +90,6 @@ type deploymentConfig struct {
 // ensureExternalDNSDeployment ensures that the externalDNS deployment exists.
 // Returns a Boolean value indicating whether the deployment exists, a pointer to the deployment, and an error when relevant.
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, externalDNS *operatorv1beta1.ExternalDNS) (bool, *appsv1.Deployment, error) {
-
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
 	// build credentials secret's hash
@@ -211,7 +211,6 @@ func (r *reconciler) currentExternalDNSTrustedCAConfigMap(ctx context.Context, n
 
 // desiredExternalDNSDeployment returns the desired deployment resource.
 func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, error) {
-
 	replicas := int32(1)
 
 	matchLbl := map[string]string{
@@ -411,6 +410,11 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 				updated.Spec.Template.Spec.Containers[currCont.Index].VolumeMounts = updatedVolumeMounts
 				changed = true
 			}
+			if scChanged, updatedContext := securityContextChanged(currCont.SecurityContext, updated.Spec.Template.Spec.Containers[currCont.Index].SecurityContext, expCont.SecurityContext); scChanged {
+				updated.Spec.Template.Spec.Containers[currCont.Index].SecurityContext = updatedContext
+				changed = true
+			}
+
 		} else {
 			// if the current container is not expected: let's not dig deeper - reset all
 			updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
@@ -597,4 +601,78 @@ func buildStringMapHash(data map[string]string) (string, error) {
 		m[k] = []byte(v)
 	}
 	return buildMapHash(m)
+}
+
+func securityContextChanged(current, updated, desired *corev1.SecurityContext) (bool, *corev1.SecurityContext) {
+	changed := false
+
+	if desired == nil {
+		return false, nil
+	}
+
+	if updated == nil {
+		return true, desired
+	}
+
+	if current == nil {
+		return true, desired
+	}
+
+	if desired.Capabilities != nil {
+		cmpCapabilities := cmpopts.SortSlices(func(a, b corev1.Capability) bool { return a < b })
+		if current.Capabilities == nil {
+			updated.Capabilities = desired.Capabilities
+			changed = true
+		} else {
+			if !cmp.Equal(desired.Capabilities.Add, current.Capabilities.Add, cmpCapabilities) {
+				updated.Capabilities.Add = desired.Capabilities.Add
+				changed = true
+			}
+			if !cmp.Equal(desired.Capabilities.Drop, current.Capabilities.Drop, cmpCapabilities) {
+				updated.Capabilities.Drop = desired.Capabilities.Drop
+				changed = true
+			}
+		}
+	}
+
+	if !equalBoolPtr(current.RunAsNonRoot, desired.RunAsNonRoot) {
+		updated.RunAsNonRoot = desired.RunAsNonRoot
+		changed = true
+	}
+
+	if !equalBoolPtr(current.Privileged, desired.Privileged) {
+		updated.Privileged = desired.Privileged
+		changed = true
+	}
+	if !equalBoolPtr(current.AllowPrivilegeEscalation, desired.AllowPrivilegeEscalation) {
+		updated.AllowPrivilegeEscalation = desired.AllowPrivilegeEscalation
+		changed = true
+	}
+
+	if desired.SeccompProfile != nil {
+		if current.SeccompProfile == nil {
+			updated.SeccompProfile = desired.SeccompProfile
+			changed = true
+		} else if desired.SeccompProfile.Type != "" && desired.SeccompProfile.Type != current.SeccompProfile.Type {
+			updated.SeccompProfile = desired.SeccompProfile
+			changed = true
+		}
+	}
+
+	return changed, updated
+}
+
+func equalBoolPtr(current, desired *bool) bool {
+	if desired == nil {
+		return true
+	}
+
+	if current == nil {
+		return false
+	}
+
+	if *current != *desired {
+		return false
+	}
+	return true
 }
