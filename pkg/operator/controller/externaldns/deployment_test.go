@@ -2947,8 +2947,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 	testCases := []struct {
 		name               string
 		existingObjects    []runtime.Object
+		credSecret         *corev1.Secret
+		trustCAConfigMap   *corev1.ConfigMap
 		expectedExist      bool
-		injectTrustedCA    bool
 		expectedDeployment appsv1.Deployment
 		errExpected        bool
 		extDNS             operatorv1beta1.ExternalDNS
@@ -2957,7 +2958,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		{
 			name:            "Does not exist with route source",
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
-			existingObjects: []runtime.Object{testSecret()},
+			existingObjects: []runtime.Object{},
+			credSecret:      testSecret(),
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3068,7 +3070,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist as expected with route source",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -3174,6 +3175,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:    testSecret(),
 			expectedExist: true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3284,7 +3286,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist as expected with one Router Names added as flag",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "default"),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -3389,6 +3390,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:     testSecret(),
 			ocpRouterNames: []string{"default"},
 			expectedExist:  true,
 			expectedDeployment: appsv1.Deployment{
@@ -3501,7 +3503,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist and drifted with route source",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -3556,6 +3557,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:    testSecret(),
 			expectedExist: true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3663,11 +3665,12 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:            "Does not exist with trusted CA configmap",
-			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
-			existingObjects: []runtime.Object{testSecret(), testTrustedCAConfigMap()},
-			injectTrustedCA: true,
-			expectedExist:   true,
+			name:             "Does not exist with trusted CA configmap",
+			extDNS:           *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
+			existingObjects:  []runtime.Object{},
+			credSecret:       testSecret(),
+			trustCAConfigMap: testTrustedCAConfigMap(),
+			expectedExist:    true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      test.OperandName,
@@ -3803,7 +3806,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 		},
 		{
 			name:            "Does not exist",
-			existingObjects: []runtime.Object{testSecret()},
+			existingObjects: []runtime.Object{},
+			credSecret:      testSecret(),
 			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			expectedExist:   true,
 			expectedDeployment: appsv1.Deployment{
@@ -3916,7 +3920,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist as expected",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -4012,6 +4015,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:    testSecret(),
 			expectedExist: true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4123,7 +4127,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist and drifted",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -4177,6 +4180,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:    testSecret(),
 			expectedExist: true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4289,7 +4293,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			name:   "Exist and drifted on volumes and envs",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
 			existingObjects: []runtime.Object{
-				testSecret(),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      test.OperandName,
@@ -4408,6 +4411,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 					},
 				},
 			},
+			credSecret:    testSecret(),
 			expectedExist: true,
 			expectedDeployment: appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4534,13 +4538,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:            "Secret does not exist",
-			extDNS:          *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
-			existingObjects: []runtime.Object{},
-			expectedExist:   false,
-			errExpected:     true,
-		},
 	}
 
 	for _, tc := range testCases {
@@ -4550,12 +4547,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				client: cl,
 				scheme: test.Scheme,
 				log:    zap.New(zap.UseDevMode(true)),
-				config: Config{
-					InjectTrustedCA: tc.injectTrustedCA,
-				},
 			}
 
-			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, &tc.extDNS)
+			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, tc.credSecret, tc.trustCAConfigMap, &tc.extDNS)
 			if err != nil {
 				if !tc.errExpected {
 					t.Fatalf("unexpected error received: %v", err)

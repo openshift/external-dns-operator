@@ -24,15 +24,17 @@ const (
 	ExternalDNSDeploymentAvailableConditionType            = "DeploymentAvailable"
 	ExternalDNSDeploymentReplicasMinAvailableConditionType = "DeploymentReplicasMinAvailable"
 	ExternalDNSDeploymentReplicasAllAvailableConditionType = "DeploymentReplicasAllAvailable"
+	ExternalDNSCredentialsSecretExistsConditionType        = "CredentialsSecretExists"
 )
 
 // clock is to enable unit testing
 var clock utilclock.Clock = utilclock.RealClock{}
 
-// updateExternalDNSStatus recomputes all conditions given the current deployment and its status
-// and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
-func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1beta1.ExternalDNS, currentDeployment *appsv1.Deployment) error {
+// updateExternalDNSStatus updates the status of the given externaldns instance with
+// the status of the operand deployment and the credentials secret.
+func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *operatorv1beta1.ExternalDNS, currentDeployment *appsv1.Deployment, secretExists bool) error {
 	extDNSWithStatus := externalDNS.DeepCopy()
+	// deployment
 	if currentDeployment != nil {
 		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions,
 			computeDeploymentAvailableCondition(currentDeployment),
@@ -40,9 +42,19 @@ func (r *reconciler) updateExternalDNSStatus(ctx context.Context, externalDNS *o
 			computeAllReplicasCondition(currentDeployment),
 			computeDeploymentPodsScheduledCondition(ctx, r.client, currentDeployment),
 		)
-	} else {
-		extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, createDeploymentAvailabilityUnknownCondition())
 	}
+	// credentials secret
+	secretExistsCond := createCredentialsSecretExistsCondition()
+	if !secretExists {
+		secretExistsCond.Status = metav1.ConditionFalse
+		secretExistsCond.Reason = "SecretNotFound"
+		// we don't show the name of the secret deliberately
+		// to not mislead the user because the name of the source and target secrets are different
+		// by showing this condition we invite the user to check the logs and see the full picture
+		secretExistsCond.Message = "The credentials secret not found."
+	}
+	extDNSWithStatus.Status.Conditions = mergeConditions(extDNSWithStatus.Status.Conditions, secretExistsCond)
+
 	extDNSWithStatus.Status.ObservedGeneration = extDNSWithStatus.Generation
 	extDNSWithStatus.Status.Zones = extDNSWithStatus.Spec.Zones
 	if !externalDNSStatusesEqual(extDNSWithStatus.Status, externalDNS.Status) {
@@ -307,6 +319,15 @@ func createPodsScheduledUnknownCondition(reason, message string) metav1.Conditio
 		Status:  metav1.ConditionUnknown,
 		Reason:  reason,
 		Message: message,
+	}
+}
+
+func createCredentialsSecretExistsCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    ExternalDNSCredentialsSecretExistsConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "SecretFound",
+		Message: "The credentials secret has been found.",
 	}
 }
 

@@ -435,20 +435,29 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 	}
 	testCases := []struct {
 		name               string
-		existingDeployment appsv1.Deployment
+		existingDeployment *appsv1.Deployment
 		existingObjects    []runtime.Object
 		existingExtDNS     *operatorv1beta1.ExternalDNS
+		secretExists       bool
 		errExpected        bool
 		expectedResult     operatorv1beta1.ExternalDNS
 	}{
-		//nominal case
 		{
 			name:               "Nominal case",
-			existingDeployment: aDeployment,
+			existingDeployment: &aDeployment,
 			existingObjects:    append(fakeRuntimeObjectFromPodList(fakePodList()), &aDeployment, anExternalDNS),
 			existingExtDNS:     anExternalDNS,
+			secretExists:       true,
 			errExpected:        false,
 			expectedResult:     fakeExternalDNSWithStatus(),
+		},
+		{
+			name:            "Missing credentials secret",
+			existingObjects: append(fakeRuntimeObjectFromPodList(fakePodList()), anExternalDNS),
+			existingExtDNS:  anExternalDNS,
+			secretExists:    false,
+			errExpected:     false,
+			expectedResult:  fakeExternalDNSWithStatusSecretMissing(),
 		},
 	}
 
@@ -461,7 +470,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 			log:    zap.New(zap.UseDevMode(true)),
 		}
 
-		err := r.updateExternalDNSStatus(context.TODO(), tc.existingExtDNS, &tc.existingDeployment)
+		err := r.updateExternalDNSStatus(context.TODO(), tc.existingExtDNS, tc.existingDeployment, tc.secretExists)
 		if tc.errExpected && err == nil {
 			t.Error("expected an error but got none")
 		} else if !tc.errExpected {
@@ -596,16 +605,35 @@ func fakeExternalDNSWithStatus() operatorv1beta1.ExternalDNS {
 		Reason:  "DeploymentMinimumReplicasMet",
 		Message: "Minimum replicas requirement is met",
 	}
-	CondPodScheduled := metav1.Condition{
+	condPodScheduled := metav1.Condition{
 		Type:    ExternalDNSPodsScheduledConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  "AllPodsScheduled",
 		Message: "All pods are scheduled",
 	}
+	condSecretExists := metav1.Condition{
+		Type:    ExternalDNSCredentialsSecretExistsConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  "SecretFound",
+		Message: "The credentials secret has been found.",
+	}
 	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condDeploymentAvailable)
 	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condAllReplicaAvailable)
 	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condMinReplicaAvailable)
-	extDNS.Status.Conditions = append(extDNS.Status.Conditions, CondPodScheduled)
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condPodScheduled)
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, condSecretExists)
+
+	return *extDNS
+}
+
+func fakeExternalDNSWithStatusSecretMissing() operatorv1beta1.ExternalDNS {
+	extDNS := fakeExternalDNS()
+	extDNS.Status.Conditions = append(extDNS.Status.Conditions, metav1.Condition{
+		Type:    ExternalDNSCredentialsSecretExistsConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  "SecretNotFound",
+		Message: "The credentials secret not found.",
+	})
 
 	return *extDNS
 }
