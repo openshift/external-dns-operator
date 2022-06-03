@@ -41,7 +41,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          value: k8s.gcr.io/external-dns/external-dns:v0.10.2
+          value: quay.io/alebedev/openshift-external-dns:0.12.0-rc2
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           allowPrivilegeEscalation: false
