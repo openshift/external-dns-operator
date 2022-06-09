@@ -49,9 +49,7 @@ const (
 	openshiftClusterConfigName = "cluster"
 )
 
-var (
-	DefaultCertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
-)
+var DefaultCertDir = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 
 // Config is configuration of the operator.
 type Config struct {

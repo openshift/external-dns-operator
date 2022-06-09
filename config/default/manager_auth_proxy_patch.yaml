@@ -27,6 +27,15 @@ spec:
         - mountPath: /var/run/secrets/serving-cert
           name: metrics-cert
           readOnly: true
+        securityContext:
+          capabilities:
+            drop: 
+            - "ALL"
+          privileged: false
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: "RuntimeDefault"
       volumes:
       - name: metrics-cert
         secret:

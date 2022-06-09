@@ -19,13 +19,13 @@ package externaldnscontroller
 import (
 	"fmt"
 	"os"
-
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -53,6 +53,8 @@ const (
 	// SSL_CERT_DIR allows Golang's crypto library to override the default locations.
 	// https://pkg.go.dev/crypto/x509#SystemCertPool
 	sslCertDirEnvVar = "SSL_CERT_DIR"
+	// all capabilities in the container security context
+	allCapabilities = "ALL"
 	//
 	// AWS
 	//
@@ -133,6 +135,17 @@ func (b *externalDNSContainerBuilder) defaultContainer(name string) *corev1.Cont
 		Args:                     []string{},
 		ImagePullPolicy:          corev1.PullIfNotPresent,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{allCapabilities},
+			},
+			Privileged:               pointer.Bool(false),
+			RunAsNonRoot:             pointer.Bool(true),
+			AllowPrivilegeEscalation: pointer.Bool(false),
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		},
 	}
 }
 
@@ -234,7 +247,6 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	}
 
 	return nil
-
 }
 
 func (b *externalDNSContainerBuilder) domainFilters() ([]string, error) {

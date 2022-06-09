@@ -44,7 +44,14 @@ spec:
           value: k8s.gcr.io/external-dns/external-dns:v0.10.2
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
+          capabilities:
+            drop: 
+            - "ALL"
+          privileged: false
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
+          seccompProfile:
+            type: "RuntimeDefault"  
         resources:
           requests:
             cpu: 100m

@@ -55,6 +55,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
 CONTAINER_ENGINE ?= docker
+CONTAINER_PUSH_ARGS ?= $(if $(filter ${CONTAINER_ENGINE}, docker), , --tls-verify=${TLS_VERIFY})
 
 BUNDLE_DIR := bundle
 BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
@@ -141,14 +142,14 @@ image-build: test ## Build container image with the operator.
 	$(CONTAINER_ENGINE) build -t ${IMG} .
 
 image-push: ## Push container image with the operator.
-	$(CONTAINER_ENGINE) push ${IMG}  --tls-verify=${TLS_VERIFY}
+	$(CONTAINER_ENGINE) push ${IMG} ${CONTAINER_PUSH_ARGS}
 
 ##@ Deployment
 
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+uninstall: kustomize manifests ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.

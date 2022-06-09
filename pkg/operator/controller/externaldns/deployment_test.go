@@ -28,6 +28,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
@@ -152,6 +153,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								ReadOnly:  true,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -193,6 +205,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -268,6 +291,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: "/etc/pki/ca-trust/extracted/pem",
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -333,6 +367,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
 								MountPath: defaultConfigMountPath,
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
 							},
 						},
 					},
@@ -402,6 +447,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -443,6 +499,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -510,6 +577,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 					{
 						Name:  ExternalDNSContainerNoZones,
@@ -539,11 +617,21 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
 		},
-
 		{
 			name:             "Nominal GCP",
 			inputSecretName:  gcpSecret,
@@ -613,6 +701,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -654,6 +753,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -699,6 +809,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
 							"--google-project=external-dns-gcp-project",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -767,6 +888,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -808,6 +940,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--txt-prefix=external-dns-",
 							"--fqdn-template={{.Name}}.test.com",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -879,6 +1022,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -920,6 +1074,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -955,6 +1120,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--log-level=debug",
 							"--service-type-filter=LoadBalancer",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -993,6 +1169,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com,{{.Name}}.{{.Namespace}}.example.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1036,6 +1223,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 					{
 						Name:  "external-dns-n656hcdh5d9hf6q",
@@ -1057,6 +1255,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1101,6 +1310,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1141,6 +1361,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1184,6 +1415,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1226,6 +1468,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1295,6 +1548,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								ReadOnly:  true,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1331,6 +1595,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1399,6 +1674,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								ReadOnly:  true,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1461,6 +1747,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1497,6 +1794,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1559,6 +1867,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 					{
 						Name:  ExternalDNSContainerNoZones,
@@ -1581,6 +1900,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:      azureConfigVolumeName,
 								ReadOnly:  true,
 								MountPath: defaultConfigMountPath,
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
 							},
 						},
 					},
@@ -1651,6 +1981,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1687,6 +2028,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1750,6 +2102,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								MountPath: defaultConfigMountPath,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1786,6 +2149,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1852,6 +2226,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								},
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1888,6 +2273,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -1922,6 +2318,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--registry=txt",
 							"--log-level=debug",
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -1960,6 +2367,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 					{
 						Name:  "external-dns-n656hcdh5d9hf6q",
@@ -1976,6 +2394,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -2015,6 +2444,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -2050,6 +2490,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -2088,6 +2539,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -2125,6 +2587,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
 						},
 					},
 				},
@@ -2182,6 +2655,17 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Value: noProxy,
 							},
 						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
 					},
 				},
 			},
@@ -2211,7 +2695,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				tc.inputPlatformStatus,
 				tc.inputSecretName,
 				testSecretHash,
-				tc.inputTrustedCAConfigMapName, ""})
+				tc.inputTrustedCAConfigMapName, "",
+			})
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
 			}
@@ -2319,6 +2804,118 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			},
 			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
+		},
+		{
+			description: "if externalDNS security context is added",
+			expect:      true,
+			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+			}),
+			mutate: func(dep1 *appsv1.Deployment) {
+				dep1.Spec.Template.Spec.Containers = []corev1.Container{
+					testContainerWithSecurityContext(&corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{allCapabilities},
+						},
+						Privileged:               pointer.Bool(false),
+						RunAsNonRoot:             pointer.Bool(true),
+						AllowPrivilegeEscalation: pointer.Bool(false),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					}),
+				}
+			},
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainerWithSecurityContext(&corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{allCapabilities},
+					},
+					Privileged:               pointer.Bool(false),
+					RunAsNonRoot:             pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				}),
+			}),
+		},
+		{
+			description: "if externalDNS security context is updated",
+			expect:      true,
+			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainerWithSecurityContext(&corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{allCapabilities},
+					},
+					Privileged:               pointer.Bool(false),
+					RunAsNonRoot:             pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(true),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				}),
+			}),
+			mutate: func(dep1 *appsv1.Deployment) {
+				dep1.Spec.Template.Spec.Containers = []corev1.Container{
+					testContainerWithSecurityContext(&corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{allCapabilities},
+						},
+						Privileged:               pointer.Bool(false),
+						RunAsNonRoot:             pointer.Bool(true),
+						AllowPrivilegeEscalation: pointer.Bool(false),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					}),
+				}
+			},
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainerWithSecurityContext(&corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{allCapabilities},
+					},
+					Privileged:               pointer.Bool(false),
+					RunAsNonRoot:             pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				}),
+			}),
+		},
+		{
+			description: "if externalDNS security context is same",
+			expect:      false,
+			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainerWithSecurityContext(&corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{allCapabilities},
+					},
+					Privileged:               pointer.Bool(false),
+					RunAsNonRoot:             pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				}),
+			}),
+			mutate: func(dep *appsv1.Deployment) {
+			},
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainerWithSecurityContext(&corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{allCapabilities},
+					},
+					Privileged:               pointer.Bool(false),
+					RunAsNonRoot:             pointer.Bool(true),
+					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				}),
+			}),
 		},
 	}
 
@@ -2449,6 +3046,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -2548,6 +3156,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												ReadOnly:  true,
 											},
 										},
+										SecurityContext: &corev1.SecurityContext{
+											Capabilities: &corev1.Capabilities{
+												Drop: []corev1.Capability{allCapabilities},
+											},
+											Privileged:               pointer.Bool(false),
+											RunAsNonRoot:             pointer.Bool(true),
+											AllowPrivilegeEscalation: pointer.Bool(false),
+											SeccompProfile: &corev1.SeccompProfile{
+												Type: corev1.SeccompProfileTypeRuntimeDefault,
+											},
+										},
 									},
 								},
 							},
@@ -2641,6 +3260,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
 											ReadOnly:  true,
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
 									},
 								},
@@ -2741,6 +3371,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												ReadOnly:  true,
 											},
 										},
+										SecurityContext: &corev1.SecurityContext{
+											Capabilities: &corev1.Capabilities{
+												Drop: []corev1.Capability{allCapabilities},
+											},
+											Privileged:               pointer.Bool(false),
+											RunAsNonRoot:             pointer.Bool(true),
+											AllowPrivilegeEscalation: pointer.Bool(false),
+											SeccompProfile: &corev1.SeccompProfile{
+												Type: corev1.SeccompProfileTypeRuntimeDefault,
+											},
+										},
 									},
 								},
 							},
@@ -2836,6 +3477,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
 											ReadOnly:  true,
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
 									},
 								},
@@ -2992,6 +3644,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -3120,6 +3783,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -3218,6 +3892,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
 											ReadOnly:  true,
+										},
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
 									},
 								},
@@ -3416,6 +4101,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -3570,6 +4266,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -3577,6 +4284,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				},
 			},
 		},
+		// TODO: Add Exist and drifted on security context fields
 		{
 			name:   "Exist and drifted on volumes and envs",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeService, ""),
@@ -3808,6 +4516,17 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											ReadOnly:  true,
 										},
 									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
 								},
 							},
 						},
@@ -3910,6 +4629,268 @@ func TestBuildSecretHash(t *testing.T) {
 	}
 }
 
+func TestSecurityContextChanged(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		currentSC *corev1.SecurityContext
+		desiredSC *corev1.SecurityContext
+		updatedSC *corev1.SecurityContext
+		changed   bool
+	}{
+		{
+			name:      "current RunAsNonRoot is nil",
+			currentSC: &corev1.SecurityContext{},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			// should be ignored to handle defaulting
+			name:      "desired RunAsNonRoot is nil",
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			desiredSC: &corev1.SecurityContext{},
+			updatedSC: &corev1.SecurityContext{},
+			changed:   false,
+		},
+		{
+			name:      "RunAsNonRoot changes true->false",
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "RunAsNonRoot changes false->true",
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "RunAsNonRoot changes is same",
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(true)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.BoolPtr(true)},
+			changed:   false,
+		},
+		{
+			name:      "current Privileged is nil",
+			currentSC: &corev1.SecurityContext{},
+			desiredSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			// should be ignored to handle defaulting
+			name:      "desired Privileged is nil",
+			desiredSC: &corev1.SecurityContext{},
+			currentSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			changed:   false,
+		},
+		{
+			name:      "Privileged changes true->false",
+			currentSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "Privileged changes false->true",
+			currentSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "Privileged is same",
+			currentSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(true)},
+			updatedSC: &corev1.SecurityContext{Privileged: pointer.BoolPtr(true)},
+			changed:   false,
+		},
+		{
+			name:      "current AllowPrivilegeEscalation is nil",
+			currentSC: &corev1.SecurityContext{},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			// should be ignored to handle defaulting
+			name:      "desired AllowPrivilegeEscalation is nil",
+			desiredSC: &corev1.SecurityContext{},
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			changed:   false,
+		},
+		{
+			name:      "AllowPrivilegeEscalation changes true->false",
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "AllowPrivilegeEscalation changes false->true",
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(false)},
+			changed:   true,
+		},
+		{
+			name:      "AllowPrivilegeEscalation is same",
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(true)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.BoolPtr(true)},
+			changed:   false,
+		},
+		{
+			name:      "Add Capabilities are the same",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"C", "B", "A"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"C", "B", "A"}}},
+			changed:   false,
+		},
+		{
+			name:      "Add Capabilities are the different",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"C", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"C", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "current Capabilities are nil",
+			currentSC: &corev1.SecurityContext{},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			// ignore the desired because the capabilities might be defaulting or set by something else.
+			name:      "desired Capabilities are nil",
+			desiredSC: &corev1.SecurityContext{},
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			changed:   false,
+		},
+		{
+			name:      "current Add Capabilities are nil",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "desired Add Capabilities are nil",
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{}},
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"A", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "Drop Capabilities are the same",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"C", "B", "A"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"C", "B", "A"}}},
+			changed:   false,
+		},
+		{
+			name:      "Drop Capabilities are the different",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"C", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"C", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "current Drop Capabilities are nil",
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{}},
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "desired Drop Capabilities are nil",
+			desiredSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{}},
+			currentSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			updatedSC: &corev1.SecurityContext{Capabilities: &corev1.Capabilities{Drop: []corev1.Capability{"A", "B", "C"}}},
+			changed:   true,
+		},
+		{
+			name:      "current SeccompProfile is nil",
+			currentSC: &corev1.SecurityContext{},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			updatedSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			changed:   true,
+		},
+		{
+			// ignore the desired seccompprofile if it is being defaulted elsewhere
+			name:      "desired SeccompProfile is nil",
+			desiredSC: &corev1.SecurityContext{},
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			updatedSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			changed:   false,
+		},
+		{
+			name:      "SeccompProfile is different",
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			updatedSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeLocalhost}},
+			changed:   true,
+		},
+		{
+			name:      "SeccompProfile is same",
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			updatedSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			changed:   false,
+		},
+		{
+			name:      "SeccompProfile is empty",
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{}},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			updatedSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			changed:   true,
+		},
+		{
+			name:      "Only update SeccompProfile in security context",
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{}},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			updatedSC: &corev1.SecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+				RunAsUser:      pointer.Int64(1007),
+			},
+			changed: true,
+		},
+		{
+			name:      "Don't update security context if diff in other fields",
+			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}, RunAsUser: pointer.Int64(1007)},
+			updatedSC: &corev1.SecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
+			},
+			changed: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			changed, updated := securityContextChanged(tc.currentSC, tc.updatedSC, tc.desiredSC)
+			if changed != tc.changed {
+				t.Errorf("expected %v, instead was %v", tc.changed, changed)
+			}
+
+			if tc.changed {
+				if !equality.Semantic.DeepDerivative(tc.desiredSC, updated) {
+					t.Errorf("expected %v, instead was %v", tc.desiredSC, updated)
+				}
+
+				if !equality.Semantic.DeepDerivative(tc.updatedSC, updated) {
+					t.Errorf("expected %v, instead was %v", tc.updatedSC, updated)
+				}
+			}
+		})
+	}
+}
+
 func testDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -3975,6 +4956,12 @@ func testContainer() corev1.Container {
 	}
 }
 
+func testContainerWithSecurityContext(sc *corev1.SecurityContext) corev1.Container {
+	cont := testContainer()
+	cont.SecurityContext = sc
+	return cont
+}
+
 func testContainerWithName(name string) corev1.Container {
 	cont := testContainer()
 	cont.Name = name
@@ -3999,7 +4986,8 @@ func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,
 	labelFilter *metav1.LabelSelector,
 	hostnamePolicy operatorv1beta1.HostnameAnnotationPolicy,
 	fqdnTemplate []string,
-	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	zones []string, routerName string,
+) *operatorv1beta1.ExternalDNS {
 	extDnsSource := &operatorv1beta1.ExternalDNSSource{
 		ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
 			Type: source,
@@ -4049,14 +5037,16 @@ func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,
 func testExternalDNSHostnameIgnore(provider operatorv1beta1.ExternalDNSProviderType,
 	source operatorv1beta1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	zones []string, routerName string,
+) *operatorv1beta1.ExternalDNS {
 	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1beta1.HostnameAnnotationPolicyIgnore, []string{"{{.Name}}.test.com"}, zones, routerName)
 }
 
 func testExternalDNSHostnameAllow(provider operatorv1beta1.ExternalDNSProviderType,
 	source operatorv1beta1.ExternalDNSSourceType,
 	svcTypes []corev1.ServiceType,
-	zones []string, routerName string) *operatorv1beta1.ExternalDNS {
+	zones []string, routerName string,
+) *operatorv1beta1.ExternalDNS {
 	return testExternalDNSInstance(provider, source, svcTypes, nil, operatorv1beta1.HostnameAnnotationPolicyAllow, nil, zones, routerName)
 }
 
@@ -4121,8 +5111,8 @@ func testGCPExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv
 func testCreateDNSFromSourceWRTCloudProvider(source operatorv1beta1.ExternalDNSSourceType, providerType operatorv1beta1.ExternalDNSProviderType, zones []string, routerName string) *operatorv1beta1.ExternalDNS {
 	switch source {
 	case operatorv1beta1.SourceTypeService:
-		//we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
-		//then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
+		// we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
+		// then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
 		if zones != nil {
 			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, zones, routerName)
 		} else {
