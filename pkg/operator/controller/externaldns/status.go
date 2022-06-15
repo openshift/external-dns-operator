@@ -12,8 +12,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	utilclock "k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilclock "k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -27,7 +27,7 @@ const (
 )
 
 // clock is to enable unit testing
-var clock utilclock.Clock = utilclock.RealClock{}
+var clock utilclock.WithTickerAndDelayedExecution = utilclock.RealClock{}
 
 // updateExternalDNSStatus recomputes all conditions given the current deployment and its status
 // and pushes the new externalDNS custom resource with updated status through a call to the client.Update function
