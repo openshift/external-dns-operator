@@ -18,7 +18,9 @@ spec:
       name: external-dns-operator
   replicas: 1
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
   template:
     metadata:
       labels:
@@ -35,6 +37,7 @@ spec:
         - --operand-namespace=$(OPERATOR_NAMESPACE)
         - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
         - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
+        - --leader-elect
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:
@@ -45,13 +48,13 @@ spec:
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
-            drop: 
+            drop:
             - "ALL"
           privileged: false
           runAsNonRoot: true
           allowPrivilegeEscalation: false
           seccompProfile:
-            type: "RuntimeDefault"  
+            type: "RuntimeDefault"
         resources:
           requests:
             cpu: 100m

@@ -44,6 +44,7 @@ const (
 	DefaultTrustedCAConfigMapName  = ""
 	DefaultHealthProbeAddr         = ":9440"
 	DefaultRequeuePeriodSeconds    = 5
+	DefaultEnableLeaderElection    = false
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -93,6 +94,9 @@ type Config struct {
 
 	// RequeuePeriodSeconds is the number of seconds to wait after a failed reconciliation.
 	RequeuePeriodSeconds int
+
+	// EnableLeaderElection enables the controller runtime's leader election.
+	EnableLeaderElection bool
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields

@@ -98,6 +98,16 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
+	if err := c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1beta1.ExternalDNS{},
+	}); err != nil {
+		return nil, err
+	}
+
+	// secret replicated by the credentials controller
+	// needs to trigger the reconciliation of the corresponding ExternalDNS
+	// because of the annotation with the secret's hash in the operand deployment
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1beta1.ExternalDNS{},

@@ -91,6 +91,8 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		NewClient: func(_ cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
 			return client.New(config, options)
 		},
+		LeaderElection:   opCfg.EnableLeaderElection,
+		LeaderElectionID: "leaderelection.externaldns.olm.openshift.io",
 	}
 
 	mgr, err := ctrl.NewManager(cliCfg, mgrOpts)
