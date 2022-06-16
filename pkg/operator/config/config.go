@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -42,6 +43,7 @@ const (
 	DefaultEnablePlatformDetection = true
 	DefaultTrustedCAConfigMapName  = ""
 	DefaultHealthProbeAddr         = ":9440"
+	DefaultRequeuePeriodSeconds    = 5
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -88,6 +90,9 @@ type Config struct {
 	// HealthProbeBindAddress is the TCP address that the operator should bind to for
 	// serving health probes (readiness and liveness).
 	HealthProbeBindAddress string
+
+	// RequeuePeriodSeconds is the number of seconds to wait after a failed reconciliation.
+	RequeuePeriodSeconds int
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields
@@ -98,7 +103,10 @@ func (c *Config) DetectPlatform(kubeConfig *rest.Config) error {
 			return err
 		}
 
-		c.IsOpenShift = isOCP(kubeClient)
+		c.IsOpenShift, err = isOCP(kubeClient)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -120,20 +128,25 @@ func (c *Config) InjectTrustedCA() bool {
 	return len(strings.TrimSpace(c.TrustedCAConfigMapName)) != 0
 }
 
+// RequeuePeriod returns requeue period as time.Duration.
+func (c *Config) RequeuePeriod() time.Duration {
+	return time.Duration(c.RequeuePeriodSeconds) * time.Second
+}
+
 // isOCP returns true if the platform is OCP
-func isOCP(kubeClient discovery.DiscoveryInterface) bool {
+func isOCP(kubeClient discovery.DiscoveryInterface) (bool, error) {
 	// Since, CRD for OpenShift API Server was introduced in OCP v4.x we can verify if the current cluster is on OCP v4.x by
 	// ensuring that resource exists against Group(operator.openshift.io), Version(v1) and Kind(OpenShiftAPIServer)
 	// In case it doesn't exist we assume that external dns is running on non OCP 4.x environment
 	resources, err := kubeClient.ServerResourcesForGroupVersion(openshiftResourceGroup + "/" + openshiftResourceVersion)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	for _, apiResource := range resources.APIResources {
 		if apiResource.Kind == openshiftKind {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }

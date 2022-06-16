@@ -36,6 +36,7 @@ var isOpenShift bool
 
 func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) error {
 	isOpenShift = openshift
+	webhookLog.Info("Setting up the webhook", "IsOpenShift", isOpenShift)
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 

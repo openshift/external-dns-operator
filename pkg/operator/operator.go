@@ -121,6 +121,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		IsOpenShift:       opCfg.IsOpenShift,
 		PlatformStatus:    opCfg.PlatformStatus,
 		InjectTrustedCA:   opCfg.InjectTrustedCA(),
+		RequeuePeriod:     opCfg.RequeuePeriod(),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}

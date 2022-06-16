@@ -47,6 +47,7 @@ func main() {
 	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
 	flag.BoolVar(&opCfg.EnablePlatformDetection, "enable-platform-detection", operatorconfig.DefaultEnablePlatformDetection, "Enable the detection of the underlying platform. Defaults to true.")
 	flag.StringVar(&opCfg.HealthProbeBindAddress, "health-probe-bind-addr", operatorconfig.DefaultHealthProbeAddr, "The address the health endpoint binds to.")
+	flag.IntVar(&opCfg.RequeuePeriodSeconds, "requeue-period", operatorconfig.DefaultRequeuePeriodSeconds, "Requeue period for a failed reconciliation (in seconds).")
 	opts := zap.Options{
 		Development: true,
 	}
