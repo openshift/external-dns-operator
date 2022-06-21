@@ -1,6 +1,7 @@
 # Usage
 
 - [AWS](#aws)
+- [AWS GovCloud](#aws-govcloud)
 - [Infoblox](#infoblox)
 - [BlueCat](#bluecat)
 - [GCP](#gcp)
@@ -53,6 +54,10 @@ spec:
 
 Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
 manage DNS records in AWS Route53.
+
+## AWS GovCloud
+The operator makes the assumption that `ExternalDNS` instances which target GovCloud DNS also run on the GovCloud. This is needed to detect the AWS region.   
+As for the rest: the usage is exactly the same as for `AWS`.
 
 ## Infoblox
 

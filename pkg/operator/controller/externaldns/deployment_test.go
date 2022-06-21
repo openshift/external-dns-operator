@@ -307,6 +307,95 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:                "Nominal AWS Gov",
+			inputSecretName:     awsSecret,
+			inputExternalDNS:    testAWSExternalDNS(operatorv1beta1.SourceTypeService),
+			inputPlatformStatus: testPlatformStatusAWSGov("us-gov-west-1"),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: awsCredentialsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "awssecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  awsCredentialsFileKey,
+										Path: awsCredentialsFileName,
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=service",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--service-type-filter=NodePort",
+							"--service-type-filter=LoadBalancer",
+							"--service-type-filter=ClusterIP",
+							"--service-type-filter=ExternalName",
+							"--publish-internal-services",
+							"--ignore-hostname-annotation",
+							"--fqdn-template={{.Name}}.test.com",
+							"--txt-prefix=external-dns-",
+							"--aws-prefer-cname",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "AWS_REGION",
+								Value: "us-gov-west-1",
+							},
+							{
+								Name:  "AWS_SHARED_CREDENTIALS_FILE",
+								Value: "/etc/kubernetes/aws-credentials",
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      awsCredentialsVolumeName,
+								MountPath: awsCredentialsMountPath,
+								ReadOnly:  true,
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:             "Nominal Azure",
 			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeService),
@@ -5159,6 +5248,15 @@ func testPlatformStatusGCP(projectID string) *configv1.PlatformStatus {
 		Type: configv1.GCPPlatformType,
 		GCP: &configv1.GCPPlatformStatus{
 			ProjectID: projectID,
+		},
+	}
+}
+
+func testPlatformStatusAWSGov(region string) *configv1.PlatformStatus {
+	return &configv1.PlatformStatus{
+		Type: configv1.AWSPlatformType,
+		AWS: &configv1.AWSPlatformStatus{
+			Region: region,
 		},
 	}
 }

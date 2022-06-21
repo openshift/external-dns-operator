@@ -59,6 +59,7 @@ const (
 	// AWS
 	//
 	awsCredentialEnvVarName  = "AWS_SHARED_CREDENTIALS_FILE"
+	awsRegionEnvVarName      = "AWS_REGION"
 	awsCredentialsVolumeName = "aws-credentials"
 	awsCredentialsMountPath  = defaultConfigMountPath
 	awsCredentialsFileKey    = "credentials"
@@ -332,6 +333,13 @@ func (b *externalDNSContainerBuilder) fillProviderSpecificFields(zone string, co
 // fillAWSFields fills the given container with the data specific to AWS provider
 func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container) {
 	container.Args = addTXTPrefixFlag(container.Args)
+
+	if b.platformStatus != nil && b.platformStatus.AWS != nil && utils.IsUSGovAWSRegion(b.platformStatus.AWS.Region) {
+		// See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#govcloud-caveats
+		container.Env = append(container.Env, corev1.EnvVar{Name: awsRegionEnvVarName, Value: b.platformStatus.AWS.Region})
+		container.Args = append(container.Args, "--aws-prefer-cname")
+	}
+
 	// don't add empty credentials environment variables if no secret was given
 	if len(b.secretName) == 0 {
 		return

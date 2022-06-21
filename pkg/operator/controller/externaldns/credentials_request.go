@@ -19,20 +19,19 @@ package externaldnscontroller
 import (
 	"context"
 	"fmt"
-
 	"reflect"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
+	configv1 "github.com/openshift/api/config/v1"
 	cco "github.com/openshift/cloud-credential-operator/pkg/apis/cloudcredential/v1"
-
-	k8sv1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
+	"github.com/openshift/external-dns-operator/pkg/utils"
 )
 
 // ensureExternalCredentialsRequest ensures that the externalDNS credential request exists.
@@ -51,7 +50,7 @@ func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, exter
 		Name:      controller.SecretFromCloudCredentialsOperator,
 		Namespace: r.config.OperatorNamespace,
 	}
-	desired, err := desiredCredentialsRequest(name, secretName, externalDNS)
+	desired, err := desiredCredentialsRequest(name, secretName, externalDNS, r.config.PlatformStatus)
 	if err != nil {
 		return false, nil, err
 	}
@@ -72,38 +71,99 @@ func (r *reconciler) ensureExternalCredentialsRequest(ctx context.Context, exter
 	return true, current, nil
 }
 
+// currentExternalDNSCredentialsRequest returns true if credentials request exists.
+func (r *reconciler) currentExternalDNSCredentialsRequest(ctx context.Context, name types.NamespacedName) (bool, *cco.CredentialsRequest, error) {
+	cr := &cco.CredentialsRequest{}
+	if err := r.client.Get(ctx, name, cr); err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil, nil
+		}
+		return false, nil, err
+	}
+	return true, cr, nil
+}
+
+// createExternalDNSCredentialsRequest creates the given credentials request.
+func (r *reconciler) createExternalDNSCredentialsRequest(ctx context.Context, desired *cco.CredentialsRequest) error {
+	if err := r.client.Create(ctx, desired); err != nil {
+		return fmt.Errorf("failed to create externalDNS credentials request %s: %w", desired.Name, err)
+	}
+	r.log.Info("created externalDNS credentials request", "name", desired.Name)
+	return nil
+}
+
 // updateExternalDNSClusterRole updates the cluster role with the desired state if the rules differ
 func (r *reconciler) updateExternalDNSCredentialsRequest(ctx context.Context, current, desired *cco.CredentialsRequest, externalDNS *operatorv1beta1.ExternalDNS) (bool, error) {
-	var updated *cco.CredentialsRequest
-	changed, err := externalDNSCredentialsRequestChanged(current, desired, externalDNS)
+	updated := current.DeepCopy()
+	changed, err := externalDNSCredentialsRequestChanged(current, desired, updated, externalDNS)
 	if err != nil {
 		return false, err
 	}
 	if !changed {
 		return false, nil
 	}
-	updated = current.DeepCopy()
-	updated.Name = desired.Name
-	updated.Namespace = desired.Namespace
-	updated.Spec = desired.Spec
+
 	if err := r.client.Update(ctx, updated); err != nil {
 		return false, err
 	}
-	r.log.Info("updated externalDNS credential request", "name", updated.Name, "reason", err)
+	r.log.Info("updated externalDNS credentials request", "name", updated.Name, "namespace", updated.Namespace)
 	return true, nil
 }
 
-func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsRequest, externalDNS *operatorv1beta1.ExternalDNS) (bool, error) {
-
-	if current.Name != desired.Name {
-		return true, nil
+// desiredCredentialsRequestName returns the desired credentials request definition for externalDNS
+func desiredCredentialsRequest(name, secretName types.NamespacedName, externalDNS *operatorv1beta1.ExternalDNS, platformStatus *configv1.PlatformStatus) (*cco.CredentialsRequest, error) {
+	credentialsRequest := &cco.CredentialsRequest{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CredentialsRequest",
+			APIVersion: "cloudcredential.openshift.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name.Name,
+			Namespace: name.Namespace,
+		},
+		Spec: cco.CredentialsRequestSpec{
+			ServiceAccountNames: []string{controller.ServiceAccountName},
+			SecretRef: corev1.ObjectReference{
+				Name:      secretName.Name,
+				Namespace: secretName.Namespace,
+			},
+		},
 	}
 
-	if current.Namespace != desired.Namespace {
-		return true, nil
+	codec, err := cco.NewCodec()
+	if err != nil {
+		return nil, err
 	}
 
-	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+	providerSpec, err := createProviderConfig(externalDNS, platformStatus, codec)
+
+	if err != nil {
+		return nil, err
+	}
+	credentialsRequest.Spec.ProviderSpec = providerSpec
+	return credentialsRequest, nil
+}
+
+func externalDNSCredentialsRequestChanged(current, desired, updated *cco.CredentialsRequest, externalDNS *operatorv1beta1.ExternalDNS) (bool, error) {
+	changed := false
+
+	if !equalStringSliceContent(desired.Spec.ServiceAccountNames, current.Spec.ServiceAccountNames) {
+		updated.Spec.ServiceAccountNames = desired.Spec.ServiceAccountNames
+		changed = true
+	}
+
+	if current.Spec.SecretRef.Name != desired.Spec.SecretRef.Name {
+		updated.Spec.SecretRef.Name = desired.Spec.SecretRef.Name
+		changed = true
+	}
+
+	if current.Spec.SecretRef.Namespace != desired.Spec.SecretRef.Namespace {
+		updated.Spec.SecretRef.Namespace = desired.Spec.SecretRef.Namespace
+		changed = true
+	}
+
+	switch externalDNS.Spec.Provider.Type {
+	case operatorv1beta1.ProviderTypeAWS:
 		codec, _ := cco.NewCodec()
 		currentAwsSpec := cco.AWSProviderSpec{}
 		err := codec.DecodeProviderSpec(current.Spec.ProviderSpec, &currentAwsSpec)
@@ -118,11 +178,10 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 		}
 
 		if !(reflect.DeepEqual(currentAwsSpec, desiredAwsSpec)) {
-			return true, nil
+			updated.Spec.ProviderSpec = desired.Spec.ProviderSpec
+			changed = true
 		}
-	}
-
-	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAzure {
+	case operatorv1beta1.ProviderTypeAzure:
 		codec, _ := cco.NewCodec()
 		currentAzureSpec := cco.AzureProviderSpec{}
 		err := codec.DecodeProviderSpec(desired.Spec.ProviderSpec, &currentAzureSpec)
@@ -137,14 +196,13 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 		}
 
 		if !(reflect.DeepEqual(currentAzureSpec, desiredAzureSpec)) {
-			return true, nil
+			updated.Spec.ProviderSpec = desired.Spec.ProviderSpec
+			changed = true
 		}
-	}
-
-	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeGCP {
+	case operatorv1beta1.ProviderTypeGCP:
 		codec, _ := cco.NewCodec()
-		currentGcpSpec := cco.GCPProviderSpec{}
-		err := codec.DecodeProviderSpec(current.Spec.ProviderSpec, &currentGcpSpec)
+		currentGCPSpec := cco.GCPProviderSpec{}
+		err := codec.DecodeProviderSpec(current.Spec.ProviderSpec, &currentGCPSpec)
 		if err != nil {
 			return false, err
 		}
@@ -155,16 +213,22 @@ func externalDNSCredentialsRequestChanged(current, desired *cco.CredentialsReque
 			return false, err
 		}
 
-		if !(reflect.DeepEqual(currentGcpSpec, desiredGCPSpec)) {
-			return true, nil
+		if !(reflect.DeepEqual(currentGCPSpec, desiredGCPSpec)) {
+			updated.Spec.ProviderSpec = desired.Spec.ProviderSpec
+			changed = true
 		}
 	}
-	return false, nil
+
+	return changed, nil
 }
 
-func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
+func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, platformStatus *configv1.PlatformStatus, codec *cco.ProviderCodec) (*runtime.RawExtension, error) {
 	switch externalDNS.Spec.Provider.Type {
 	case operatorv1beta1.ProviderTypeAWS:
+		region := ""
+		if platformStatus != nil && platformStatus.Type == configv1.AWSPlatformType && platformStatus.AWS != nil {
+			region = platformStatus.AWS.Region
+		}
 		return codec.EncodeProviderSpec(
 			&cco.AWSProviderSpec{
 				TypeMeta: metav1.TypeMeta{
@@ -176,7 +240,7 @@ func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.P
 						Action: []string{
 							"route53:ChangeResourceRecordSets",
 						},
-						Resource: "arn:aws:route53:::hostedzone/*",
+						Resource: arnPrefix(region) + ":route53:::hostedzone/*",
 					},
 					{
 						Effect: "Allow",
@@ -214,57 +278,9 @@ func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, codec *cco.P
 	return nil, nil
 }
 
-// desiredCredentialsRequestName returns the desired credentials request definition for externalDNS
-func desiredCredentialsRequest(name, secretName types.NamespacedName, externalDNS *operatorv1beta1.ExternalDNS) (*cco.CredentialsRequest, error) {
-	credentialsRequest := &cco.CredentialsRequest{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "CredentialsRequest",
-			APIVersion: "cloudcredential.openshift.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name.Name,
-			Namespace: name.Namespace,
-		},
-		Spec: cco.CredentialsRequestSpec{
-			ServiceAccountNames: []string{controller.ServiceAccountName},
-			SecretRef: k8sv1.ObjectReference{
-				Name:      secretName.Name,
-				Namespace: secretName.Namespace,
-			},
-		},
+func arnPrefix(region string) string {
+	if utils.IsUSGovAWSRegion(region) {
+		return "arn:aws-us-gov"
 	}
-
-	codec, err := cco.NewCodec()
-	if err != nil {
-		return nil, err
-	}
-
-	providerSpec, err := createProviderConfig(externalDNS, codec)
-
-	if err != nil {
-		return nil, err
-	}
-	credentialsRequest.Spec.ProviderSpec = providerSpec
-	return credentialsRequest, nil
-}
-
-// currentExternalDNSCredentialsRequest returns true if credentials request exists.
-func (r *reconciler) currentExternalDNSCredentialsRequest(ctx context.Context, name types.NamespacedName) (bool, *cco.CredentialsRequest, error) {
-	cr := &cco.CredentialsRequest{}
-	if err := r.client.Get(ctx, name, cr); err != nil {
-		if errors.IsNotFound(err) {
-			return false, nil, nil
-		}
-		return false, nil, err
-	}
-	return true, cr, nil
-}
-
-// createExternalDNSCredentialsRequest creates the given credentials request.
-func (r *reconciler) createExternalDNSCredentialsRequest(ctx context.Context, desired *cco.CredentialsRequest) error {
-	if err := r.client.Create(ctx, desired); err != nil {
-		return fmt.Errorf("failed to create externalDNS credentials request %s: %w", desired.Name, err)
-	}
-	r.log.Info("created externalDNS credentials request", "name", desired.Name)
-	return nil
+	return "arn:aws"
 }

@@ -10,6 +10,7 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
 - [Running end-to-end tests manually](#running-end-to-end-tests-manually)
 - [Proxy support](#proxy-support)
 - [Metrics](#metrics)
+- [Status of providers](#status-of-providers)
 
 ## Deploying the `ExternalDNS` Operator
 The following procedure describes how to deploy the `ExternalDNS` Operator for AWS.     
@@ -233,7 +234,7 @@ Prepare your environment for the installation commands.
 
 ## Metrics
 
-The ExternalDNS Operator exposes [controller-runtime metrics](https://book.kubebuilder.io/reference/metrics.html) in the format expected by [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
+The ExternalDNS Operator exposes [controller-runtime metrics](https://book.kubebuilder.io/reference/metrics.html) using custom resources expected by [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator).
 `ServiceMonitor` object is created in the operator's namespace (by default `external-dns-operator`), make sure that your instance of the Prometheus Operator is properly configured to find it.     
 You can check `.spec.serviceMonitorNamespaceSelector` and `.spec.serviceMonitorSelector` fields of `prometheus` resource and edit the operator's namespace or service monitor accordingly:
 ```sh
@@ -247,3 +248,17 @@ oc -n openshift-monitoring get prometheus k8s --template='{{.spec.serviceMonitor
 map[matchLabels:map[openshift.io/cluster-monitoring:true]]
 map[]
 ```
+
+## Status of providers
+We define the following stability levels for DNS providers:
+- **GA**: Integration and smoke tests before release are done on the real platforms. API is stable with a guarantee of no breaking changes.
+- **TechPreview**: Maintainers have no access to resources to execute integration tests on the real platform, API may be a subject to a change.
+
+| Provider                | Status      |
+| ----------------------- | ----------- |
+| AWS Route53             | GA          |
+| AWS Route53 on GovCloud | TechPreview |
+| AzureDNS                | GA          |
+| GCP Cloud DNS           | GA          |
+| Infoblox                | GA          |
+| BlueCat                 | TechPreview |

@@ -40,10 +40,21 @@ func EnvProxySupportedProvider(e *operatorv1beta1.ExternalDNS) bool {
 	return false
 }
 
+// MustParseLabelSelector parses the given string into LabelSelector object.
 func MustParseLabelSelector(input string) *metav1.LabelSelector {
 	selector, err := metav1.ParseToLabelSelector(input)
 	if err != nil {
 		panic(err)
 	}
 	return selector
+}
+
+// IsUSGovAWSRegion returns true if the given AWS region is US Gov one.
+func IsUSGovAWSRegion(region string) bool {
+	switch region {
+	case "us-gov-east-1", "us-gov-west-1":
+		return true
+	default:
+		return false
+	}
 }
