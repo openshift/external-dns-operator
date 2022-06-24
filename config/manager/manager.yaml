@@ -41,7 +41,8 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          value: k8s.gcr.io/external-dns/external-dns:v0.10.2
+          # openshift/external-dns commit: 7511ef28574ef86581fef28e67b95af3b0d97ea9
+          value: quay.io/openshift/origin-external-dns@sha256:419ae8594ba87f197c49e298ecec85e185ed29e8fd80e874351415c7ce69381e
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
