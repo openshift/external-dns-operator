@@ -48,6 +48,7 @@ func main() {
 	flag.BoolVar(&opCfg.EnablePlatformDetection, "enable-platform-detection", operatorconfig.DefaultEnablePlatformDetection, "Enable the detection of the underlying platform. Defaults to true.")
 	flag.StringVar(&opCfg.HealthProbeBindAddress, "health-probe-bind-addr", operatorconfig.DefaultHealthProbeAddr, "The address the health endpoint binds to.")
 	flag.IntVar(&opCfg.RequeuePeriodSeconds, "requeue-period", operatorconfig.DefaultRequeuePeriodSeconds, "Requeue period for a failed reconciliation (in seconds).")
+	flag.BoolVar(&opCfg.EnableLeaderElection, "leader-elect", operatorconfig.DefaultEnableLeaderElection, "Enable leader election for controller manager to ensure there is only one active controller manager.")
 	opts := zap.Options{
 		Development: true,
 	}

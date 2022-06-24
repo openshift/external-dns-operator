@@ -420,7 +420,9 @@ spec:
             matchLabels:
               name: external-dns-operator
           strategy:
-            type: Recreate
+            rollingUpdate:
+              maxUnavailable: 25%
+            type: RollingUpdate
           template:
             metadata:
               labels:
@@ -433,6 +435,7 @@ spec:
                 - --operand-namespace=$(OPERATOR_NAMESPACE)
                 - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
                 - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
+                - --leader-elect
                 env:
                 - name: OPERATOR_NAMESPACE
                   valueFrom:
@@ -542,6 +545,25 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
         serviceAccountName: external-dns-operator
     strategy: deployment
   installModes:
