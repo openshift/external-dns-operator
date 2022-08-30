@@ -449,6 +449,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -528,6 +529,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--fqdn-template={{.Name}}.test.com",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
@@ -588,6 +590,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						SecurityContext: &corev1.SecurityContext{
 							Capabilities: &corev1.Capabilities{
@@ -657,6 +660,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -697,6 +701,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							"--fqdn-template={{.Name}}.test.com",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 							"--azure-config-file=/etc/kubernetes/azure.json",
 						},
 						VolumeMounts: []corev1.VolumeMount{
@@ -1828,6 +1833,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
@@ -1883,6 +1889,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							"--ignore-hostname-annotation",
 							`--fqdn-template={{""}}`,
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						SecurityContext: &corev1.SecurityContext{
 							Capabilities: &corev1.Capabilities{
@@ -1948,6 +1955,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
@@ -1983,6 +1991,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 							`--fqdn-template={{""}}`,
 							"--azure-config-file=/etc/kubernetes/azure.json",
 							"--txt-prefix=external-dns-",
+							"--txt-wildcard-replacement=any",
 						},
 						VolumeMounts: []corev1.VolumeMount{
 							{
