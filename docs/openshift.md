@@ -14,4 +14,5 @@ $ ./hack/add-serving-cert.sh --namespace external-dns-operator --service webhook
 ## Release-branch mapping
 | OCP version | ExternalDNS Operator branch |
 | :---------: | :-------------------------: |
+| 4.11        | release-1.0                 |
 | 4.10        | release-0.1                 |
