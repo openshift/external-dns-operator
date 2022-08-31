@@ -94,13 +94,17 @@ Make sure your AWS account is subscribed to the following product:
 - Once the EC2 instance passed all the checks you can try to connect to the Grid Manager WebUI using the Elastic IP and `admin/${GRID_ADMIN_PASSWORD}` as credentials. Use HTTPS scheme and accept the self signed certificate
 
 ### Infoblox configuration
-- Setup a new grid. At the first start a wizard would pop up and propose to do so, you can follow `Use vNIOS Instance for New grid` chapter from the guide in the [links](#links) or just keep the default answers, however note that:
-    - Admin password is better to be reset
+- Setup a new grid. At the first start a wizard would pop up and propose to do so, you can follow `Use vNIOS Instance for New grid` chapter from the guide in the [links](#links) or follow these notes:
+    - Most of the values can be kept as set by default except for these:
+        - Set the shared secret to the admin password (note that it can be changed later in the setup process)
+        - Set the hostname to the FQDN of your vNIOS instance, if you have one
+        - Admin password is better to be reset if you plan to use this Infoblox for a long time
+        - Enable NTP if you plan to use this Infoblox for a long time
     - Restart will be needed at the end of the setup of the new grid
-- Start DNS service: `Grid` top tab -> `Grid manager` subtab -> `DNS` -> Select `infoblox.localdomain` and button `Start`
+- Start DNS service: `Grid` top tab -> `Grid manager` subtab -> `DNS` -> Select `infoblox.localdomain` (or your instance's FQDN) -> Button `Play` (Start)
 - Add name server group with the grid server: `Data Management` top tab -> `DNS` subtab -> `Add` right panel -> `Group` -> `Authorative` -> Put a name -> `+` button -> `Add Grid Primary` -> `Select` -> `Add` -> `Save & Close`
 - Default self signed certificate uses the private IP, you would need to regenerate it with the Elastic IP:
-    - `Grid` -> `Grid Manager` -> `DNS` -> `Certificates` right panel -> `HTTPS Cert` -> `Generate Self Signed Certificate` -> Put Elastic IP in `Subject Alternative name` and fill `Days Valid` -> Accept the restart of the service
+    - `Grid` top tab -> `Grid Manager` subtab -> `DNS` -> `Certificates` right panel -> `HTTPS Cert` -> `Generate Self Signed Certificate` -> Add Elastic IP (or FQDN if any) in `Subject Alternative name` and fill `Days Valid` -> Accept the restart of the service
 
 ## Links
 - [Deploy Infoblox vNIOS instances for AWS](https://www.infoblox.com/wp-content/uploads/infoblox-deployment-guide-deploy-infoblox-vnios-instances-for-aws.pdf)
