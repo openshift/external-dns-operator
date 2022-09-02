@@ -11,6 +11,8 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
 - [Proxy support](#proxy-support)
 - [Metrics](#metrics)
 - [Status of providers](#status-of-providers)
+- [Known limitations](#known-limitations)
+    - [Length of the domain name](#length-of-the-domain-name)
 
 ## Deploying the `ExternalDNS` Operator
 The following procedure describes how to deploy the `ExternalDNS` Operator for AWS.     
@@ -262,3 +264,71 @@ We define the following stability levels for DNS providers:
 | GCP Cloud DNS           | GA          |
 | Infoblox                | GA          |
 | BlueCat                 | TechPreview |
+
+## Known limitations
+
+### Length of the domain name
+ExternalDNS Operator uses [the TXT registry](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/proposal/registry.md#txt-records) which implies the usage of [the new format](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/registry.md#txt-registry-migration-to-a-new-format) and [the prefix](https://github.com/kubernetes-sigs/external-dns#note) for the TXT records.
+This reduces the maximum length of the domain name for the TXT records.     
+Since the TXT record accompanies every DNS record, there cannot be a DNS record without a corresponding TXT record, therefore the DNS record's domain name gets hit by the same limit:
+```plaintext
+DNS record: <domain-name-from-source>
+TXT record: external-dns-<record-type>-<domain-name-from-source>
+```
+
+Please be aware that instead of [the standardized 63 characters long maximum length](https://www.rfc-editor.org/rfc/rfc1035#section-2.3.1), the domain names generated from the ExternalDNS sources have the following limits:
+* for the CNAME record type:
+    * 44 characters
+    * 42 characters for wildcard records on AzureDNS ([OCPBUGS-819](https://github.com/openshift/external-dns-operator/pull/171))
+* for the A record type:
+    * 48 characters
+    * 46 characters for wildcard records on AzureDNS ([OCPBUGS-819](https://github.com/openshift/external-dns-operator/pull/171))
+
+**Example**
+
+ExternalDNS CR which uses `Service` of type `ExternalName` (to force CNAME record type) as the source for the DNS records:
+```yaml
+$ oc get externaldns aws -o yaml
+apiVersion: externaldns.olm.openshift.io/v1beta1
+kind: ExternalDNS
+metadata:
+  name: aws
+spec:
+  provider:
+    type: AWS
+  zones:
+  - Z06988883Q0H0RL6UMXXX
+  source:
+    type: Service
+    service:
+        serviceType:
+        - ExternalName
+    fqdnTemplate:
+    - "{{.Name}}.test.example.io"
+```
+
+The service of the following name will not pose any problems because its name is 44 characters long:
+```sh
+$ oc get svc
+NAME                                                          TYPE           CLUSTER-IP     EXTERNAL-IP              PORT(S)             AGE
+hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc                  ExternalName   <none>         somednsname.example.io   8080/TCP,8888/TCP
+
+$ aws route53 list-resource-record-sets --hosted-zone-id=Z06988883Q0H0RL6UMXXX
+RESOURCERECORDSETS	external-dns-cname-hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc.test.example.io.	300	TXT
+RESOURCERECORDS	"heritage=external-dns,external-dns/owner=external-dns-aws,external-dns/resource=service/test-long-dnsname/hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc"
+RESOURCERECORDSETS	external-dns-hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc.test.example.io.	300	TXT
+RESOURCERECORDS	"heritage=external-dns,external-dns/owner=external-dns-aws,external-dns/resource=service/test-long-dnsname/hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc"
+RESOURCERECORDSETS	hello-openshift-aaaaaaaaaa-bbbbbbbbbb-cccccc.test.example.io.	300	CNAME
+RESOURCERECORDS	somednsname.example.io
+```
+
+The service of a longer name will result in no changes on the DNS provider and the errors similar to the below ones in the ExternalDNS instance:
+```
+$ oc -n external-dns-operator logs external-dns-aws-7ddbd9c7f8-2jqjh
+...
+time="2022-09-02T08:53:57Z" level=info msg="Desired change: CREATE external-dns-cname-hello-openshift-aaaaaaaaaa-bbbbbbbbbb-ccccccc.test.example.io TXT [Id: /hostedzone/Z06988883Q0H0RL6UMXXX]"
+time="2022-09-02T08:53:57Z" level=info msg="Desired change: CREATE external-dns-hello-openshift-aaaaaaaaaa-bbbbbbbbbb-ccccccc.test.example.io TXT [Id: /hostedzone/Z06988883Q0H0RL6UMXXX]"
+time="2022-09-02T08:53:57Z" level=info msg="Desired change: CREATE hello-openshift-aaaaaaaaaa-bbbbbbbbbb-ccccccc.test.example.io A [Id: /hostedzone/Z06988883Q0H0RL6UMXXX]"
+time="2022-09-02T08:53:57Z" level=error msg="Failure in zone test.example.io. [Id: /hostedzone/Z06988883Q0H0RL6UMXXX]"
+time="2022-09-02T08:53:57Z" level=error msg="InvalidChangeBatch: [FATAL problem: DomainLabelTooLong (Domain label is too long) encountered with 'external-dns-a-hello-openshift-aaaaaaaaaa-bbbbbbbbbb-ccccccc']\n\tstatus code: 400, request id: e54dfd5a-06c6-47b0-bcb9-a4f7c3a4e0c6"
+...
