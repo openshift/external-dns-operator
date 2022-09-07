@@ -45,7 +45,7 @@ const (
 	rbacRsrcName               = "external-dns-operator"
 	operatorServiceAccount     = "external-dns-operator"
 	dnsPollingInterval         = 15 * time.Second
-	dnsPollingTimeout          = 15 * time.Minute
+	dnsPollingTimeout          = 3 * time.Minute
 	googleDNSServer            = "8.8.8.8"
 	infobloxDNSProvider        = "INFOBLOX"
 	dnsProviderEnvVar          = "DNS_PROVIDER"
