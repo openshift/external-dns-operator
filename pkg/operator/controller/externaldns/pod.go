@@ -35,19 +35,20 @@ import (
 )
 
 const (
-	defaultMetricsAddress    = "127.0.0.1"
-	defaultOwnerPrefix       = "external-dns"
-	defaultMetricsStartPort  = 7979
-	defaultConfigMountPath   = "/etc/kubernetes"
-	defaultTXTRecordPrefix   = "external-dns-"
-	providerArg              = "--provider="
-	httpProxyEnvVar          = "HTTP_PROXY"
-	httpsProxyEnvVar         = "HTTPS_PROXY"
-	noProxyEnvVar            = "NO_PROXY"
-	trustedCAVolumeName      = "trusted-ca"
-	trustedCAFileName        = "tls-ca-bundle.pem"
-	trustedCAFileKey         = "ca-bundle.crt"
-	trustedCAExtractedPEMDir = "/etc/pki/ca-trust/extracted/pem"
+	defaultMetricsAddress         = "127.0.0.1"
+	defaultOwnerPrefix            = "external-dns"
+	defaultMetricsStartPort       = 7979
+	defaultConfigMountPath        = "/etc/kubernetes"
+	defaultTXTRecordPrefix        = "external-dns-"
+	defaultTXTWildcardReplacement = "any"
+	providerArg                   = "--provider="
+	httpProxyEnvVar               = "HTTP_PROXY"
+	httpsProxyEnvVar              = "HTTPS_PROXY"
+	noProxyEnvVar                 = "NO_PROXY"
+	trustedCAVolumeName           = "trusted-ca"
+	trustedCAFileName             = "tls-ca-bundle.pem"
+	trustedCAFileKey              = "ca-bundle.crt"
+	trustedCAExtractedPEMDir      = "/etc/pki/ca-trust/extracted/pem"
 	// RHEL path for the trusted certificate bundle may not work for some distributions (e.g. Alpine).
 	// This makes the usage of the trusted CAs impossible when the vanilla upstream image is given.
 	// SSL_CERT_DIR allows Golang's crypto library to override the default locations.
@@ -362,6 +363,9 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 func (b *externalDNSContainerBuilder) fillAzureFields(zone string, container *corev1.Container) {
 	// https://github.com/kubernetes-sigs/external-dns/issues/2082
 	container.Args = addTXTPrefixFlag(container.Args)
+
+	// https://github.com/kubernetes-sigs/external-dns/issues/2922
+	container.Args = append(container.Args, fmt.Sprintf("--txt-wildcard-replacement=%s", defaultTXTWildcardReplacement))
 
 	// check the zone field for the keyword 'privatednszones', this ensures that the
 	// provider 'azure-private-dns' is passed to the container
