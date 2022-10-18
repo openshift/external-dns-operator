@@ -70,19 +70,14 @@ output:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - errcheck
     - gofmt
     - goimports
-    - gosimple
     - govet
     - ineffassign
     - misspell
-    - staticcheck
-    - structcheck
     - typecheck
     - unused
-    - varcheck
   fast: false
 
 linters-settings:

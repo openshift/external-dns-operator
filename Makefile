@@ -41,6 +41,7 @@ endif
 
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
+KUSTOMIZE := go run sigs.k8s.io/kustomize/kustomize/v4
 K8S_ENVTEST_VERSION := 1.21.4
 
 PACKAGE=github.com/openshift/external-dns-operator
@@ -146,13 +147,13 @@ image-push: ## Push container image with the operator.
 
 ##@ Deployment
 
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: manifests ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-uninstall: kustomize manifests ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+uninstall: manifests ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	# do not commit the following 2 changes
 	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=${IMG}
 	# webhook volume and service are added explicilty so that they don't land in the bundle where it's managed by OLM
@@ -167,7 +168,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 .PHONY: bundle
-bundle: $(OPERATOR_SDK_BIN) manifests kustomize
+bundle: $(OPERATOR_SDK_BIN) manifests
 	$(OPERATOR_SDK_BIN) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=${IMG}
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK_BIN) generate bundle -q --overwrite=false --version $(BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
@@ -188,25 +189,6 @@ index-image-build: opm
 .PHONY: index-image-push
 index-image-push:
 	$(CONTAINER_ENGINE) push ${INDEX_IMG}
-
-KUSTOMIZE = $(BIN_DIR)/kustomize
-kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
-
-# go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
-
 
 OPM=$(BIN_DIR)/opm
 opm: ## Download opm locally if necessary.
