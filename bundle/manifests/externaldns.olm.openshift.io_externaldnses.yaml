@@ -11,6 +11,8 @@ spec:
     kind: ExternalDNS
     listKind: ExternalDNSList
     plural: externaldnses
+    shortNames:
+    - extdns
     singular: externaldns
   scope: Cluster
   versions:
