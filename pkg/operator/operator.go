@@ -21,14 +21,10 @@ import (
 
 	"fmt"
 
-	"github.com/go-logr/logr"
-
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -39,22 +35,9 @@ import (
 	externaldnsctrl "github.com/openshift/external-dns-operator/pkg/operator/controller/externaldns"
 )
 
-const (
-	operatorName = "external_dns_operator"
-)
-
-// Client holds the API clients required by Operator.
-type Client struct {
-	client.Client
-	meta.RESTMapper
-}
-
-// Operator hold the client, manager, and logging resources
-// for the ExternalDNS opreator.
+// Operator holds the manager for the ExternalDNS opreator.
 type Operator struct {
-	client  Client
 	manager manager.Manager
-	log     logr.Logger
 }
 
 // Aggregate kubebuilder RBAC tags in one location for simplicity.
@@ -148,15 +131,8 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		}
 	}
 
-	restMapper, err := apiutil.NewDiscoveryRESTMapper(cliCfg)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Operator{
 		manager: mgr,
-		client:  Client{mgr.GetClient(), restMapper},
-		log:     ctrl.Log.WithName(operatorName),
 	}, nil
 }
 
