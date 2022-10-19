@@ -70,7 +70,6 @@ output:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - errcheck
     - gofmt
     - goimports
@@ -78,7 +77,7 @@ linters:
     - ineffassign
     - misspell
     - typecheck
-    - varcheck
+    - unused
   fast: false
 
 linters-settings:

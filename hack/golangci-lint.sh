@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-GOLANGCI_VERSION="1.45.2"
+GOLANGCI_VERSION="1.50.0"
 
 OUTPUT_PATH=${1:-./bin/golangci-lint}
 
@@ -10,10 +10,10 @@ GOARCH=$(go env GOARCH)
 
 case $GOOS in
   linux)
-    CHECKSUM="595ad6c6dade4c064351bc309f411703e457f8ffbb7a1806b3d8ee713333427f"
+    CHECKSUM="b4b329efcd913082c87d0e9606711ecb57415b5e6ddf233fde9e76c69d9b4e8b"
     ;;
   darwin)
-    CHECKSUM="995e509e895ca6a64ffc7395ac884d5961bdec98423cb896b17f345a9b4a19cf"
+    CHECKSUM="7ab306b91b0f2bb741cc0a4c86f29f69506eb7b505f47e91b0e74365e4c28c4e"
     ;;
     *)
     echo "Unsupported OS $GOOS"
