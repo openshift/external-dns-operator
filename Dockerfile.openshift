@@ -1,9 +1,9 @@
-FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.18-openshift-4.11 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-8-golang-1.19-openshift-4.12 AS builder
 WORKDIR /external-dns-operator
 COPY . .
 RUN make build-operator
 
-FROM registry.ci.openshift.org/ocp/4.11:base
+FROM registry.ci.openshift.org/ocp/4.12:base
 COPY --from=builder /external-dns-operator/bin/external-dns-operator /usr/bin/
 COPY --from=builder /external-dns-operator/bundle/manifests /manifests
 COPY --from=builder /external-dns-operator/bundle/metadata /metadata
