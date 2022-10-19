@@ -17,9 +17,9 @@ require (
 	github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 	github.com/operator-framework/api v0.11.0
 	google.golang.org/api v0.58.0
-	k8s.io/api v0.25.2
-	k8s.io/apimachinery v0.25.2
-	k8s.io/client-go v0.25.2
+	k8s.io/api v0.25.3
+	k8s.io/apimachinery v0.25.3
+	k8s.io/client-go v0.25.3
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20220602164547-f46919744bee
