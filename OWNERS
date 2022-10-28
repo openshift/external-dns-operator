@@ -2,24 +2,18 @@ approvers:
   - knobunc
   - Miciah
   - frobware
-  - danehans
-  - sgreene570
   - candita
   - rfredette
   - alebedev87
   - miheer
   - lmzuccarelli
-  - arjunrn
 reviewers:
   - knobunc
   - Miciah
   - frobware
-  - danehans
-  - sgreene570
   - candita
   - rfredette
   - alebedev87
   - miheer
   - lmzuccarelli
-  - arjunrn
 component: DNS
