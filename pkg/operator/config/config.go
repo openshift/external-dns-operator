@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	DefaultExternalDNSImage        = "quay.io/openshift/origin-external-dns:latest"
+	DefaultExternalDNSImage        = "quay.io/external-dns-operator/external-dns:latest"
 	DefaultMetricsAddr             = "127.0.0.1:8080"
 	DefaultOperatorNamespace       = "external-dns-operator"
 	DefaultOperandNamespace        = "external-dns"
