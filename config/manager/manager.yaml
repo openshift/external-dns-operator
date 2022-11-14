@@ -44,8 +44,8 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          # openshift/external-dns commit: 906ba04e06b8d18857bb0f13d2cd5e10843da08e
-          value: quay.io/external-dns-operator/external-dns@sha256:61dda6375596a8afe26b7bc109fe463e99c8216c8ea9d2475d0d77bcbc721b1e
+          # openshift/external-dns commit: fe00b4b83c2263282a9068655e8e3fbbc167b653
+          value: quay.io/external-dns-operator/external-dns@sha256:a742a727d3a18ffb78c7d0a24fd2c5eebed01479163959169203427514d7aa89
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
