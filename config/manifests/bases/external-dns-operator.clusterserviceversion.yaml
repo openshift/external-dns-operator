@@ -7,12 +7,12 @@ metadata:
     certified: "false"
     containerImage: quay.io/openshift/origin-external-dns-operator:latest
     createdAt: 2021/09/28
-    olm.skipRange: <1.0.0
+    olm.skipRange: <1.1.0
     operatorframework.io/suggested-namespace: external-dns-operator
     operators.openshift.io/infrastructure-features: '["disconnected","proxy-aware"]'
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
-  name: external-dns-operator.v1.0.0
+  name: external-dns-operator.v1.1.0
   namespace: external-dns-operator
 spec:
   apiservicedefinitions: {}
@@ -66,4 +66,4 @@ spec:
   minKubeVersion: 1.22.0
   provider:
     name: Red Hat, Inc.
-  version: 1.0.0
+  version: 1.1.0

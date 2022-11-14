@@ -75,7 +75,7 @@ You can use the following steps after the `external-dns-operator` namespace has 
         name: external-dns-operator
         namespace: external-dns-operator
     spec:
-        channel: stable-v1.0
+        channel: stable-v1
         name: external-dns-operator
         source: external-dns-operator
         sourceNamespace: openshift-marketplace
