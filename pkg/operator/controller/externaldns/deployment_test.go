@@ -2840,7 +2840,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			expectedDeployment: testDeploymentWithContainers([]corev1.Container{testContainerWithImage("foo.io/test:latest")}),
 		},
 		{
-			description: "if externalDNS container args",
+			description: "if externalDNS container args change",
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Args = []string{"Nada"}
 			},
@@ -2873,15 +2873,12 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			description: "if externalDNS has extra container",
 			originalDeployment: testDeploymentWithContainers([]corev1.Container{
 				testContainer(),
-				testContainerWithName("second"),
+				testContainerWithName("extra"),
 			}),
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers = []corev1.Container{testContainer()}
 			},
-			expect: true,
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-			}),
+			expect: false,
 		},
 		{
 			description: "if externalDNS annotation changes",
@@ -3001,19 +2998,47 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			}),
 			mutate: func(dep *appsv1.Deployment) {
 			},
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainerWithSecurityContext(&corev1.SecurityContext{
-					Capabilities: &corev1.Capabilities{
-						Drop: []corev1.Capability{allCapabilities},
-					},
-					Privileged:               pointer.Bool(false),
-					RunAsNonRoot:             pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
-					SeccompProfile: &corev1.SeccompProfile{
-						Type: corev1.SeccompProfileTypeRuntimeDefault,
-					},
-				}),
-			}),
+		},
+		{
+			description: "if externalDNS has extra volume",
+			expect:      false,
+			originalDeployment: testDeploymentWithVolumes(
+				testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets"),
+				testConfigMapVolume("extravolume", "extra", "files", "/etc"),
+			),
+			mutate: func(dep *appsv1.Deployment) {
+				dep.Spec.Template.Spec.Volumes = []corev1.Volume{testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets")}
+			},
+		},
+		{
+			description:        "if API server sets defaultMode on secret volume",
+			expect:             false,
+			originalDeployment: testDeploymentWithVolumes(testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets")),
+			mutate: func(dep *appsv1.Deployment) {
+				dep.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.DefaultMode = nil
+			},
+		},
+		{
+			description:        "if API server sets defaultMode on configmap volume",
+			expect:             false,
+			originalDeployment: testDeploymentWithVolumes(testConfigMapVolume("testcerts", "testcerts", "key", "/etc/pki/trust")),
+			mutate: func(dep *appsv1.Deployment) {
+				dep.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.DefaultMode = nil
+			},
+		},
+		{
+			description: "if volumes change ordering",
+			expect:      false,
+			originalDeployment: testDeploymentWithVolumes(
+				testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets"),
+				testConfigMapVolume("testconfig", "config", "files", "/etc"),
+			),
+			mutate: func(dep *appsv1.Deployment) {
+				dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+					testConfigMapVolume("testconfig", "config", "files", "/etc"),
+					testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets"),
+				}
+			},
 		},
 	}
 
@@ -3026,6 +3051,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
+			// original is the object that's in the API.
+			// mutated is the new desired object, which mutates the original API object based on some update:
+			// changes to the externaldns, or changes to the operator itself.
 			if changed, updated := externalDNSDeploymentChanged(original, mutated); changed != tc.expect {
 				t.Errorf("Expect externalDNSDeploymentChanged to be %t, got %t", tc.expect, changed)
 			} else if changed {
@@ -3646,7 +3674,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-unexpected",
+										Name:  "external-dns-injected",
 										Image: test.OperandImage,
 									},
 								},
@@ -3717,6 +3745,10 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 							},
 							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-injected",
+									Image: test.OperandImage,
+								},
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
@@ -4269,7 +4301,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-unexpected",
+										Name:  "external-dns-injected-1",
+										Image: test.OperandImage,
+									},
+									{
+										Name:  "external-dns-injected-2",
 										Image: test.OperandImage,
 									},
 								},
@@ -4340,6 +4376,14 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 							},
 							Containers: []corev1.Container{
+								{
+									Name:  "external-dns-injected-1",
+									Image: test.OperandImage,
+								},
+								{
+									Name:  "external-dns-injected-2",
+									Image: test.OperandImage,
+								},
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
@@ -5035,6 +5079,12 @@ func testDeploymentWithAnnotations(annotations map[string]string) *appsv1.Deploy
 	return depl
 }
 
+func testDeploymentWithVolumes(volumes ...corev1.Volume) *appsv1.Deployment {
+	depl := testDeployment()
+	depl.Spec.Template.Spec.Volumes = volumes
+	return depl
+}
+
 func testContainer() corev1.Container {
 	return corev1.Container{
 		Name:                     "first",
@@ -5070,6 +5120,46 @@ func testContainerWithArgs(args []string) corev1.Container {
 	cont := testContainer()
 	cont.Args = args
 	return cont
+}
+
+func testConfigMapVolume(name, cmname, key, path string) corev1.Volume {
+	mode := int32(0644)
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: cmname,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  key,
+						Path: path,
+					},
+				},
+				DefaultMode: &mode,
+			},
+		},
+	}
+}
+
+func testSecretVolume(name, sname, key, path string) corev1.Volume {
+	mode := int32(0644)
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: sname,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  key,
+						Path: path,
+					},
+				},
+				DefaultMode: &mode,
+			},
+		},
+	}
 }
 
 func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,

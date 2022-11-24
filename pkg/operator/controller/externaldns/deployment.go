@@ -363,19 +363,14 @@ func externalDNSAnnotationsChanged(current, expected, updated *appsv1.Deployment
 func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment) bool {
 	changed := false
 
-	// number of container is different: let's reset them all
-	if len(current.Spec.Template.Spec.Containers) != len(expected.Spec.Template.Spec.Containers) {
-		updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
-		return true
-	}
-
 	currentContMap := buildIndexedContainerMap(current.Spec.Template.Spec.Containers)
 	expectedContMap := buildIndexedContainerMap(expected.Spec.Template.Spec.Containers)
 
-	// let's check that all the current containers have the desired values set
-	for currName, currCont := range currentContMap {
-		// if the current container is expected: check its fields
-		if expCont, found := expectedContMap[currName]; found {
+	// ensure all expected containers are present,
+	// unsolicited ones are kept (e.g. service mesh proxy injection)
+	for expName, expCont := range expectedContMap {
+		// expected container is present
+		if currCont, found := currentContMap[expName]; found {
 			if currCont.Image != expCont.Image {
 				updated.Spec.Template.Spec.Containers[currCont.Index].Image = expCont.Image
 				changed = true
@@ -398,9 +393,9 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 			}
 
 		} else {
-			// if the current container is not expected: let's not dig deeper - reset all
-			updated.Spec.Template.Spec.Containers = expected.Spec.Template.Spec.Containers
-			return true
+			// expected container is not present - add it
+			updated.Spec.Template.Spec.Containers = append(updated.Spec.Template.Spec.Containers, expCont.Container)
+			changed = true
 		}
 	}
 
@@ -422,6 +417,10 @@ func externalDNSVolumesChanged(current, expected, updated *appsv1.Deployment) bo
 	currentVolumeMap := buildIndexedVolumeMap(current.Spec.Template.Spec.Volumes)
 	expectedVolumeMap := buildIndexedVolumeMap(expected.Spec.Template.Spec.Volumes)
 
+	// ignore defaultMode to prevent the fight with the defaulting
+	ignoreFieldsConfigMap := cmpopts.IgnoreFields(corev1.ConfigMapVolumeSource{}, "DefaultMode")
+	ignoreFieldsSecret := cmpopts.IgnoreFields(corev1.SecretVolumeSource{}, "DefaultMode")
+
 	// ensure all expected volumes are present,
 	// unsolicited ones are kept (e.g. kube api token)
 	for expName, expVol := range expectedVolumeMap {
@@ -429,9 +428,7 @@ func externalDNSVolumesChanged(current, expected, updated *appsv1.Deployment) bo
 			updated.Spec.Template.Spec.Volumes = append(updated.Spec.Template.Spec.Volumes, expVol.Volume)
 			changed = true
 		} else {
-			// deepequal is fine here as we don't have more than 1 item
-			// neither in the secret nor in the configmap
-			if !reflect.DeepEqual(currVol.Volume, expVol.Volume) {
+			if !cmp.Equal(currVol.Volume, expVol.Volume, cmpopts.EquateEmpty(), ignoreFieldsConfigMap, ignoreFieldsSecret) {
 				updated.Spec.Template.Spec.Volumes[currVol.Index] = expVol.Volume
 				changed = true
 			}
