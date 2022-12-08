@@ -2828,27 +2828,28 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 	}{
 		{
 			description: "if nothing changes",
-			mutate:      func(_ *appsv1.Deployment) {},
 			expect:      false,
+			mutate:      func(_ *appsv1.Deployment) {},
 		},
 		{
 			description: "if externalDNS test.OperandImage changes",
+			expect:      true,
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Image = "foo.io/test:latest"
 			},
-			expect:             true,
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{testContainerWithImage("foo.io/test:latest")}),
+			expectedDeployment: testDeploymentWithContainers(testContainerWithImage("foo.io/test:latest")),
 		},
 		{
 			description: "if externalDNS container args change",
+			expect:      true,
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers[0].Args = []string{"Nada"}
 			},
-			expect:             true,
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{testContainerWithArgs([]string{"Nada"})}),
+			expectedDeployment: testDeploymentWithContainers(testContainerWithArgs("Nada")),
 		},
 		{
 			description: "if externalDNS container args order changes",
+			expect:      false,
 			mutate: func(depl *appsv1.Deployment) {
 				// swap the last and the first elements
 				last := len(depl.Spec.Template.Spec.Containers[0].Args) - 1
@@ -2856,59 +2857,46 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 				depl.Spec.Template.Spec.Containers[0].Args[0] = depl.Spec.Template.Spec.Containers[0].Args[last]
 				depl.Spec.Template.Spec.Containers[0].Args[last] = tmp
 			},
-			expect: false,
 		},
 		{
 			description: "if externalDNS misses container",
+			expect:      true,
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, testContainerWithName("second"))
 			},
-			expect: true,
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-				testContainerWithName("second"),
-			}),
+			expectedDeployment: testDeploymentWithContainers(testContainer(), testContainerWithName("second")),
 		},
 		{
-			description: "if externalDNS has extra container",
-			originalDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-				testContainerWithName("extra"),
-			}),
+			description:        "if externalDNS has extra container",
+			expect:             true,
+			originalDeployment: testDeploymentWithContainers(testContainer(), testContainerWithName("extra")),
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers = []corev1.Container{testContainer()}
 			},
-			expect: true,
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-			}),
+			expectedDeployment: testDeploymentWithContainers(testContainer()),
 		},
 		{
-			description: "if externalDNS annotation changes",
-			originalDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-			}),
+			description:        "if externalDNS annotation changes",
+			expect:             true,
+			originalDeployment: testDeploymentWithContainers(testContainer()),
 			mutate: func(dep1 *appsv1.Deployment) {
 				dep1.Spec.Template.Annotations = updatedSecretHashAnnotation
 			},
-			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
 		},
 		{
 			description:        "if externalDNS annotation is not present",
+			expect:             true,
 			originalDeployment: testDeploymentWithoutAnnotations(),
 			mutate: func(dep1 *appsv1.Deployment) {
 				dep1.Spec.Template.Annotations = updatedSecretHashAnnotation
 			},
-			expect:             true,
 			expectedDeployment: testDeploymentWithAnnotations(updatedSecretHashAnnotation),
 		},
 		{
-			description: "if externalDNS security context is added",
-			expect:      true,
-			originalDeployment: testDeploymentWithContainers([]corev1.Container{
-				testContainer(),
-			}),
+			description:        "if externalDNS security context is added",
+			expect:             true,
+			originalDeployment: testDeploymentWithContainers(testContainer()),
 			mutate: func(dep1 *appsv1.Deployment) {
 				dep1.Spec.Template.Spec.Containers = []corev1.Container{
 					testContainerWithSecurityContext(&corev1.SecurityContext{
@@ -2924,7 +2912,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					}),
 				}
 			},
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+			expectedDeployment: testDeploymentWithContainers(
 				testContainerWithSecurityContext(&corev1.SecurityContext{
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
@@ -2935,13 +2923,12 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
-				}),
-			}),
+				})),
 		},
 		{
 			description: "if externalDNS security context is updated",
 			expect:      true,
-			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+			originalDeployment: testDeploymentWithContainers(
 				testContainerWithSecurityContext(&corev1.SecurityContext{
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
@@ -2952,8 +2939,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
-				}),
-			}),
+				})),
 			mutate: func(dep1 *appsv1.Deployment) {
 				dep1.Spec.Template.Spec.Containers = []corev1.Container{
 					testContainerWithSecurityContext(&corev1.SecurityContext{
@@ -2969,7 +2955,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					}),
 				}
 			},
-			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+			expectedDeployment: testDeploymentWithContainers(
 				testContainerWithSecurityContext(&corev1.SecurityContext{
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
@@ -2980,13 +2966,12 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
-				}),
-			}),
+				})),
 		},
 		{
 			description: "if externalDNS security context is same",
 			expect:      false,
-			originalDeployment: testDeploymentWithContainers([]corev1.Container{
+			originalDeployment: testDeploymentWithContainers(
 				testContainerWithSecurityContext(&corev1.SecurityContext{
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
@@ -2997,8 +2982,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
-				}),
-			}),
+				})),
 			mutate: func(dep *appsv1.Deployment) {
 			},
 		},
@@ -5058,7 +5042,7 @@ func testDeploymentWithoutAnnotations() *appsv1.Deployment {
 	return depl
 }
 
-func testDeploymentWithContainers(containers []corev1.Container) *appsv1.Deployment {
+func testDeploymentWithContainers(containers ...corev1.Container) *appsv1.Deployment {
 	depl := testDeployment()
 	depl.Spec.Template.Spec.Containers = containers
 	return depl
@@ -5107,7 +5091,7 @@ func testContainerWithImage(image string) corev1.Container {
 	return cont
 }
 
-func testContainerWithArgs(args []string) corev1.Container {
+func testContainerWithArgs(args ...string) corev1.Container {
 	cont := testContainer()
 	cont.Args = args
 	return cont
