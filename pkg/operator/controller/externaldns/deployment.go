@@ -367,7 +367,6 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 	expectedContMap := buildIndexedContainerMap(expected.Spec.Template.Spec.Containers)
 
 	// ensure all expected containers are present,
-	// unsolicited ones are kept (e.g. service mesh proxy injection)
 	for expName, expCont := range expectedContMap {
 		// expected container is present
 		if currCont, found := currentContMap[expName]; found {
@@ -391,12 +390,23 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 				updated.Spec.Template.Spec.Containers[currCont.Index].SecurityContext = updatedContext
 				changed = true
 			}
-
 		} else {
 			// expected container is not present - add it
 			updated.Spec.Template.Spec.Containers = append(updated.Spec.Template.Spec.Containers, expCont.Container)
 			changed = true
 		}
+	}
+
+	// remove unexpected containers
+	updatedNew := []corev1.Container{}
+	for _, updCont := range updated.Spec.Template.Spec.Containers {
+		if _, found := expectedContMap[updCont.Name]; found {
+			updatedNew = append(updatedNew, updCont)
+		}
+	}
+	if len(updated.Spec.Template.Spec.Containers) != len(updatedNew) {
+		updated.Spec.Template.Spec.Containers = updatedNew
+		changed = true
 	}
 
 	return changed

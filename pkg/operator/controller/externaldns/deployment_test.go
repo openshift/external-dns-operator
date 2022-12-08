@@ -2878,7 +2878,10 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			mutate: func(depl *appsv1.Deployment) {
 				depl.Spec.Template.Spec.Containers = []corev1.Container{testContainer()}
 			},
-			expect: false,
+			expect: true,
+			expectedDeployment: testDeploymentWithContainers([]corev1.Container{
+				testContainer(),
+			}),
 		},
 		{
 			description: "if externalDNS annotation changes",
@@ -3674,7 +3677,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-injected",
+										Name:  "external-dns-unsolicited",
 										Image: test.OperandImage,
 									},
 								},
@@ -3745,10 +3748,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 							},
 							Containers: []corev1.Container{
-								{
-									Name:  "external-dns-injected",
-									Image: test.OperandImage,
-								},
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
@@ -4301,11 +4300,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 								Containers: []corev1.Container{
 									{
-										Name:  "external-dns-injected-1",
+										Name:  "external-dns-unsolicited-1",
 										Image: test.OperandImage,
 									},
 									{
-										Name:  "external-dns-injected-2",
+										Name:  "external-dns-unsolicited-2",
 										Image: test.OperandImage,
 									},
 								},
@@ -4376,14 +4375,6 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 								},
 							},
 							Containers: []corev1.Container{
-								{
-									Name:  "external-dns-injected-1",
-									Image: test.OperandImage,
-								},
-								{
-									Name:  "external-dns-injected-2",
-									Image: test.OperandImage,
-								},
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
