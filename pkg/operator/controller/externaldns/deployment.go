@@ -233,7 +233,7 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 
 	// if we are using the kiam or kube2iam assume role strategy, ensure
 	// that we add the appropriate annotation to the pod
-	if cfg.externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+	if cfg.externalDNS.Spec.Provider.AWS != nil {
 		if cfg.externalDNS.Spec.Provider.AWS.AssumeRole != nil {
 			if cfg.externalDNS.Spec.Provider.AWS.AssumeRole.Strategy == operatorv1beta1.ExternalDNSAWSAssumeRoleOptionKIAM {
 				annotations[kiamAnnotation] = *cfg.externalDNS.Spec.Provider.AWS.AssumeRole.ID

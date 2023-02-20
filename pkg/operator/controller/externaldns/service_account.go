@@ -83,7 +83,7 @@ func desiredExternalDNSServiceAccount(namespace string, externalDNS *operatorv1b
 	// if we are using the IRSA assume role strategy, ensure
 	// that we add the appropriate annotation to the service
 	// account
-	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+	if externalDNS.Spec.Provider.AWS != nil {
 		if externalDNS.Spec.Provider.AWS.AssumeRole != nil && externalDNS.Spec.Provider.AWS.AssumeRole.Strategy == operatorv1beta1.ExternalDNSAWSAssumeRoleOptionIRSA {
 			serviceAccount.SetAnnotations(map[string]string{
 				irsaServiceAccountAnnotation: *externalDNS.Spec.Provider.AWS.AssumeRole.ID,
