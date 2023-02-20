@@ -254,12 +254,19 @@ type ExternalDNSAWSProviderOptions struct {
 	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
 	// for more information.
 	//
-	// +kubebuilder:validation:Required
-	// +required
+	// +kubebuilder:validation:Optional
+	// +optional
 	Credentials SecretReference `json:"credentials"`
-	// TODO: Additionally support access for:
-	// - kiam/kube2iam enabled clusters ("iam.amazonaws.com/role" POD's annotation to assume IAM role)
-	// - EKS clusters ("eks.amazonaws.com/role-arn" ServiceAccount's annotation to assume IAM role)
+
+	// AssumeRole is a reference to the IAM role that the
+	// controller will be assuming in order to perform
+	// any DNS updates.  One of `Credentials` or
+	// `AssumeRole` must be specified in order to give
+	// the controller proper privileges to update DNS.
+	//
+	// +kubebuilder:validation:Optional
+	// +optional
+	AssumeRole *ExternalDNSAWSAssumeRoleOptions `json:"assumeRole,omitempty"`
 }
 
 type ExternalDNSGCPProviderOptions struct {
@@ -484,6 +491,40 @@ const (
 	HostnameAnnotationPolicyIgnore HostnameAnnotationPolicy = "Ignore"
 	HostnameAnnotationPolicyAllow  HostnameAnnotationPolicy = "Allow"
 )
+
+// +kubebuilder:validation:Enum=kiam;kube2iam;irsa
+type ExternalDNSAWSAssumeRoleStrategy string
+
+const (
+	ExternalDNSAWSAssumeRoleOptionKIAM     ExternalDNSAWSAssumeRoleStrategy = "kiam"
+	ExternalDNSAWSAssumeRoleOptionKube2IAM ExternalDNSAWSAssumeRoleStrategy = "kube2iam"
+	ExternalDNSAWSAssumeRoleOptionIRSA     ExternalDNSAWSAssumeRoleStrategy = "irsa"
+)
+
+type ExternalDNSAWSAssumeRoleOptions struct {
+	// ID is an AWS role ARN that the external-dns
+	// operator will assume when making DNS updates.  The
+	// underlying configuration for assuming a role is
+	// dependent upon the Strategy.
+	//
+	// +kubebuilder:validation:Optional
+	// +optional
+	ID *string
+
+	// Strategy is the strategy that will be used
+	// in order to assume a role.  The following values are
+	// accepted:
+	//
+	// * kiam: See https://github.com/uswitch/kiam
+	// * kube2iam: See https://github.com/jtblin/kube2iam
+	// * irsa: See
+	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-roles-for-service-accounts
+	//
+	// +kubebuilder:default:=irsa
+	// +kubebuilder:validation:Optional
+	// +optional
+	Strategy ExternalDNSAWSAssumeRoleStrategy
+}
 
 // ExternalDNSServiceSourceOptions describes options
 // specific to the ExternalDNS service source.

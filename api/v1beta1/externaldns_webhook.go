@@ -133,9 +133,7 @@ func (r *ExternalDNS) validateProviderCredentials() error {
 	provider := r.Spec.Provider
 	switch provider.Type {
 	case ProviderTypeAWS:
-		if provider.AWS == nil || provider.AWS.Credentials.Name == "" {
-			return errors.New("credentials secret must be specified when provider type is AWS")
-		}
+		return r.validateAWSProviderCredentials(provider)
 	case ProviderTypeAzure:
 		if provider.Azure == nil || provider.Azure.ConfigFile.Name == "" {
 			return errors.New("config file name must be specified when provider type is Azure")
@@ -153,5 +151,33 @@ func (r *ExternalDNS) validateProviderCredentials() error {
 			return errors.New(`"WAPIVersion", "WAPIPort", "GridHost" and credentials file must be specified when provider is Infoblox`)
 		}
 	}
+	return nil
+}
+
+func (r *ExternalDNS) validateAWSProviderCredentials(provider ExternalDNSProvider) error {
+	// ensure that either credentials or
+	// an assume role configuration is provided
+	if provider.AWS == nil || (provider.AWS.Credentials.Name == "" && provider.AWS.AssumeRole == nil) {
+		return errors.New("credentials secret or assume role options must be specified when provider type is AWS")
+	}
+
+	// validate credentials and assume role
+	// configurations independently
+	switch {
+	case provider.AWS.Credentials.Name != "":
+		// return an error if both credentials and
+		// assume role configuration is provided
+		if provider.AWS.AssumeRole != nil {
+			return errors.New("credentials and assume role options are mutually exclusive but both are specified when provider type is AWS")
+		}
+	case provider.AWS.AssumeRole != nil:
+		// return an error if an assume role block
+		// is specified but it is missing a role
+		// ARN to assume
+		if provider.AWS.AssumeRole.ID == nil {
+			return errors.New("assume role arn must be specified when assume role strategy is used and provider type is AWS")
+		}
+	}
+
 	return nil
 }
