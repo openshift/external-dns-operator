@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
@@ -176,6 +177,11 @@ func (r *ExternalDNS) validateAWSProviderCredentials(provider ExternalDNSProvide
 		// ARN to assume
 		if provider.AWS.AssumeRole.ID == nil {
 			return errors.New("assume role arn must be specified when assume role strategy is used and provider type is AWS")
+		}
+
+		// ensure we have a valid arn
+		if !arn.IsARN(*provider.AWS.AssumeRole.ID) {
+			return errors.New(fmt.Sprintf("arn %s is not a valid AWS ARN", *provider.AWS.AssumeRole.ID))
 		}
 	}
 

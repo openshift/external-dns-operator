@@ -168,12 +168,75 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 	})
 
 	Context("resource with AWS provider", func() {
-		It("rejected when credential not specified", func() {
+		It("rejected when credential or assume role options not specified", func() {
 			resource := makeExternalDNS("test-missing-aws-credentials", nil)
 			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS}
 			err := k8sClient.Create(context.Background(), resource)
 			Expect(err).ShouldNot(Succeed())
-			Expect(err.Error()).Should(ContainSubstring("credentials secret must be specified when provider type is AWS"))
+			Expect(err.Error()).Should(ContainSubstring("credentials secret or assume role options must be specified when provider type is AWS"))
+		})
+
+		It("rejected when credential and assume role options both specified", func() {
+			arn := "arn:aws:iam::123456789012:role/my-role"
+			resource := makeExternalDNS("test-mutually-exclusive-aws-credentials", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				Credentials: SecretReference{Name: "aws-credentials"},
+				AssumeRole:  &ExternalDNSAWSAssumeRoleOptions{ID: &arn, Strategy: ExternalDNSAWSAssumeRoleOptionIRSA},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("credentials and assume role options are mutually exclusive but both are specified when provider type is AWS"))
+		})
+
+		It("rejected when assume role is specified without a role arn", func() {
+			resource := makeExternalDNS("test-missing-aws-role-arn", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				AssumeRole: &ExternalDNSAWSAssumeRoleOptions{Strategy: ExternalDNSAWSAssumeRoleOptionIRSA},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("assume role arn must be specified when assume role strategy is used and provider type is AWS"))
+		})
+
+		It("rejected when role arn is invalid", func() {
+			arn := "role-arn"
+			resource := makeExternalDNS("test-invalid-aws-role-arn", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				AssumeRole: &ExternalDNSAWSAssumeRoleOptions{ID: &arn, Strategy: ExternalDNSAWSAssumeRoleOptionIRSA},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("is not a valid AWS ARN"))
+		})
+
+		It("resource with irsa assume role configuration", func() {
+			arn := "arn:aws:iam::123456789012:role/my-role"
+			resource := makeExternalDNS("test-irsa-aws-assume-role", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				AssumeRole: &ExternalDNSAWSAssumeRoleOptions{ID: &arn, Strategy: ExternalDNSAWSAssumeRoleOptionIRSA},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).Should(Succeed())
+		})
+
+		It("resource with kiam assume role configuration", func() {
+			arn := "arn:aws:iam::123456789012:role/my-role"
+			resource := makeExternalDNS("test-kiam-aws-assume-role", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				AssumeRole: &ExternalDNSAWSAssumeRoleOptions{ID: &arn, Strategy: ExternalDNSAWSAssumeRoleOptionKIAM},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).Should(Succeed())
+		})
+
+		It("resource with kube2iam assume role configuration", func() {
+			arn := "arn:aws:iam::123456789012:role/my-role"
+			resource := makeExternalDNS("test-kube2iam-aws-assume-role", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeAWS, AWS: &ExternalDNSAWSProviderOptions{
+				AssumeRole: &ExternalDNSAWSAssumeRoleOptions{ID: &arn, Strategy: ExternalDNSAWSAssumeRoleOptionKube2IAM},
+			}}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).Should(Succeed())
 		})
 	})
 
@@ -274,7 +337,7 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 			Expect(err).ShouldNot(Succeed())
 			Expect(err.Error()).Should(ContainSubstring(`"Pattern" cannot be empty when match type is "Pattern"`))
 			Expect(err.Error()).Should(ContainSubstring(`"fqdnTemplate" must be specified when "hostnameAnnotation" is "Ignore"`))
-			Expect(err.Error()).Should(ContainSubstring(`credentials secret must be specified when provider type is AWS`))
+			Expect(err.Error()).Should(ContainSubstring(`credentials secret or assume role options must be specified when provider type is AWS`))
 		})
 	})
 
