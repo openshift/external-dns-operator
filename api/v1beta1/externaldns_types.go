@@ -509,7 +509,7 @@ type ExternalDNSAWSAssumeRoleOptions struct {
 	//
 	// +kubebuilder:validation:Optional
 	// +optional
-	ID *string
+	ID *string `json:"id,omitempty"`
 
 	// Strategy is the strategy that will be used
 	// in order to assume a role.  The following values are
@@ -523,7 +523,7 @@ type ExternalDNSAWSAssumeRoleOptions struct {
 	// +kubebuilder:default:=irsa
 	// +kubebuilder:validation:Optional
 	// +optional
-	Strategy ExternalDNSAWSAssumeRoleStrategy
+	Strategy ExternalDNSAWSAssumeRoleStrategy `json:"strategy"`
 }
 
 // ExternalDNSServiceSourceOptions describes options

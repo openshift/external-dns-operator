@@ -572,6 +572,13 @@ spec:
                     description: AWS describes provider configuration options specific
                       to AWS (Route 53).
                     properties:
+                      assumeRole:
+                        description: AssumeRole is a reference to the IAM role that
+                          the controller will be assuming in order to perform any
+                          DNS updates.  One of `Credentials` or `AssumeRole` must
+                          be specified in order to give the controller proper privileges
+                          to update DNS.
+                        type: object
                       credentials:
                         description: "Credentials is a reference to a secret containing
                           the following keys (with corresponding values): \n * aws_access_key_id
@@ -584,8 +591,6 @@ spec:
                         required:
                         - name
                         type: object
-                    required:
-                    - credentials
                     type: object
                   azure:
                     description: Azure describes provider configuration options specific
