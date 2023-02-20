@@ -512,8 +512,9 @@ type ExternalDNSAWSAssumeRoleOptions struct {
 	ID *string `json:"id,omitempty"`
 
 	// Strategy is the strategy that will be used
-	// in order to assume a role.  The following values are
-	// accepted:
+	// in order to assume a role.  All configurations
+	// assume the requested strategy is configured
+	// correctly. The following values are accepted:
 	//
 	// * kiam: See https://github.com/uswitch/kiam
 	// * kube2iam: See https://github.com/jtblin/kube2iam

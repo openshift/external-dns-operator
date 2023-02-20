@@ -588,8 +588,9 @@ spec:
                           strategy:
                             default: irsa
                             description: "Strategy is the strategy that will be used
-                              in order to assume a role.  The following values are
-                              accepted: \n * kiam: See https://github.com/uswitch/kiam
+                              in order to assume a role.  All configurations assume
+                              the requested strategy is configured correctly. The
+                              following values are accepted: \n * kiam: See https://github.com/uswitch/kiam
                               * kube2iam: See https://github.com/jtblin/kube2iam *
                               irsa: See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-roles-for-service-accounts"
                             enum:
