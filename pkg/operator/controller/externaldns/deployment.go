@@ -99,13 +99,14 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	// provider. this is only relevant for AWS providers that
 	// are using kiam/irsa/kube2iam as all other providers
 	// require a credential.
-	var credSecretHash string
+	var credSecretHash, credSecretName string
 	var err error
 	if credSecret != nil {
 		credSecretHash, err = buildMapHash(credSecret.Data)
 		if err != nil {
 			return false, nil, fmt.Errorf("failed to build the credentials secret's hash: %w", err)
 		}
+		credSecretName = credSecret.Name
 	}
 
 	// build trusted CA configmap's hash
@@ -125,7 +126,7 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 		externalDNS,
 		r.config.IsOpenShift,
 		r.config.PlatformStatus,
-		credSecret.Name,
+		credSecretName,
 		credSecretHash,
 		trustCAConfigMapName,
 		trustCAConfigMapHash,

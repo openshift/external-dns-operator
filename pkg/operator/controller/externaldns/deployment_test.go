@@ -3180,6 +3180,176 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:            "Does not exist with KIAM",
+			extDNS:          *testAWSExternalDNSKiam(),
+			existingObjects: []runtime.Object{},
+			credSecret:      nil,
+			expectedExist:   true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{
+								credentialsAnnotation: "",
+								kiamAnnotation:        roleArn,
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--txt-prefix=external-dns-",
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "Does not exist with Kube2IAM",
+			extDNS:          *testAWSExternalDNSKube2IAM(),
+			existingObjects: []runtime.Object{},
+			credSecret:      nil,
+			expectedExist:   true,
+			expectedDeployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      test.OperandName,
+					Namespace: test.OperandNamespace,
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         operatorv1beta1.GroupVersion.String(),
+							Kind:               externalDNSKind,
+							Name:               test.Name,
+							Controller:         &test.TrueVar,
+							BlockOwnerDeletion: &test.TrueVar,
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas: &replicas,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/instance": testName,
+							"app.kubernetes.io/name":     ExternalDNSBaseName,
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/instance": testName,
+								"app.kubernetes.io/name":     ExternalDNSBaseName,
+							},
+							Annotations: map[string]string{
+								credentialsAnnotation: "",
+								kube2iamAnnotation:    roleArn,
+							},
+						},
+						Spec: corev1.PodSpec{
+							ServiceAccountName: test.OperandName,
+							NodeSelector: map[string]string{
+								osLabel:             linuxOS,
+								masterNodeRoleLabel: "",
+							},
+							Tolerations: []corev1.Toleration{
+								{
+									Key:      masterNodeRoleLabel,
+									Operator: corev1.TolerationOpExists,
+									Effect:   corev1.TaintEffectNoSchedule,
+								},
+							},
+							Containers: []corev1.Container{
+								{
+									Name:  ExternalDNSContainerName,
+									Image: test.OperandImage,
+									Args: []string{
+										"--metrics-address=127.0.0.1:7979",
+										"--txt-owner-id=external-dns-test",
+										"--zone-id-filter=my-dns-public-zone",
+										"--provider=aws",
+										"--source=openshift-route",
+										"--policy=sync",
+										"--registry=txt",
+										"--log-level=debug",
+										"--txt-prefix=external-dns-",
+									},
+									SecurityContext: &corev1.SecurityContext{
+										Capabilities: &corev1.Capabilities{
+											Drop: []corev1.Capability{allCapabilities},
+										},
+										Privileged:               pointer.Bool(false),
+										RunAsNonRoot:             pointer.Bool(true),
+										AllowPrivilegeEscalation: pointer.Bool(false),
+										SeccompProfile: &corev1.SeccompProfile{
+											Type: corev1.SeccompProfileTypeRuntimeDefault,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "Exist as expected with route source",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			existingObjects: []runtime.Object{
@@ -5224,6 +5394,34 @@ func testAWSExternalDNSHostnameAllow(source operatorv1beta1.ExternalDNSSourceTyp
 		return testExternalDNSHostnameAllow(operatorv1beta1.ProviderTypeAWS, source, nil, []string{test.PublicZone}, routerName)
 	}
 	return nil
+}
+
+func testAWSExternalDNSKiam() *operatorv1beta1.ExternalDNS {
+	testRoleArn := roleArn
+	externalDns := testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "")
+	externalDns.Spec.Provider.AWS = &operatorv1beta1.ExternalDNSAWSProviderOptions{
+		AssumeRole: &operatorv1beta1.ExternalDNSAWSAssumeRoleOptions{
+			ID:       &testRoleArn,
+			Strategy: operatorv1beta1.ExternalDNSAWSAssumeRoleOptionKIAM,
+		},
+	}
+	externalDns.Spec.Provider.AWS.Credentials.Name = ""
+
+	return externalDns
+}
+
+func testAWSExternalDNSKube2IAM() *operatorv1beta1.ExternalDNS {
+	testRoleArn := roleArn
+	externalDns := testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "")
+	externalDns.Spec.Provider.AWS = &operatorv1beta1.ExternalDNSAWSProviderOptions{
+		AssumeRole: &operatorv1beta1.ExternalDNSAWSAssumeRoleOptions{
+			ID:       &testRoleArn,
+			Strategy: operatorv1beta1.ExternalDNSAWSAssumeRoleOptionKube2IAM,
+		},
+	}
+	externalDns.Spec.Provider.AWS.Credentials.Name = ""
+
+	return externalDns
 }
 
 func testAWSExternalDNSFQDNTemplate(source operatorv1beta1.ExternalDNSSourceType) *operatorv1beta1.ExternalDNS {

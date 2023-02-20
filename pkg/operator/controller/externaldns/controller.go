@@ -185,7 +185,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS service account: %w", err)
 	}
 
-	var credSecret *corev1.Secret
+	var credSecret corev1.Secret
 	if credSecretRequired {
 		credSecretNsName := controlleroperator.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name)
 		credSecretExists, credSecretCurrent, err := r.currentExternalDNSSecret(ctx, credSecretNsName)
@@ -202,7 +202,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// either way: no need to requeue immediately polluting the logs.
 			return reconcile.Result{RequeueAfter: r.config.RequeuePeriod}, fmt.Errorf("target credentials secret %s not found", credSecretNsName)
 		}
-		credSecret = credSecretCurrent
+		credSecret = *credSecretCurrent
 	}
 
 	var trustCAConfigMap *corev1.ConfigMap
@@ -220,7 +220,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		trustCAConfigMap = configMap
 	}
 
-	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, credSecret, trustCAConfigMap, externalDNS)
+	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, &credSecret, trustCAConfigMap, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}

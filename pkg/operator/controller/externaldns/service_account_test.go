@@ -35,6 +35,8 @@ import (
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
+const roleArn = "arn:aws:iam::123456789012:role/my-role"
+
 func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 	testCases := []struct {
 		name            string
@@ -131,7 +133,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 }
 
 func Test_desiredExternalDNSServiceAccount(t *testing.T) {
-	roleArn := "arn:aws:iam::123456789012:role/my-role"
+	testRoleArn := roleArn
 
 	type args struct {
 		namespace   string
@@ -154,7 +156,7 @@ func Test_desiredExternalDNSServiceAccount(t *testing.T) {
 						Provider: operatorv1beta1.ExternalDNSProvider{
 							AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
 								AssumeRole: &operatorv1beta1.ExternalDNSAWSAssumeRoleOptions{
-									ID:       &roleArn,
+									ID:       &testRoleArn,
 									Strategy: operatorv1beta1.ExternalDNSAWSAssumeRoleOptionIRSA,
 								},
 							},
