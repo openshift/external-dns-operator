@@ -58,3 +58,14 @@ func IsUSGovAWSRegion(region string) bool {
 		return false
 	}
 }
+
+// NeedsCredentialSecret determines if an ExternalDNS object is required
+// to have a credential secret as part of its structure.
+func NeedsCredentialSecret(e *operatorv1beta1.ExternalDNS) bool {
+	if e.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+		if e.Spec.Provider.AWS.AssumeRole != nil {
+			return false
+		}
+	}
+	return true
+}

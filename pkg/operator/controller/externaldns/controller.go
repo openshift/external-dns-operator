@@ -166,9 +166,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// request credentials from CCO only if all of the following is true:
 	//  - underlying platform is OpenShift
+	//  - a credentials secret is required
 	//  - DNS provider is supported by CCO
 	//  - no credentials secret was provided
-	if r.config.IsOpenShift &&
+	credSecretRequired := operatorutils.NeedsCredentialSecret(externalDNS)
+	if r.config.IsOpenShift && credSecretRequired &&
 		operatorutils.ManagedCredentialsProvider(externalDNS) &&
 		controlleroperator.ExternalDNSCredentialsSecretNameFromProvider(externalDNS) == "" {
 		if _, _, err := r.ensureExternalCredentialsRequest(ctx, externalDNS); err != nil {
@@ -183,19 +185,24 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to get externalDNS service account: %w", err)
 	}
 
-	credSecretNsName := controlleroperator.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name)
-	credSecretExists, credSecret, err := r.currentExternalDNSSecret(ctx, credSecretNsName)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get the target credentials secret: %w", err)
-	}
-	if !credSecretExists {
-		// show that the secret is not there yet
-		if err := r.updateExternalDNSStatus(ctx, externalDNS, nil, false); err != nil {
-			reqLogger.Error(err, "failed to update externalDNS custom resource")
+	var credSecret *corev1.Secret
+	if credSecretRequired {
+		credSecretNsName := controlleroperator.ExternalDNSDestCredentialsSecretName(r.config.Namespace, externalDNS.Name)
+		credSecretExists, credSecretCurrent, err := r.currentExternalDNSSecret(ctx, credSecretNsName)
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to get the target credentials secret: %w", err)
 		}
-		// credentials secret was not synced yet or doesn't exist at all,
-		// either way: no need to requeue immediately polluting the logs.
-		return reconcile.Result{RequeueAfter: r.config.RequeuePeriod}, fmt.Errorf("target credentials secret %s not found", credSecretNsName)
+
+		if !credSecretExists {
+			// show that the secret is not there yet
+			if err := r.updateExternalDNSStatus(ctx, externalDNS, nil, false); err != nil {
+				reqLogger.Error(err, "failed to update externalDNS custom resource")
+			}
+			// credentials secret was not synced yet or doesn't exist at all,
+			// either way: no need to requeue immediately polluting the logs.
+			return reconcile.Result{RequeueAfter: r.config.RequeuePeriod}, fmt.Errorf("target credentials secret %s not found", credSecretNsName)
+		}
+		credSecret = credSecretCurrent
 	}
 
 	var trustCAConfigMap *corev1.ConfigMap

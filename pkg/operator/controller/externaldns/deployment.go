@@ -94,10 +94,18 @@ type deploymentConfig struct {
 func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace, image string, serviceAccount *corev1.ServiceAccount, credSecret *corev1.Secret, trustCAConfigMap *corev1.ConfigMap, externalDNS *operatorv1beta1.ExternalDNS) (bool, *appsv1.Deployment, error) {
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
 
-	// build credentials secret's hash
-	credSecretHash, err := buildMapHash(credSecret.Data)
-	if err != nil {
-		return false, nil, fmt.Errorf("failed to build the credentials secret's hash: %w", err)
+	// build credentials secret's hash if we are using
+	// a credential as an authentication source for the dns
+	// provider. this is only relevant for AWS providers that
+	// are using kiam/irsa/kube2iam as all other providers
+	// require a credential.
+	var credSecretHash string
+	var err error
+	if credSecret != nil {
+		credSecretHash, err = buildMapHash(credSecret.Data)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to build the credentials secret's hash: %w", err)
+		}
 	}
 
 	// build trusted CA configmap's hash
