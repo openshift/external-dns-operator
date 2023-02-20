@@ -55,6 +55,8 @@ const (
 	azurePrivateDNSZonesResourceSubStr  = "privatednszones"
 	credentialsAnnotation               = "externaldns.olm.openshift.io/credentials-secret-hash"
 	trustedCAAnnotation                 = "externaldns.olm.openshift.io/trusted-ca-configmap-hash"
+	kiamAnnotation                      = "iam.amazonaws.com/role"
+	kube2iamAnnotation                  = "iam.amazonaws.com/role"
 )
 
 // providerStringTable maps ExternalDNSProviderType values from the
@@ -219,6 +221,20 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 
 	if cfg.trustedCAConfigMapHash != "" {
 		annotations[trustedCAAnnotation] = cfg.trustedCAConfigMapHash
+	}
+
+	// if we are using the kiam or kube2iam assume role strategy, ensure
+	// that we add the appropriate annotation to the pod
+	if cfg.externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+		if cfg.externalDNS.Spec.Provider.AWS.AssumeRole != nil {
+			if cfg.externalDNS.Spec.Provider.AWS.AssumeRole.Strategy == operatorv1beta1.ExternalDNSAWSAssumeRoleOptionKIAM {
+				annotations[kiamAnnotation] = *cfg.externalDNS.Spec.Provider.AWS.AssumeRole.ID
+			}
+
+			if cfg.externalDNS.Spec.Provider.AWS.AssumeRole.Strategy == operatorv1beta1.ExternalDNSAWSAssumeRoleOptionKube2IAM {
+				annotations[kube2iamAnnotation] = *cfg.externalDNS.Spec.Provider.AWS.AssumeRole.ID
+			}
+		}
 	}
 
 	depl := &appsv1.Deployment{

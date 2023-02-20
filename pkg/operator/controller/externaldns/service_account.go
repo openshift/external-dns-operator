@@ -30,6 +30,10 @@ import (
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
+const (
+	irsaServiceAccountAnnotation = "eks.amazonaws.com/role-arn"
+)
+
 // ensureExternalDNSServiceAccount ensures that the externalDNS service account exists.
 func (r *reconciler) ensureExternalDNSServiceAccount(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) (bool, *corev1.ServiceAccount, error) {
 	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
@@ -69,12 +73,25 @@ func (r *reconciler) currentExternalDNSServiceAccount(ctx context.Context, nsNam
 
 // desiredExternalDNSServiceAccount returns the desired serivce account resource.
 func desiredExternalDNSServiceAccount(namespace string, externalDNS *operatorv1beta1.ExternalDNS) *corev1.ServiceAccount {
-	return &corev1.ServiceAccount{
+	serviceAccount := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      controller.ExternalDNSResourceName(externalDNS),
 		},
 	}
+
+	// if we are using the IRSA assume role strategy, ensure
+	// that we add the appropriate annotation to the service
+	// account
+	if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAWS {
+		if externalDNS.Spec.Provider.AWS.AssumeRole != nil && externalDNS.Spec.Provider.AWS.AssumeRole.Strategy == operatorv1beta1.ExternalDNSAWSAssumeRoleOptionIRSA {
+			serviceAccount.SetAnnotations(map[string]string{
+				irsaServiceAccountAnnotation: *externalDNS.Spec.Provider.AWS.AssumeRole.ID,
+			})
+		}
+	}
+
+	return serviceAccount
 }
 
 // createExternalDNSServiceAccount creates the given service account using the reconciler's client.
