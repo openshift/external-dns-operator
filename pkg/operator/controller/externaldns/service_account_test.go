@@ -18,6 +18,7 @@ package externaldnscontroller
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -124,6 +125,82 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 			diffOpts := cmpopts.IgnoreFields(corev1.ServiceAccount{}, "ResourceVersion", "Kind", "APIVersion")
 			if diff := cmp.Diff(tc.expectedSA, *gotSA, diffOpts); diff != "" {
 				t.Errorf("unexpected service account (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func Test_desiredExternalDNSServiceAccount(t *testing.T) {
+	roleArn := "arn:aws:iam::123456789012:role/my-role"
+
+	type args struct {
+		namespace   string
+		externalDNS *operatorv1beta1.ExternalDNS
+	}
+	tests := []struct {
+		name string
+		args args
+		want *corev1.ServiceAccount
+	}{
+		{
+			name: "ensure external dns config requesting irsa annotates service account correctly",
+			args: args{
+				namespace: test.OperandNamespace,
+				externalDNS: &operatorv1beta1.ExternalDNS{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: operatorv1beta1.ExternalDNSSpec{
+						Provider: operatorv1beta1.ExternalDNSProvider{
+							AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+								AssumeRole: &operatorv1beta1.ExternalDNSAWSAssumeRoleOptions{
+									ID:       &roleArn,
+									Strategy: operatorv1beta1.ExternalDNSAWSAssumeRoleOptionIRSA,
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: test.OperandNamespace,
+					Name:      "external-dns-test",
+					Annotations: map[string]string{
+						irsaServiceAccountAnnotation: roleArn,
+					},
+				},
+			},
+		},
+		{
+			name: "ensure external dns config without irsa returns service account correctly",
+			args: args{
+				namespace: test.OperandNamespace,
+				externalDNS: &operatorv1beta1.ExternalDNS{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: operatorv1beta1.ExternalDNSSpec{
+						Provider: operatorv1beta1.ExternalDNSProvider{
+							AWS: &operatorv1beta1.ExternalDNSAWSProviderOptions{
+								Credentials: operatorv1beta1.SecretReference{Name: "test"},
+							},
+						},
+					},
+				},
+			},
+			want: &corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: test.OperandNamespace,
+					Name:      "external-dns-test",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := desiredExternalDNSServiceAccount(tt.args.namespace, tt.args.externalDNS); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("desiredExternalDNSServiceAccount() = %v, want %v", got, tt.want)
 			}
 		})
 	}
