@@ -578,6 +578,25 @@ spec:
                           DNS updates.  One of `Credentials` or `AssumeRole` must
                           be specified in order to give the controller proper privileges
                           to update DNS.
+                        properties:
+                          id:
+                            description: ID is an AWS role ARN that the external-dns
+                              operator will assume when making DNS updates.  The underlying
+                              configuration for assuming a role is dependent upon
+                              the Strategy.
+                            type: string
+                          strategy:
+                            default: irsa
+                            description: "Strategy is the strategy that will be used
+                              in order to assume a role.  The following values are
+                              accepted: \n * kiam: See https://github.com/uswitch/kiam
+                              * kube2iam: See https://github.com/jtblin/kube2iam *
+                              irsa: See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md#iam-roles-for-service-accounts"
+                            enum:
+                            - kiam
+                            - kube2iam
+                            - irsa
+                            type: string
                         type: object
                       credentials:
                         description: "Credentials is a reference to a secret containing
