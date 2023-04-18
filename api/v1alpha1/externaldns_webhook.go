@@ -98,8 +98,8 @@ func (r *ExternalDNS) validateFilters() error {
 }
 
 func (r *ExternalDNS) validateHostnameAnnotationPolicy() error {
-	if r.Spec.Source.Type == SourceTypeRoute {
-		// dummy fqdnTemplate is used for Route source
+	if r.Spec.Source.Type == SourceTypeRoute || r.Spec.Source.Type == SourceTypeIngress {
+		// dummy fqdnTemplate is used for Route source and Ingress
 		return nil
 	}
 

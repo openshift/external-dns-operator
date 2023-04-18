@@ -468,13 +468,14 @@ type ExternalDNSSourceUnion struct {
 	OpenShiftRoute *ExternalDNSOpenShiftRouteOptions `json:"openshiftRouteOptions,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=OpenShiftRoute;Service;CRD
+// +kubebuilder:validation:Enum=OpenShiftRoute;Service;CRD;Ingress
 type ExternalDNSSourceType string
 
 const (
 	SourceTypeRoute   ExternalDNSSourceType = "OpenShiftRoute"
 	SourceTypeService ExternalDNSSourceType = "Service"
 	SourceTypeCRD     ExternalDNSSourceType = "CRD"
+	SourceTypeIngress ExternalDNSSourceType = "Ingress"
 )
 
 // +kubebuilder:validation:Enum=Ignore;Allow

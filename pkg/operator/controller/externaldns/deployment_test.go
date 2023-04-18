@@ -169,6 +169,84 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:             "Normal AWS Ingress",
+			inputSecretName:  awsSecret,
+			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeIngress),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Volumes: []corev1.Volume{
+					{
+						Name: awsCredentialsVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "awssecret",
+								Items: []corev1.KeyToPath{
+									{
+										Key:  awsCredentialsFileKey,
+										Path: awsCredentialsFileName,
+									},
+								},
+							},
+						},
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
+						Args: []string{
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=ingress",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
+							"--txt-prefix=external-dns-",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  awsCredentialEnvVarName,
+								Value: awsCredentialsFilePath,
+							},
+						},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      awsCredentialsVolumeName,
+								MountPath: awsCredentialsMountPath,
+								ReadOnly:  true,
+							},
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:             "No credentials AWS",
 			inputExternalDNS: testAWSExternalDNS(operatorv1beta1.SourceTypeService),
 			expectedTemplatePodSpec: corev1.PodSpec{
@@ -5156,6 +5234,15 @@ func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,
 		HostnameAnnotationPolicy: hostnamePolicy,
 		FQDNTemplate:             fqdnTemplate,
 	}
+
+	extDnsSourceForIngress := &operatorv1beta1.ExternalDNSSource{
+		ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
+			Type:        source,
+			LabelFilter: labelFilter,
+		},
+		HostnameAnnotationPolicy: hostnamePolicy,
+	}
+
 	// As FQDNTemplate: not needed for openshift-route source
 	extDnsSourceForRoute := &operatorv1beta1.ExternalDNSSource{
 		ExternalDNSSourceUnion: operatorv1beta1.ExternalDNSSourceUnion{
@@ -5188,6 +5275,12 @@ func testExternalDNSInstance(provider operatorv1beta1.ExternalDNSProviderType,
 		extDNS.Spec.Source = *extDnsSource
 		return extDNS
 	}
+
+	if source == operatorv1beta1.SourceTypeIngress {
+		extDNS.Spec.Source = *extDnsSourceForIngress
+		return extDNS
+	}
+
 	return extDNS
 }
 
@@ -5268,6 +5361,14 @@ func testGCPExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *operatorv
 func testCreateDNSFromSourceWRTCloudProvider(source operatorv1beta1.ExternalDNSSourceType, providerType operatorv1beta1.ExternalDNSProviderType, zones []string, routerName string) *operatorv1beta1.ExternalDNS {
 	switch source {
 	case operatorv1beta1.SourceTypeService:
+		// we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
+		// then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
+		if zones != nil {
+			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, zones, routerName)
+		} else {
+			return testExternalDNSHostnameIgnore(providerType, source, allSvcTypes, []string{test.PublicZone}, routerName)
+		}
+	case operatorv1beta1.SourceTypeIngress:
 		// we need to check nil as for the test case No_zones_&&_no_domain_filter and No_zones_+_Domain_filter because if we check len(zones)
 		// then it will to else condition and fail as test.PublicZone will be added where we don't want any zones
 		if zones != nil {
