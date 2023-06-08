@@ -462,7 +462,7 @@ func TestUpdateExternalDNSStatus(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
+		cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithStatusSubresource(tc.existingExtDNS).WithRuntimeObjects(tc.existingObjects...).Build()
 		r := &reconciler{
 			client: cl,
 			scheme: test.Scheme,

@@ -184,7 +184,7 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithRuntimeObjects(tc.existingObjects...).Build()
+			cl := fake.NewClientBuilder().WithScheme(test.Scheme).WithStatusSubresource(&operatorv1beta1.ExternalDNS{}).WithRuntimeObjects(tc.existingObjects...).Build()
 
 			r := &reconciler{
 				client: cl,

@@ -6,7 +6,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
@@ -194,19 +193,19 @@ func (h *infobloxTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zon
 func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) error {
 	configDir := os.Getenv(infobloxGridConfigDirEnvVar)
 	if configDir != "" {
-		host, err := ioutil.ReadFile(configDir + "/" + defaultHostFilename)
+		host, err := os.ReadFile(configDir + "/" + defaultHostFilename)
 		if err != nil {
 			return fmt.Errorf("failed to read grid host from file: %w", err)
 		}
-		username, err := ioutil.ReadFile(configDir + "/" + defaultUsernameFilename)
+		username, err := os.ReadFile(configDir + "/" + defaultUsernameFilename)
 		if err != nil {
 			return fmt.Errorf("failed to read wapi username from file: %w", err)
 		}
-		password, err := ioutil.ReadFile(configDir + "/" + defaultPasswordFilename)
+		password, err := os.ReadFile(configDir + "/" + defaultPasswordFilename)
 		if err != nil {
 			return fmt.Errorf("failed to read wapi password from file: %w", err)
 		}
-		masterHostname, err := ioutil.ReadFile(configDir + "/" + defaultMasterHostnameFilename)
+		masterHostname, err := os.ReadFile(configDir + "/" + defaultMasterHostnameFilename)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return fmt.Errorf("failed to read grid master hostname from file: %w", err)

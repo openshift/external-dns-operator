@@ -132,15 +132,15 @@ func deploymentConditionMap(conditions ...appsv1.DeploymentCondition) map[string
 	return conds
 }
 
-func waitForOperatorDeploymentStatusCondition(t *testing.T, cl client.Client, conditions ...appsv1.DeploymentCondition) error {
+func waitForOperatorDeploymentStatusCondition(ctx context.Context, t *testing.T, cl client.Client, conditions ...appsv1.DeploymentCondition) error {
 	t.Helper()
-	return wait.Poll(2*time.Second, 1*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 2*time.Second, 1*time.Minute, false, func(ctx context.Context) (bool, error) {
 		dep := &appsv1.Deployment{}
 		depNamespacedName := types.NamespacedName{
 			Name:      "external-dns-operator",
 			Namespace: "external-dns-operator",
 		}
-		if err := cl.Get(context.TODO(), depNamespacedName, dep); err != nil {
+		if err := cl.Get(ctx, depNamespacedName, dep); err != nil {
 			t.Logf("failed to get deployment %s: %v", depNamespacedName.Name, err)
 			return false, nil
 		}

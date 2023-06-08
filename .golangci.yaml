@@ -73,9 +73,11 @@ linters:
     - errcheck
     - gofmt
     - goimports
+    - gosimple
     - govet
     - ineffassign
     - misspell
+    - staticcheck
     - typecheck
     - unused
   fast: false
