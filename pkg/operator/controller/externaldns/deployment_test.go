@@ -1784,6 +1784,55 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:             "RoleARN set AWS Route",
+			inputExternalDNS: testAWSExternalDNSRoleARN(operatorv1beta1.SourceTypeRoute, "arn:aws:iam:123456789012:role/foo"),
+			expectedTemplatePodSpec: corev1.PodSpec{
+				ServiceAccountName: test.OperandName,
+				NodeSelector: map[string]string{
+					osLabel:             linuxOS,
+					masterNodeRoleLabel: "",
+				},
+				Tolerations: []corev1.Toleration{
+					{
+						Key:      masterNodeRoleLabel,
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+				},
+				Containers: []corev1.Container{
+					{
+						Name:  ExternalDNSContainerName,
+						Image: test.OperandImage,
+						Args: []string{
+							"--aws-assume-role=arn:aws:iam:123456789012:role/foo",
+							"--metrics-address=127.0.0.1:7979",
+							"--txt-owner-id=external-dns-test",
+							"--zone-id-filter=my-dns-public-zone",
+							"--provider=aws",
+							"--source=openshift-route",
+							"--policy=sync",
+							"--registry=txt",
+							"--log-level=debug",
+							"--ignore-hostname-annotation",
+							`--fqdn-template={{""}}`,
+							"--txt-prefix=external-dns-",
+						},
+						SecurityContext: &corev1.SecurityContext{
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{allCapabilities},
+							},
+							Privileged:               pointer.Bool(false),
+							RunAsNonRoot:             pointer.Bool(true),
+							AllowPrivilegeEscalation: pointer.Bool(false),
+							SeccompProfile: &corev1.SeccompProfile{
+								Type: corev1.SeccompProfileTypeRuntimeDefault,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:             "Nominal Azure Route",
 			inputSecretName:  azureSecret,
 			inputExternalDNS: testAzureExternalDNS(operatorv1beta1.SourceTypeRoute),
@@ -5312,6 +5361,16 @@ func testAWSExternalDNSDomainFilter(zones []string, source operatorv1beta1.Exter
 				Name:      pointer.String("abc.com"),
 			},
 			FilterType: operatorv1beta1.FilterTypeInclude,
+		},
+	}
+	return extdns
+}
+
+func testAWSExternalDNSRoleARN(source operatorv1beta1.ExternalDNSSourceType, roleARN string) *operatorv1beta1.ExternalDNS {
+	extdns := testCreateDNSFromSourceWRTCloudProvider(source, operatorv1beta1.ProviderTypeAWS, nil, "")
+	extdns.Spec.Provider.AWS = &operatorv1beta1.ExternalDNSAWSProviderOptions{
+		AssumeRole: &operatorv1beta1.ExternalDNSAWSAssumeRoleOptions{
+			ARN: roleARN,
 		},
 	}
 	return extdns

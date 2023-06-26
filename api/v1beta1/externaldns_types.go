@@ -257,9 +257,14 @@ type ExternalDNSAWSProviderOptions struct {
 	// +kubebuilder:validation:Required
 	// +required
 	Credentials SecretReference `json:"credentials"`
-	// TODO: Additionally support access for:
-	// - kiam/kube2iam enabled clusters ("iam.amazonaws.com/role" POD's annotation to assume IAM role)
-	// - EKS clusters ("eks.amazonaws.com/role-arn" ServiceAccount's annotation to assume IAM role)
+
+	// assumeRole is a reference to the IAM role that
+	// ExternalDNS will be assuming in order to perform
+	// any DNS updates.
+	//
+	// +kubebuilder:validation:Optional
+	// +optional
+	AssumeRole *ExternalDNSAWSAssumeRoleOptions `json:"assumeRole,omitempty"`
 }
 
 type ExternalDNSGCPProviderOptions struct {
@@ -484,6 +489,15 @@ const (
 	HostnameAnnotationPolicyIgnore HostnameAnnotationPolicy = "Ignore"
 	HostnameAnnotationPolicyAllow  HostnameAnnotationPolicy = "Allow"
 )
+
+type ExternalDNSAWSAssumeRoleOptions struct {
+	// arn is an AWS role ARN that the ExternalDNS
+	// operator will assume when making DNS updates.
+	//
+	// +kubebuilder:validation:Required
+	// +required
+	ARN string `json:"arn,omitempty"`
+}
 
 // ExternalDNSServiceSourceOptions describes options
 // specific to the ExternalDNS service source.

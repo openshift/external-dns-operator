@@ -52,6 +52,33 @@ var _ = Describe("ExternalDNS admission webhook when platform is OCP", func() {
 				err := k8sClient.Create(context.Background(), resource)
 				Expect(err).Should(Succeed())
 			})
+			It("valid RoleARN", func() {
+				resource := makeExternalDNS("test-valid-rolearn-openshift", nil)
+				resource.Spec.Provider = ExternalDNSProvider{
+					Type: ProviderTypeAWS,
+					AWS: &ExternalDNSAWSProviderOptions{
+						AssumeRole: &ExternalDNSAWSAssumeRoleOptions{
+							ARN: "arn:aws:iam::123456789012:role/foo",
+						},
+					},
+				}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).Should(Succeed())
+			})
+			It("invalid RoleARN rejected", func() {
+				resource := makeExternalDNS("test-invalid-rolearn-openshift", nil)
+				resource.Spec.Provider = ExternalDNSProvider{
+					Type: ProviderTypeAWS,
+					AWS: &ExternalDNSAWSProviderOptions{
+						AssumeRole: &ExternalDNSAWSAssumeRoleOptions{
+							ARN: "arn:aws:iam:bad123456789012:role/foo",
+						},
+					},
+				}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).ShouldNot(Succeed())
+				Expect(err.Error()).Should(ContainSubstring(`arn "arn:aws:iam:bad123456789012:role/foo" is not a valid AWS ARN`))
+			})
 		})
 		Context("resource with Azure provider", func() {
 			It("ignores when provider Azure credentials are not specified", func() {
@@ -174,6 +201,35 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 			err := k8sClient.Create(context.Background(), resource)
 			Expect(err).ShouldNot(Succeed())
 			Expect(err.Error()).Should(ContainSubstring("credentials secret must be specified when provider type is AWS"))
+		})
+		It("valid RoleARN", func() {
+			resource := makeExternalDNS("test-valid-rolearn", nil)
+			resource.Spec.Provider = ExternalDNSProvider{
+				Type: ProviderTypeAWS,
+				AWS: &ExternalDNSAWSProviderOptions{
+					AssumeRole: &ExternalDNSAWSAssumeRoleOptions{
+						ARN: "arn:aws:iam::123456789012:role/foo",
+					},
+					Credentials: SecretReference{Name: "credentials"},
+				},
+			}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).Should(Succeed())
+		})
+		It("invalid RoleARN rejected", func() {
+			resource := makeExternalDNS("test-invalid-rolearn", nil)
+			resource.Spec.Provider = ExternalDNSProvider{
+				Type: ProviderTypeAWS,
+				AWS: &ExternalDNSAWSProviderOptions{
+					AssumeRole: &ExternalDNSAWSAssumeRoleOptions{
+						ARN: "arn:aws:iam:bad123456789012:role/foo",
+					},
+					Credentials: SecretReference{Name: "credentials"},
+				},
+			}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring(`arn "arn:aws:iam:bad123456789012:role/foo" is not a valid AWS ARN`))
 		})
 	})
 

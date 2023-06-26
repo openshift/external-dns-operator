@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
@@ -71,6 +72,7 @@ func (r *ExternalDNS) validate(old runtime.Object) error {
 		r.validateSources(old),
 		r.validateHostnameAnnotationPolicy(),
 		r.validateProviderCredentials(),
+		r.validateAWSRoleARN(),
 	})
 }
 
@@ -154,5 +156,15 @@ func (r *ExternalDNS) validateProviderCredentials() error {
 			return errors.New(`"WAPIVersion", "WAPIPort", "GridHost" and credentials file must be specified when provider is Infoblox`)
 		}
 	}
+	return nil
+}
+
+func (r *ExternalDNS) validateAWSRoleARN() error {
+	// Ensure we have a valid arn if it is specified.
+	provider := r.Spec.Provider
+	if provider.AWS != nil && provider.AWS.AssumeRole != nil && !arn.IsARN(provider.AWS.AssumeRole.ARN) {
+		return fmt.Errorf("arn %q is not a valid AWS ARN", provider.AWS.AssumeRole.ARN)
+	}
+
 	return nil
 }

@@ -341,6 +341,10 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 		container.Args = append(container.Args, "--aws-prefer-cname")
 	}
 
+	if b.externalDNS.Spec.Provider.AWS != nil && b.externalDNS.Spec.Provider.AWS.AssumeRole != nil {
+		container.Args = append(container.Args, fmt.Sprintf("--aws-assume-role=%s", b.externalDNS.Spec.Provider.AWS.AssumeRole.ARN))
+	}
+
 	// don't add empty credentials environment variables if no secret was given
 	if len(b.secretName) == 0 {
 		return
