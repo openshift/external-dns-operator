@@ -59,6 +59,7 @@ type reconciler struct {
 // between the operator and operand namespaces.
 func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	log := ctrl.Log.WithName(controllerName)
+	operatorCache := mgr.GetCache()
 
 	reconciler := &reconciler{
 		client: mgr.GetClient(),
@@ -70,7 +71,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	targetToSource := func(o client.Object) []reconcile.Request {
+	targetToSource := func(ctx context.Context, o client.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -83,7 +84,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// Watch the configmap from the source namespace
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.ConfigMap{}},
+		source.Kind(operatorCache, &corev1.ConfigMap{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(config.CAConfigMapName))),
 	); err != nil {
@@ -93,7 +94,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// Watch the configmap from the target namespace
 	// and enqueue the one from the source namespace
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.ConfigMap{}},
+		source.Kind(operatorCache, &corev1.ConfigMap{}),
 		handler.EnqueueRequestsFromMapFunc(targetToSource),
 		predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(extdnscontroller.ExternalDNSDestTrustedCAConfigMapName("").Name))),
 	); err != nil {

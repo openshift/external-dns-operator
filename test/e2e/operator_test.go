@@ -182,7 +182,7 @@ func TestOperatorAvailable(t *testing.T) {
 	expected := []appsv1.DeploymentCondition{
 		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
 	}
-	if err := waitForOperatorDeploymentStatusCondition(t, kubeClient, expected...); err != nil {
+	if err := waitForOperatorDeploymentStatusCondition(context.TODO(), t, kubeClient, expected...); err != nil {
 		t.Errorf("Did not get expected available condition: %v", err)
 	}
 }
@@ -216,7 +216,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 	t.Log("Creating source route")
 	testRouteHost := "myroute." + hostedZoneDomain
 	route := testRoute(testRouteName, testNamespace, testRouteHost, testServiceName)
-	if err := kubeClient.Create(context.Background(), route); err != nil {
+	if err := kubeClient.Create(context.TODO(), route); err != nil {
 		t.Fatalf("Failed to create test route %s/%s: %v", testNamespace, testRouteName, err)
 	}
 	defer func() {
@@ -226,9 +226,9 @@ func TestExternalDNSWithRoute(t *testing.T) {
 
 	// get the router canonical name
 	var targetRoute routev1.Route
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 		t.Log("Waiting for the route to be acknowledged by the router")
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+		err = kubeClient.Get(ctx, types.NamespacedName{
 			Namespace: testNamespace,
 			Name:      testRouteName,
 		}, &targetRoute)
@@ -258,7 +258,7 @@ func TestExternalDNSWithRoute(t *testing.T) {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 
 		// verify dns records has been created for the route host.
-		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 			cNameHost, err := lookupCNAME(testRouteHost, nameSrv)
 			if err != nil {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
@@ -304,7 +304,7 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
 	t.Log("Creating source service")
 	service := defaultService(testServiceName, testNamespace)
-	if err := kubeClient.Create(context.Background(), service); err != nil {
+	if err := kubeClient.Create(context.TODO(), service); err != nil {
 		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testServiceName, err)
 	}
 	defer func() {
@@ -313,10 +313,10 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 
 	serviceIPs := make(map[string]struct{})
 	// get the IPs of the loadbalancer which is created for the service
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 		t.Log("Getting IPs of service's load balancer")
 		var service corev1.Service
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+		err = kubeClient.Get(ctx, types.NamespacedName{
 			Namespace: testNamespace,
 			Name:      testServiceName,
 		}, &service)
@@ -358,7 +358,7 @@ func TestExternalDNSRecordLifecycle(t *testing.T) {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 
 		// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
-		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 			expectedHost := fmt.Sprintf("%s.%s", testServiceName, hostedZoneDomain)
 			ips, err := lookupARecord(expectedHost, nameSrv)
 			if err != nil {
@@ -446,13 +446,13 @@ func TestExternalDNSCustomIngress(t *testing.T) {
 		_ = kubeClient.Delete(context.TODO(), route)
 	}()
 
-	canonicalName, err := fetchRouterCanonicalHostname(t, routeName, ingDomain)
+	canonicalName, err := fetchRouterCanonicalHostname(context.TODO(), t, routeName, ingDomain)
 	if err != nil {
 		t.Fatalf("Failed to get RouterCanonicalHostname for route %s/%s: %v", routeName.Namespace, routeName.Name, err)
 	}
 	t.Logf("CanonicalName: %s for the route: %s", canonicalName, routeName.Name)
 
-	verifyCNAMERecordForOpenshiftRoute(t, canonicalName, host)
+	verifyCNAMERecordForOpenshiftRoute(context.TODO(), t, canonicalName, host)
 }
 
 func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
@@ -484,7 +484,7 @@ func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
 	t.Log("Creating source route")
 	testRouteHost := "myroute." + hostedZoneDomain
 	route := testRoute(testRouteName, testNamespace, testRouteHost, testServiceName)
-	if err := kubeClient.Create(context.Background(), route); err != nil {
+	if err := kubeClient.Create(context.TODO(), route); err != nil {
 		t.Fatalf("Failed to create test route %s/%s: %v", testNamespace, testRouteName, err)
 	}
 	defer func() {
@@ -494,9 +494,9 @@ func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
 
 	// get the router canonical name
 	var targetRoute routev1.Route
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 		t.Log("Waiting for the route to be acknowledged by the router")
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+		err = kubeClient.Get(ctx, types.NamespacedName{
 			Namespace: testNamespace,
 			Name:      testRouteName,
 		}, &targetRoute)
@@ -526,7 +526,7 @@ func TestExternalDNSWithRouteV1Alpha1(t *testing.T) {
 		t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 
 		// verify dns records has been created for the route host.
-		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 			cNameHost, err := lookupCNAME(testRouteHost, nameSrv)
 			if err != nil {
 				t.Logf("Waiting for DNS record: %s, error: %v", testRouteHost, err)
@@ -575,7 +575,7 @@ func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
 	// create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource
 	t.Log("Creating source service")
 	service := defaultService(testService, testNamespace)
-	if err := kubeClient.Create(context.Background(), service); err != nil {
+	if err := kubeClient.Create(context.TODO(), service); err != nil {
 		t.Fatalf("Failed to create test service %s/%s: %v", testNamespace, testService, err)
 	}
 	defer func() {
@@ -584,10 +584,10 @@ func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
 
 	serviceIPs := make(map[string]struct{})
 	// get the IPs of the loadbalancer which is created for the service
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 		t.Log("Getting IPs of service's load balancer")
 		var service corev1.Service
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+		err = kubeClient.Get(ctx, types.NamespacedName{
 			Namespace: testNamespace,
 			Name:      testService,
 		}, &service)
@@ -630,7 +630,7 @@ func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
 		for _, nameSrv := range nameServers {
 			t.Logf("Looking for DNS record in nameserver: %s", nameSrv)
 			// verify that the IPs of the record created by ExternalDNS match the IPs of loadbalancer obtained in the previous step.
-			if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+			if err := wait.PollUntilContextTimeout(context.TODO(), dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 				expectedHost := fmt.Sprintf("%s.%s", testService, hostedZoneDomain)
 				ips, err := lookupARecord(expectedHost, nameSrv)
 				if err != nil {
@@ -755,12 +755,12 @@ func ensureOperandRoleBinding() error {
 	return kubeClient.Create(context.TODO(), &rb)
 }
 
-func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string) {
+func verifyCNAMERecordForOpenshiftRoute(ctx context.Context, t *testing.T, canonicalName, host string) {
 	// try all nameservers and fail only if all failed
 	recordExist := false
 	for _, nameSrv := range nameServers {
 		t.Logf("Looking for cname record in nameserver: %s", nameSrv)
-		if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
+		if err := wait.PollUntilContextTimeout(ctx, dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
 			cname, err := lookupCNAME(host, nameSrv)
 			if err != nil {
 				t.Logf("Cname lookup failed for nameserver: %s , error: %v", nameSrv, err)
@@ -781,11 +781,11 @@ func verifyCNAMERecordForOpenshiftRoute(t *testing.T, canonicalName, host string
 	}
 }
 
-func fetchRouterCanonicalHostname(t *testing.T, routeName types.NamespacedName, routerDomain string) (string, error) {
+func fetchRouterCanonicalHostname(ctx context.Context, t *testing.T, routeName types.NamespacedName, routerDomain string) (string, error) {
 	route := routev1.Route{}
 	canonicalName := ""
-	if err := wait.PollImmediate(dnsPollingInterval, dnsPollingTimeout, func() (done bool, err error) {
-		err = kubeClient.Get(context.TODO(), types.NamespacedName{
+	if err := wait.PollUntilContextTimeout(ctx, dnsPollingInterval, dnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
+		err = kubeClient.Get(ctx, types.NamespacedName{
 			Namespace: routeName.Namespace,
 			Name:      routeName.Name,
 		}, &route)

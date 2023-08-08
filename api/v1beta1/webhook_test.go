@@ -112,7 +112,7 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*\.test.com`),
+						Pattern:   pointer.String(`(.*\.test.com`),
 					},
 					FilterType: FilterTypeInclude,
 				},
@@ -139,14 +139,14 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.test.com"),
+						Name:      pointer.String("abc.test.com"),
 					},
 					FilterType: FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeExact,
-						Name:      pointer.StringPtr(`(.*)\.test\.com`),
+						Name:      pointer.String(`(.*)\.test\.com`),
 					},
 					FilterType: FilterTypeInclude,
 				},

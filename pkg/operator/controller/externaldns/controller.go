@@ -74,6 +74,9 @@ type reconciler struct {
 // to watch for ExternalDNS objects across all namespaces.
 func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 	log := ctrl.Log.WithName(controlleroperator.ControllerName)
+	operatorCache := mgr.GetCache()
+	operatorScheme := mgr.GetScheme()
+	operatorRESTMapper := mgr.GetRESTMapper()
 
 	r := &reconciler{
 		config: cfg,
@@ -87,41 +90,32 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &operatorv1beta1.ExternalDNS{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(operatorCache, &operatorv1beta1.ExternalDNS{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &operatorv1beta1.ExternalDNS{},
-	}); err != nil {
+	if err := c.Watch(source.Kind(operatorCache, &appsv1.Deployment{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
 		return nil, err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &operatorv1beta1.ExternalDNS{},
-	}); err != nil {
+	if err := c.Watch(source.Kind(operatorCache, &corev1.ServiceAccount{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
 		return nil, err
 	}
 
 	// secret replicated by the credentials controller
 	// needs to trigger the reconciliation of the corresponding ExternalDNS
 	// because of the annotation with the secret's hash in the operand deployment
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &operatorv1beta1.ExternalDNS{},
-	}); err != nil {
+	if err := c.Watch(source.Kind(operatorCache, &corev1.Secret{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
 		return nil, err
 	}
 
 	// enqueue all ExternalDNS instances if the trusted CA config map changed
 	// EnqueueRequestForOwner won't work here
 	// because the trusted CA configmap doesn't belong to any particular ExternalDNS instance
-	allExtDNSInstances := func(o client.Object) []reconcile.Request {
+	allExtDNSInstances := func(ctx context.Context, o client.Object) []reconcile.Request {
 		externalDNSList := &operatorv1beta1.ExternalDNSList{}
 		requests := []reconcile.Request{}
-		if err := mgr.GetCache().List(context.Background(), externalDNSList); err != nil {
+		if err := mgr.GetCache().List(ctx, externalDNSList); err != nil {
 			log.Error(err, "failed to list externalDNS for trusted CA configmap")
 			return requests
 		}
@@ -137,7 +131,7 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return requests
 	}
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.ConfigMap{}},
+		source.Kind(operatorCache, &corev1.ConfigMap{}),
 		handler.EnqueueRequestsFromMapFunc(allExtDNSInstances),
 		// only the target trusted CA configmap
 		predicate.NewPredicateFuncs(ctrlutils.InNamespace(cfg.Namespace)),

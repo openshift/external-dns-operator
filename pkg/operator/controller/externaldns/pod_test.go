@@ -24,7 +24,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.com"),
+						Name:      pointer.String("abc.com"),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
@@ -37,21 +37,21 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.com"),
+						Name:      pointer.String("abc.com"),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("def.com"),
+						Name:      pointer.String("def.com"),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("ghi.com"),
+						Name:      pointer.String("ghi.com"),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
@@ -64,7 +64,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.abc\.com`),
+						Pattern:   pointer.String(`(.*)\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
@@ -78,7 +78,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*]\.abc\.com`),
+						Pattern:   pointer.String(`(.*]\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
@@ -92,14 +92,14 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.abc\.com`),
+						Pattern:   pointer.String(`(.*)\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.def\.com`),
+						Pattern:   pointer.String(`(.*)\.def\.com`),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
@@ -112,7 +112,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.com"),
+						Name:      pointer.String("abc.com"),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
@@ -125,21 +125,21 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.com"),
+						Name:      pointer.String("abc.com"),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("def.com"),
+						Name:      pointer.String("def.com"),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("ghi.com"),
+						Name:      pointer.String("ghi.com"),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
@@ -152,7 +152,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.abc\.com`),
+						Pattern:   pointer.String(`(.*)\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
@@ -166,7 +166,7 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*]\.abc\.com`),
+						Pattern:   pointer.String(`(.*]\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
@@ -180,14 +180,14 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.abc\.com`),
+						Pattern:   pointer.String(`(.*)\.abc\.com`),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.def\.com`),
+						Pattern:   pointer.String(`(.*)\.def\.com`),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
@@ -202,28 +202,28 @@ func TestDomainFilters(t *testing.T) {
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("abc.com"),
+						Name:      pointer.String("abc.com"),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeExact,
-						Name:      pointer.StringPtr("def.com"),
+						Name:      pointer.String("def.com"),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.ghi\.com`),
+						Pattern:   pointer.String(`(.*)\.ghi\.com`),
 					},
 					FilterType: v1beta1.FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: v1beta1.ExternalDNSDomainUnion{
 						MatchType: v1beta1.DomainMatchTypeRegex,
-						Pattern:   pointer.StringPtr(`(.*)\.pqr\.com`),
+						Pattern:   pointer.String(`(.*)\.pqr\.com`),
 					},
 					FilterType: v1beta1.FilterTypeExclude,
 				},

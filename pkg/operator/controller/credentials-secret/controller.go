@@ -69,6 +69,7 @@ type reconciler struct {
 // between the operator and operand namespaces.
 func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	log := ctrl.Log.WithName(controllerName)
+	operatorCache := mgr.GetCache()
 
 	reconciler := &reconciler{
 		cache:  mgr.GetCache(),
@@ -86,7 +87,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// Enqueue if ExternalDNS references a secret or if the secret name changes
 	if err := c.Watch(
-		&source.Kind{Type: &operatorv1beta1.ExternalDNS{}},
+		source.Kind(operatorCache, &operatorv1beta1.ExternalDNS{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
@@ -129,11 +130,11 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	}
 
 	// function to get all ExternalDNS resources which match the secret's index key
-	credSecretToExtDNS := func(o client.Object) []reconcile.Request {
+	credSecretToExtDNS := func(ctx context.Context, o client.Object) []reconcile.Request {
 		externalDNSList := &operatorv1beta1.ExternalDNSList{}
 		listOpts := client.MatchingFields{credentialsSecretIndexFieldName: o.GetName()}
 		requests := []reconcile.Request{}
-		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
+		if err := reconciler.cache.List(ctx, externalDNSList, listOpts); err != nil {
 			log.Error(err, "failed to list externalDNS for secret")
 			return requests
 		}
@@ -165,11 +166,11 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 		return nil, fmt.Errorf("failed to create index for credentials secret: %w", err)
 	}
 
-	credSecretToExtDNSTargetNS := func(o client.Object) []reconcile.Request {
+	credSecretToExtDNSTargetNS := func(ctx context.Context, o client.Object) []reconcile.Request {
 		externalDNSList := &operatorv1beta1.ExternalDNSList{}
 		listOpts := client.MatchingFields{credentialsSecretIndexFieldNameInOperand: o.GetName()}
 		requests := []reconcile.Request{}
-		if err := reconciler.cache.List(context.Background(), externalDNSList, listOpts); err != nil {
+		if err := reconciler.cache.List(ctx, externalDNSList, listOpts); err != nil {
 			log.Error(err, "failed to list externalDNS for secret")
 			return requests
 		}
@@ -190,7 +191,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// we send the reconcile requests with all the ExternalDNS resources
 	// which referenced it
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.Secret{}},
+		source.Kind(operatorCache, &corev1.Secret{}),
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
 		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)),
 	); err != nil {
@@ -202,7 +203,7 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// we send the reconcile requests with all the ExternalDNS resources
 	// which referenced it
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.Secret{}},
+		source.Kind(operatorCache, &corev1.Secret{}),
 		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
 		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)),
 	); err != nil {

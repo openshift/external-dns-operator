@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // webhookLog is for logging in this package.
@@ -42,21 +43,21 @@ func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) 
 var _ webhook.Validator = &ExternalDNS{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ExternalDNS) ValidateCreate() error {
+func (r *ExternalDNS) ValidateCreate() (admission.Warnings, error) {
 	webhookLog.Info("validate create", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ExternalDNS) ValidateUpdate(_ runtime.Object) error {
+func (r *ExternalDNS) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	webhookLog.Info("validate update", "name", r.Name)
-	return r.validate()
+	return nil, r.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ExternalDNS) ValidateDelete() error {
+func (r *ExternalDNS) ValidateDelete() (admission.Warnings, error) {
 	webhookLog.Info("validate delete", "name", r.Name)
-	return nil
+	return nil, nil
 }
 
 func (r *ExternalDNS) validate() error {
