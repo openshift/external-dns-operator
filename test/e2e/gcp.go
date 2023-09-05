@@ -6,6 +6,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/openshift/external-dns-operator/test/common"
 	"strconv"
 	"strings"
 
@@ -170,7 +171,7 @@ func (g *gcpTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 
 func (a *gcpTestHelper) prepareConfigurations(openshiftCI bool, kubeClient client.Client) error {
 	if openshiftCI {
-		data, err := rootCredentials(kubeClient, "gcp-credentials")
+		data, err := common.RootCredentials(kubeClient, "gcp-credentials")
 		if err != nil {
 			return fmt.Errorf("failed to get GCP credentials: %w", err)
 		}
@@ -180,8 +181,8 @@ func (a *gcpTestHelper) prepareConfigurations(openshiftCI bool, kubeClient clien
 			return fmt.Errorf("failed to get GCP project id: %w", err)
 		}
 	} else {
-		a.gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
-		a.gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
+		a.gcpCredentials = common.MustGetEnv("GCP_CREDENTIALS")
+		a.gcpProjectId = common.MustGetEnv("GCP_PROJECT_ID")
 	}
 	return nil
 }

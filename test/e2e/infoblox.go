@@ -6,6 +6,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"github.com/openshift/external-dns-operator/test/common"
 	"net"
 	"os"
 	"strconv"
@@ -218,9 +219,9 @@ func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) err
 		h.wapiPassword = string(password)
 		h.gridMasterHostname = string(masterHostname)
 	} else {
-		h.gridHost = mustGetEnv(infobloxGridHostEnvVar)
-		h.wapiUsername = mustGetEnv(infobloxWAPIUsernameEnvVar)
-		h.wapiPassword = mustGetEnv(infobloxWAPIPasswordEnvVar)
+		h.gridHost = common.MustGetEnv(infobloxGridHostEnvVar)
+		h.wapiUsername = common.MustGetEnv(infobloxWAPIUsernameEnvVar)
+		h.wapiPassword = common.MustGetEnv(infobloxWAPIPasswordEnvVar)
 		h.gridMasterHostname = os.Getenv(infobloxGridMasterHostnameEnvVar)
 		if h.gridMasterHostname == "" {
 			// assume that grid host is a resolvable DNS name

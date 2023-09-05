@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/openshift/external-dns-operator/test/common"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
@@ -55,7 +56,7 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 }
 
 func (a *azureTestHelper) prepareConfigurations(kubeClient client.Client) (err error) {
-	data, err := rootCredentials(kubeClient, "azure-credentials")
+	data, err := common.RootCredentials(kubeClient, "azure-credentials")
 	if err != nil {
 		return fmt.Errorf("failed to get credentials secret, error : %v", err)
 	}

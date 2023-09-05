@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/openshift/external-dns-operator/test/common"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -172,15 +174,15 @@ func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 
 func (a *awsTestHelper) prepareConfigurations(isOpenShiftCI bool, kubeClient client.Client) error {
 	if isOpenShiftCI {
-		data, err := rootCredentials(kubeClient, "aws-creds")
+		data, err := common.RootCredentials(kubeClient, "aws-creds")
 		if err != nil {
 			return fmt.Errorf("failed to get AWS credentials: %w", err)
 		}
 		a.keyID = string(data["aws_access_key_id"])
 		a.secretKey = string(data["aws_secret_access_key"])
 	} else {
-		a.keyID = mustGetEnv("AWS_ACCESS_KEY_ID")
-		a.secretKey = mustGetEnv("AWS_SECRET_ACCESS_KEY")
+		a.keyID = common.MustGetEnv("AWS_ACCESS_KEY_ID")
+		a.secretKey = common.MustGetEnv("AWS_SECRET_ACCESS_KEY")
 	}
 	return nil
 }
