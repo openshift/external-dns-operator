@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/external-dns-operator/test/common"
+
 	ibclient "github.com/infobloxopen/infoblox-go-client"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -52,10 +54,10 @@ type infobloxTestHelper struct {
 	gridMasterHostname string
 }
 
-func newInfobloxHelper(kubeClient client.Client) (*infobloxTestHelper, error) {
+func newInfobloxHelper() (*infobloxTestHelper, error) {
 	helper := &infobloxTestHelper{}
 
-	if err := helper.prepareConfigurations(kubeClient); err != nil {
+	if err := helper.prepareConfigurations(); err != nil {
 		return nil, fmt.Errorf("failed to prepare infoblox helper: %w", err)
 	}
 
@@ -190,7 +192,7 @@ func (h *infobloxTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zon
 	return resource
 }
 
-func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) error {
+func (h *infobloxTestHelper) prepareConfigurations() error {
 	configDir := os.Getenv(infobloxGridConfigDirEnvVar)
 	if configDir != "" {
 		host, err := os.ReadFile(configDir + "/" + defaultHostFilename)
@@ -218,9 +220,9 @@ func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) err
 		h.wapiPassword = string(password)
 		h.gridMasterHostname = string(masterHostname)
 	} else {
-		h.gridHost = mustGetEnv(infobloxGridHostEnvVar)
-		h.wapiUsername = mustGetEnv(infobloxWAPIUsernameEnvVar)
-		h.wapiPassword = mustGetEnv(infobloxWAPIPasswordEnvVar)
+		h.gridHost = common.MustGetEnv(infobloxGridHostEnvVar)
+		h.wapiUsername = common.MustGetEnv(infobloxWAPIUsernameEnvVar)
+		h.wapiPassword = common.MustGetEnv(infobloxWAPIPasswordEnvVar)
 		h.gridMasterHostname = os.Getenv(infobloxGridMasterHostnameEnvVar)
 		if h.gridMasterHostname == "" {
 			// assume that grid host is a resolvable DNS name
@@ -230,11 +232,11 @@ func (h *infobloxTestHelper) prepareConfigurations(kubeClient client.Client) err
 
 	// TODO: only needed while we are using the temporary setup of Infoblox.
 	// Must be removed once the setup is permanent and has the right certificate.
-	return h.trustGridTLSCert(kubeClient)
+	return h.trustGridTLSCert()
 }
 
 // trustGridTLSCert instructs the operator to trust Grid Master's self signed TLS certificate.
-func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
+func (h *infobloxTestHelper) trustGridTLSCert() error {
 	// get Grid's TLS certificate as raw PEM encoded data
 	certRaw, err := readServerTLSCert(net.JoinHostPort(h.gridHost, defaultWAPIPort), true)
 	if err != nil {
@@ -254,7 +256,7 @@ func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
 			"ca-bundle.crt": string(certRaw),
 		},
 	}
-	if err := kubeClient.Create(context.TODO(), trustedCAConfigMap); err != nil {
+	if err := common.KubeClient.Create(context.TODO(), trustedCAConfigMap); err != nil {
 		return fmt.Errorf("failed to create trusted CA configmap %s/%s: %w", trustedCAConfigMap.Namespace, trustedCAConfigMap.Name, err)
 	}
 
@@ -267,7 +269,7 @@ func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
 	// inject into subscription if there is one
 	findOperatorSubscription := func() (*olmv1alpha1.Subscription, error) {
 		list := &olmv1alpha1.SubscriptionList{}
-		if err := kubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
+		if err := common.KubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
 			return nil, err
 		}
 		for _, sub := range list.Items {
@@ -291,7 +293,7 @@ func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
 			subscription.Spec.Config = &olmv1alpha1.SubscriptionConfig{}
 		}
 		subscription.Spec.Config.Env = ensureEnvVar(subscription.Spec.Config.Env, trustedCAEnvVar)
-		if err := kubeClient.Update(context.TODO(), subscription); err != nil {
+		if err := common.KubeClient.Update(context.TODO(), subscription); err != nil {
 			return fmt.Errorf("failed to inject trusted CA environment variable into the subscription: %w", err)
 		}
 		return nil
@@ -300,7 +302,7 @@ func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
 	// no subscription was found, try to update the deployment directly
 	findOperatorDeployment := func() (*appsv1.Deployment, error) {
 		list := &appsv1.DeploymentList{}
-		if err := kubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
+		if err := common.KubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
 			return nil, err
 		}
 		for _, depl := range list.Items {
@@ -324,7 +326,7 @@ func (h *infobloxTestHelper) trustGridTLSCert(kubeClient client.Client) error {
 			break
 		}
 	}
-	if err := kubeClient.Update(context.TODO(), deployment); err != nil {
+	if err := common.KubeClient.Update(context.TODO(), deployment); err != nil {
 		return fmt.Errorf("failed to inject trusted CA environment variable into the deployment: %w", err)
 	}
 
