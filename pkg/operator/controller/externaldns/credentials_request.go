@@ -248,6 +248,7 @@ func createProviderConfig(externalDNS *operatorv1beta1.ExternalDNS, platformStat
 							"route53:ListHostedZones",
 							"route53:ListResourceRecordSets",
 							"tag:GetResources",
+							"sts:AssumeRole",
 						},
 						Resource: "*",
 					},

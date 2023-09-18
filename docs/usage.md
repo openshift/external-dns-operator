@@ -14,7 +14,7 @@ provider configuration in the `ExternalDNS` resource. However, it does not provi
 it expects the credentials to be in the same namespace as the operator itself. It then copies over the credentials into
 the namespace where the _external-dns_ deployments are created so that they can be mounted by the pods.
 
-## AWS
+# AWS
 
 Create a secret with the access key id and secret:
 
@@ -55,11 +55,57 @@ spec:
 Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
 manage DNS records in AWS Route53.
 
-## AWS GovCloud
+## Assume Role
+
+The _external-dns-operator_ supports managing records in another AWS account's hosted zone. To achieve this, you will
+require an IAM Role ARN with the necessary permissions properly set up. This Role ARN should then be specified in the
+`ExternalDNS` resource in the following manner:
+
+```yaml
+apiVersion: externaldns.olm.openshift.io/v1beta1
+kind: ExternalDNS
+metadata:
+  name: aws-example
+spec:
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        name: aws-access-key
+      assumeRole:
+        arn: arn:aws:iam::123456789012:role/role-name # Replace with the desire Role ARN
+  zones: # Replace with the desired hosted zone IDs
+    - "Z3URY6TWQ91KXX"
+  source:
+    type: Service
+    fqdnTemplate:
+    - '{{.Name}}.mydomain.net'
+```
+
+**Note**: Due to a limitation of the `v1beta1` API requiring the `credentials` field, OpenShift users will be required
+to provide an empty (`""`) credentials field. The empty credentials will be ignored and the secret provided by
+OpenShift's Cloud Credentials Operator will be used:
+
+```yaml
+apiVersion: externaldns.olm.openshift.io/v1beta1
+kind: ExternalDNS
+metadata:
+  name: aws-example
+spec:
+  provider:
+    type: AWS
+    aws:
+      credentials:
+        name: "" # Empty Credentials
+      assumeRole:
+        arn: arn:aws:iam::123456789012:role/role-name # Replace with the desire Role ARN
+```
+
+## GovCloud
 The operator makes the assumption that `ExternalDNS` instances which target GovCloud DNS also run on the GovCloud. This is needed to detect the AWS region.   
 As for the rest: the usage is exactly the same as for `AWS`.
 
-## Infoblox
+# Infoblox
 
 Before creating an `ExternalDNS` resource for the [Infoblox](https://www.infoblox.com/wp-content/uploads/infoblox-deployment-infoblox-rest-api.pdf)
 the following information is required:
@@ -110,7 +156,7 @@ spec:
 Once this is created the _external-dns-operator_ will create a deployment of _external-dns_ which is configured to
 manage DNS records in Infoblox.
 
-## BlueCat
+# BlueCat
 
 The BlueCat provider requires
 the [BlueCat Gateway](https://docs.bluecatnetworks.com/r/Gateway-Installation-Guide/Installing-BlueCat-Gateway/20.3.1)
