@@ -167,6 +167,10 @@ func desiredCredentialsSecret(sourceSecret *corev1.Secret, destName types.Namesp
 		if config, exists := sourceSecret.Data["bluecat.json"]; !exists || len(config) == 0 {
 			return nil, fmt.Errorf("invalid config for bluecat")
 		}
+	case operatorv1beta1.ProviderTypeCloudflare:
+		if creds, exists := sourceSecret.Data["CF_API_TOKEN"]; !exists || len(creds) == 0 {
+			return nil, fmt.Errorf("invalid config for cloudflare")
+		}
 	}
 
 	return secret, nil

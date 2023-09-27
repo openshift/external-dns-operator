@@ -155,6 +155,10 @@ func (r *ExternalDNS) validateProviderCredentials() error {
 		if provider.Infoblox == nil || provider.Infoblox.WAPIVersion == "" || provider.Infoblox.WAPIPort == 0 || provider.Infoblox.GridHost == "" || provider.Infoblox.Credentials.Name == "" {
 			return errors.New(`"WAPIVersion", "WAPIPort", "GridHost" and credentials file must be specified when provider is Infoblox`)
 		}
+	case ProviderTypeCloudflare:
+		if provider.Cloudflare == nil || provider.Cloudflare.Credentials.Name == "" {
+			return errors.New("credentials secret must be specified when provider type is Cloudflare")
+		}
 	}
 	return nil
 }

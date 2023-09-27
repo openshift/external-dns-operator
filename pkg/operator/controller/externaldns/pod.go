@@ -95,6 +95,12 @@ const (
 	infobloxWAPIPasswordEnvVar = "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD"
 	infobloxWAPIUsernameKey    = "EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME"
 	infobloxWAPIPasswordKey    = "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD"
+
+	//
+	// Cloudflare
+	//
+	cloudflareCredentialEnvVar = "CF_API_TOKEN"
+	cloudflareCredentialKey    = "CF_API_TOKEN"
 )
 
 // externalDNSContainerBuilder builds the definition of the containers for ExternalDNS POD
@@ -328,6 +334,8 @@ func (b *externalDNSContainerBuilder) fillProviderSpecificFields(zone string, co
 		b.fillBlueCatFields(container)
 	case externalDNSProviderTypeInfoblox:
 		b.fillInfobloxFields(container)
+	case externalDNSProviderTypeCloudflare:
+		b.fillCloudflareFields(container)
 	}
 }
 
@@ -490,6 +498,38 @@ func (b *externalDNSContainerBuilder) fillInfobloxFields(container *corev1.Conta
 						Name: b.secretName,
 					},
 					Key: infobloxWAPIPasswordKey,
+				},
+			},
+		},
+	}
+
+	container.Args = append(container.Args, args...)
+	container.Env = append(container.Env, env...)
+}
+
+// fillCloudflareFields fills the given container with the data specific to the Cloudflare provider
+func (b *externalDNSContainerBuilder) fillCloudflareFields(container *corev1.Container) {
+	args := []string{}
+
+	if b.externalDNS.Spec.Provider.Cloudflare.Proxied {
+		args = append(args, "--cloudflare-proxied")
+	}
+
+	if b.externalDNS.Spec.Provider.Cloudflare.RecordsPerPage >= 1 && b.externalDNS.Spec.Provider.Cloudflare.RecordsPerPage <= 5000 {
+		args = append(args, fmt.Sprintf("--cloudflare-dns-records-per-page=%d", b.externalDNS.Spec.Provider.Cloudflare.RecordsPerPage))
+	}
+
+	args = addTXTPrefixFlag(args)
+
+	env := []corev1.EnvVar{
+		{
+			Name: cloudflareCredentialEnvVar,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: b.secretName,
+					},
+					Key: cloudflareCredentialKey,
 				},
 			},
 		},

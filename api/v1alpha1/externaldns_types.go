@@ -240,6 +240,13 @@ type ExternalDNSProvider struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	Infoblox *ExternalDNSInfobloxProviderOptions `json:"infoblox,omitempty"`
+
+	// Cloudflare describes provider configuration options
+	// specific to Cloudflare DNS.
+	//
+	// +kubebuilder:validation:Optional
+	// +optional
+	Cloudflare *ExternalDNSCloudflareProviderOptions `json:"cloudflare,omitempty"`
 }
 
 type ExternalDNSAWSProviderOptions struct {
@@ -365,6 +372,29 @@ type ExternalDNSInfobloxProviderOptions struct {
 	WAPIVersion string `json:"wapiVersion"`
 }
 
+type ExternalDNSCloudflareProviderOptions struct {
+	// Credentials is a reference to a secret containing
+	// the following keys (with proper corresponding values):
+	//
+	// * CF_API_TOKEN
+	//
+	// See
+	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/cloudflare.md
+	// for more information and configuration options.
+	//
+	// +kubebuilder:validation:Required
+	// +required
+	Credentials SecretReference `json:"credentials"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=false
+	Proxied bool `json:"proxied"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Maximum:=5000
+	RecordsPerPage int `json:"recordsPerPage"`
+}
+
 // SecretReference contains the information to let you locate the desired secret.
 // Secret is required to be in the operator namespace.
 type SecretReference struct {
@@ -375,15 +405,16 @@ type SecretReference struct {
 	Name string `json:"name"`
 }
 
-// +kubebuilder:validation:Enum=AWS;GCP;Azure;BlueCat;Infoblox
+// +kubebuilder:validation:Enum=AWS;GCP;Azure;BlueCat;Infoblox;Cloudflare
 type ExternalDNSProviderType string
 
 const (
-	ProviderTypeAWS      ExternalDNSProviderType = "AWS"
-	ProviderTypeGCP      ExternalDNSProviderType = "GCP"
-	ProviderTypeAzure    ExternalDNSProviderType = "Azure"
-	ProviderTypeBlueCat  ExternalDNSProviderType = "BlueCat"
-	ProviderTypeInfoblox ExternalDNSProviderType = "Infoblox"
+	ProviderTypeAWS        ExternalDNSProviderType = "AWS"
+	ProviderTypeGCP        ExternalDNSProviderType = "GCP"
+	ProviderTypeAzure      ExternalDNSProviderType = "Azure"
+	ProviderTypeBlueCat    ExternalDNSProviderType = "BlueCat"
+	ProviderTypeInfoblox   ExternalDNSProviderType = "Infoblox"
+	ProviderTypeCloudflare ExternalDNSProviderType = "Cloudflare"
 	// More providers will ultimately be added in the future.
 )
 

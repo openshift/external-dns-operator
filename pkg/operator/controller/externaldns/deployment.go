@@ -47,6 +47,7 @@ const (
 	externalDNSProviderTypeAzurePrivate = "azure-private-dns"
 	externalDNSProviderTypeBlueCat      = "bluecat"
 	externalDNSProviderTypeInfoblox     = "infoblox"
+	externalDNSProviderTypeCloudflare   = "cloudflare"
 	appNameLabel                        = "app.kubernetes.io/name"
 	appInstanceLabel                    = "app.kubernetes.io/instance"
 	masterNodeRoleLabel                 = "node-role.kubernetes.io/master"
@@ -60,11 +61,12 @@ const (
 // providerStringTable maps ExternalDNSProviderType values from the
 // ExternalDNS operator API to the provider string argument expected by ExternalDNS.
 var providerStringTable = map[operatorv1beta1.ExternalDNSProviderType]string{
-	operatorv1beta1.ProviderTypeAWS:      externalDNSProviderTypeAWS,
-	operatorv1beta1.ProviderTypeGCP:      externalDNSProviderTypeGCP,
-	operatorv1beta1.ProviderTypeAzure:    externalDNSProviderTypeAzure,
-	operatorv1beta1.ProviderTypeBlueCat:  externalDNSProviderTypeBlueCat,
-	operatorv1beta1.ProviderTypeInfoblox: externalDNSProviderTypeInfoblox,
+	operatorv1beta1.ProviderTypeAWS:        externalDNSProviderTypeAWS,
+	operatorv1beta1.ProviderTypeGCP:        externalDNSProviderTypeGCP,
+	operatorv1beta1.ProviderTypeAzure:      externalDNSProviderTypeAzure,
+	operatorv1beta1.ProviderTypeBlueCat:    externalDNSProviderTypeBlueCat,
+	operatorv1beta1.ProviderTypeInfoblox:   externalDNSProviderTypeInfoblox,
+	operatorv1beta1.ProviderTypeCloudflare: externalDNSProviderTypeCloudflare,
 }
 
 // sourceStringTable maps ExternalDNSSourceType values from the

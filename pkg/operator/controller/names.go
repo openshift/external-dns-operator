@@ -111,6 +111,10 @@ func ExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1beta1.E
 		if externalDNS.Spec.Provider.Infoblox != nil {
 			return externalDNS.Spec.Provider.Infoblox.Credentials.Name
 		}
+	case operatorv1beta1.ProviderTypeCloudflare:
+		if externalDNS.Spec.Provider.Cloudflare != nil {
+			return externalDNS.Spec.Provider.Cloudflare.Credentials.Name
+		}
 	}
 	return ""
 }

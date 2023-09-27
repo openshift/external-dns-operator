@@ -107,6 +107,17 @@ var _ = Describe("ExternalDNS admission webhook when platform is OCP", func() {
 				Expect(err.Error()).Should(ContainSubstring("config file name must be specified when provider type is BlueCat"))
 			})
 		})
+
+		Context("resource with Cloudflare provider", func() {
+			It("ignores when provider Cloudflare credentials are not specified", func() {
+				resource := makeExternalDNS("test-missing-cloudflare-credentials", nil)
+				resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeCloudflare}
+				err := k8sClient.Create(context.Background(), resource)
+				Expect(err).ShouldNot(Succeed())
+				Expect(err.Error()).Should(ContainSubstring("credentials secret must be specified when provider type is Cloudflare"))
+			})
+		})
+
 	})
 
 })
@@ -310,6 +321,16 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 			err := k8sClient.Create(context.Background(), resource)
 			Expect(err).ShouldNot(Succeed())
 			Expect(err.Error()).Should(ContainSubstring(`"WAPIVersion", "WAPIPort", "GridHost" and credentials file must be specified when provider is Infoblox`))
+		})
+	})
+
+	Context("resource with Cloudflare provider", func() {
+		It("rejected when provider Cloudflare credentials are not specified", func() {
+			resource := makeExternalDNS("test-missing-cloudflare-credentials", nil)
+			resource.Spec.Provider = ExternalDNSProvider{Type: ProviderTypeCloudflare}
+			err := k8sClient.Create(context.Background(), resource)
+			Expect(err).ShouldNot(Succeed())
+			Expect(err.Error()).Should(ContainSubstring("credentials secret must be specified when provider type is Cloudflare"))
 		})
 	})
 
