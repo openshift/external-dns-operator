@@ -231,6 +231,9 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLbl,
 			},
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      matchLbl,
@@ -332,11 +335,37 @@ func (r *reconciler) updateExternalDNSDeployment(ctx context.Context, current, d
 // externalDNSDeploymentChanged evaluates whether or not a deployment update is necessary.
 // Returns a boolean if an update is necessary, and the deployment resource to update to.
 func externalDNSDeploymentChanged(current, expected *appsv1.Deployment) (bool, *appsv1.Deployment) {
+	changed := false
 	updated := current.DeepCopy()
-	annotationChanged := externalDNSAnnotationsChanged(current, expected, updated)
-	containersChanged := externalDNSContainersChanged(current, expected, updated)
-	volumesChanged := externalDNSVolumesChanged(current, expected, updated)
-	return annotationChanged || containersChanged || volumesChanged, updated
+
+	if expected.Spec.Replicas != nil {
+		expReplicas := *expected.Spec.Replicas
+		if current.Spec.Replicas == nil {
+			updated.Spec.Replicas = &expReplicas
+			changed = true
+		} else if *expected.Spec.Replicas != *current.Spec.Replicas {
+			updated.Spec.Replicas = &expReplicas
+			changed = true
+		}
+	}
+
+	if externalDNSDeploymentStrategyChanged(current, expected, updated) {
+		changed = true
+	}
+
+	if externalDNSAnnotationsChanged(current, expected, updated) {
+		changed = true
+	}
+
+	if externalDNSContainersChanged(current, expected, updated) {
+		changed = true
+	}
+
+	if externalDNSVolumesChanged(current, expected, updated) {
+		changed = true
+	}
+
+	return changed, updated
 }
 
 // externalDNSAnnotationsChanged returns true if any annotation from the podspec differs from the expected.```
@@ -442,6 +471,28 @@ func externalDNSVolumesChanged(current, expected, updated *appsv1.Deployment) bo
 				updated.Spec.Template.Spec.Volumes[currVol.Index] = expVol.Volume
 				changed = true
 			}
+		}
+	}
+
+	return changed
+}
+
+// externalDNSDeploymentStrategyChanged returns true if the current update strategy differs from expected.
+func externalDNSDeploymentStrategyChanged(current, expected, updated *appsv1.Deployment) bool {
+	changed := false
+
+	// reset the strategy type if it differs
+	if expected.Spec.Strategy.Type != "" &&
+		expected.Spec.Strategy.Type != current.Spec.Strategy.Type {
+		updated.Spec.Strategy.Type = expected.Spec.Strategy.Type
+		changed = true
+	}
+
+	// if the expected strategy is Recreate: make sure no rolling update params are present
+	if expected.Spec.Strategy.Type == appsv1.RecreateDeploymentStrategyType {
+		if current.Spec.Strategy.RollingUpdate != nil {
+			updated.Spec.Strategy.RollingUpdate = nil
+			changed = true
 		}
 	}
 
