@@ -578,11 +578,13 @@ spec:
                           updates.
                         properties:
                           arn:
-                            description: arn is an AWS role ARN that the ExternalDNS
+                            description: arn is an IAM role ARN that the ExternalDNS
                               operator will assume when making DNS updates.
                             type: string
                         type: object
                       credentials:
+                        default:
+                          name: ""
                         description: "Credentials is a reference to a secret containing
                           the following keys (with corresponding values): \n * aws_access_key_id
                           * aws_secret_access_key \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md

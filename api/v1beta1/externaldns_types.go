@@ -255,6 +255,7 @@ type ExternalDNSAWSProviderOptions struct {
 	// for more information.
 	//
 	// +kubebuilder:validation:Required
+	// +kubebuilder:default:={"name":""}
 	// +required
 	Credentials SecretReference `json:"credentials"`
 
@@ -491,7 +492,7 @@ const (
 )
 
 type ExternalDNSAWSAssumeRoleOptions struct {
-	// arn is an AWS role ARN that the ExternalDNS
+	// arn is an IAM role ARN that the ExternalDNS
 	// operator will assume when making DNS updates.
 	//
 	// +kubebuilder:validation:Required
