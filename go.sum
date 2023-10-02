@@ -517,8 +517,8 @@ github.com/onsi/gomega v1.14.0/go.mod h1:cIuvLEne0aoVhAgh/O6ac0Op8WWw9H6eYCriF+t
 github.com/onsi/gomega v1.15.0/go.mod h1:cIuvLEne0aoVhAgh/O6ac0Op8WWw9H6eYCriF+tEHG0=
 github.com/onsi/gomega v1.27.7 h1:fVih9JD6ogIiHUN6ePK7HJidyEDpWGVB5mzM7cWNXoU=
 github.com/onsi/gomega v1.27.7/go.mod h1:1p8OOlwo2iUUDsHnOrjE5UKYJ+e3W8eQ3qSlRahPmr4=
-github.com/openshift/api v0.0.0-20220906163444-2df055c101a3 h1:JEFTPLulnOSzBIsZZWitpm0SMJ+TFr7kUumAx7LvvGI=
-github.com/openshift/api v0.0.0-20220906163444-2df055c101a3/go.mod h1:9JWn+H7X8wEPPc9D63krigXl8r3F1Mt6/lC98brUyhQ=
+github.com/openshift/api v0.0.0-20230712163317-e19a88e10d9c h1:CrYt+EyqxuL8EulM5w37YSJ2jAxxChbyA0e4rQWosuI=
+github.com/openshift/api v0.0.0-20230712163317-e19a88e10d9c/go.mod h1:yimSGmjsI+XF1mr+AKBs2//fSXIOhhetHGbMlBEfXbs=
 github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa h1:q2NffXPZIu0OfddEsV/6SqSpQAwol1VD9lOIc5JEmvE=
 github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa/go.mod h1:2yIM8jdbNwuuHOIWwE8wzE+bxu6XvyAPpNzQPK2azgc=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
