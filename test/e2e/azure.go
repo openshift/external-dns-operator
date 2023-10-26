@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/openshift/external-dns-operator/test/common"
+
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -16,7 +18,6 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -41,10 +42,10 @@ type azureTestHelper struct {
 
 // Build the necessary object for the provider test
 // for Azure Need the credentials ref clusterConfig
-func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
+func newAzureHelper() (providerTestHelper, error) {
 	azureProvider := &azureTestHelper{}
 
-	if err := azureProvider.prepareConfigurations(kubeClient); err != nil {
+	if err := azureProvider.prepareConfigurations(); err != nil {
 		return nil, err
 	}
 
@@ -54,8 +55,8 @@ func newAzureHelper(kubeClient client.Client) (providerTestHelper, error) {
 	return azureProvider, nil
 }
 
-func (a *azureTestHelper) prepareConfigurations(kubeClient client.Client) (err error) {
-	data, err := rootCredentials(kubeClient, "azure-credentials")
+func (a *azureTestHelper) prepareConfigurations() (err error) {
+	data, err := common.RootCredentials("azure-credentials")
 	if err != nil {
 		return fmt.Errorf("failed to get credentials secret, error : %v", err)
 	}

@@ -13,12 +13,13 @@ require (
 	github.com/miekg/dns v1.0.14
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.7
-	github.com/openshift/api v0.0.0-20220906163444-2df055c101a3
+	github.com/openshift/api v0.0.0-20230712163317-e19a88e10d9c
 	github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 	github.com/operator-framework/api v0.11.0
 	google.golang.org/api v0.58.0
 	k8s.io/api v0.27.4
 	k8s.io/apimachinery v0.27.4
+	k8s.io/apiserver v0.27.2
 	k8s.io/client-go v0.27.4
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 	sigs.k8s.io/controller-runtime v0.15.1

@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift/external-dns-operator/test/common"
+
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +18,6 @@ import (
 
 	"google.golang.org/api/dns/v1"
 	"google.golang.org/api/option"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -28,9 +29,9 @@ type gcpTestHelper struct {
 	gcpProjectId   string
 }
 
-func newGCPHelper(isOpenShiftCI bool, kubeClient client.Client) (providerTestHelper, error) {
+func newGCPHelper(isOpenShiftCI bool) (providerTestHelper, error) {
 	provider := &gcpTestHelper{}
-	err := provider.prepareConfigurations(isOpenShiftCI, kubeClient)
+	err := provider.prepareConfigurations(isOpenShiftCI)
 	if err != nil {
 		return nil, err
 	}
@@ -168,27 +169,27 @@ func (g *gcpTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
 	return nil
 }
 
-func (a *gcpTestHelper) prepareConfigurations(openshiftCI bool, kubeClient client.Client) error {
+func (a *gcpTestHelper) prepareConfigurations(openshiftCI bool) error {
 	if openshiftCI {
-		data, err := rootCredentials(kubeClient, "gcp-credentials")
+		data, err := common.RootCredentials("gcp-credentials")
 		if err != nil {
 			return fmt.Errorf("failed to get GCP credentials: %w", err)
 		}
 		a.gcpCredentials = string(data["service_account.json"])
-		a.gcpProjectId, err = getGCPProjectId(kubeClient)
+		a.gcpProjectId, err = getGCPProjectId()
 		if err != nil {
 			return fmt.Errorf("failed to get GCP project id: %w", err)
 		}
 	} else {
-		a.gcpCredentials = mustGetEnv("GCP_CREDENTIALS")
-		a.gcpProjectId = mustGetEnv("GCP_PROJECT_ID")
+		a.gcpCredentials = common.MustGetEnv("GCP_CREDENTIALS")
+		a.gcpProjectId = common.MustGetEnv("GCP_PROJECT_ID")
 	}
 	return nil
 }
 
-func getGCPProjectId(kubeClient client.Client) (string, error) {
+func getGCPProjectId() (string, error) {
 	infraConfig := &configv1.Infrastructure{}
-	err := kubeClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, infraConfig)
+	err := common.KubeClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, infraConfig)
 	if err != nil {
 		return "", err
 	}

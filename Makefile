@@ -73,6 +73,7 @@ SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
 GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
 
 E2E_TIMEOUT ?= 1h
+TEST_PKG ?= ./test/e2e
 
 all: build
 
@@ -120,7 +121,11 @@ test-e2e:
 	-v \
 	-tags e2e \
 	-run "$(TEST)" \
-	./test/e2e
+	$(TEST_PKG)
+
+.PHONY: test-e2e-sharedvpc
+test-e2e-sharedvpc:
+	TEST_PKG=./test/e2e_sharedvpc make test-e2e
 
 verify: lint
 	hack/verify-gofmt.sh
