@@ -82,25 +82,6 @@ spec:
     - '{{.Name}}.mydomain.net'
 ```
 
-**Note**: Due to a limitation of the `v1beta1` API requiring the `credentials` field, OpenShift users will be required
-to provide an empty (`""`) credentials field. The empty credentials will be ignored and the secret provided by
-OpenShift's Cloud Credentials Operator will be used:
-
-```yaml
-apiVersion: externaldns.olm.openshift.io/v1beta1
-kind: ExternalDNS
-metadata:
-  name: aws-example
-spec:
-  provider:
-    type: AWS
-    aws:
-      credentials:
-        name: "" # Empty Credentials
-      assumeRole:
-        arn: arn:aws:iam::123456789012:role/role-name # Replace with the desire Role ARN
-```
-
 ## GovCloud
 The operator makes the assumption that `ExternalDNS` instances which target GovCloud DNS also run on the GovCloud. This is needed to detect the AWS region.   
 As for the rest: the usage is exactly the same as for `AWS`.
