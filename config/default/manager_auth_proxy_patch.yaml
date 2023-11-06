@@ -16,6 +16,7 @@ spec:
         - "--v=10"
         - "--tls-cert-file=/var/run/secrets/serving-cert/tls.crt"
         - "--tls-private-key-file=/var/run/secrets/serving-cert/tls.key"
+        - "--http2-disable"
         ports:
         - containerPort: 8443
           name: https
