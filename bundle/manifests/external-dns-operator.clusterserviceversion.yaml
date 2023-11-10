@@ -436,13 +436,14 @@ spec:
                 - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
                 - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
                 - --leader-elect
+                - --webhook-disable-http2
                 env:
                 - name: OPERATOR_NAMESPACE
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: RELATED_IMAGE_EXTERNAL_DNS
-                  value: quay.io/external-dns-operator/external-dns@sha256:a742a727d3a18ffb78c7d0a24fd2c5eebed01479163959169203427514d7aa89
+                  value: quay.io/external-dns-operator/external-dns@sha256:6fa3afebbc99926163d4c827a638473e106e6589e9f3d3d3accd3e426693f04f
                 - name: TRUSTED_CA_CONFIGMAP_NAME
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: external-dns-operator
@@ -479,6 +480,7 @@ spec:
                 - --v=10
                 - --tls-cert-file=/var/run/secrets/serving-cert/tls.crt
                 - --tls-private-key-file=/var/run/secrets/serving-cert/tls.key
+                - --http2-disable
                 image: quay.io/openshift/origin-kube-rbac-proxy:latest
                 name: kube-rbac-proxy
                 ports:
