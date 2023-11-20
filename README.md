@@ -5,7 +5,7 @@ The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https:/
 - [Deploying the ExternalDNS Operator](#deploying-the-externaldns-operator)
     - [Preparing the environment](#preparing-the-environment)
     - [Installing the ExternalDNS Operator by building and pushing the Operator image to a registry](#installing-the-externaldns-operator-by-building-and-pushing-the-operator-image-to-a-registry)
-    - [Installing the ExternalDNS Operator using a custom index image on OperatorHub](#installing-the-externaldns-operator-using-a-custom-index-image-on-operatorhub)
+    - [Installing the ExternalDNS Operator using a custom catalog image on OperatorHub](#installing-the-externaldns-operator-using-a-custom-catalog-image-on-operatorhub)
 - [Using custom operand image](#using-custom-operand-image)
 - [Running end-to-end tests manually](#running-end-to-end-tests-manually)
 - [Proxy support](#proxy-support)
@@ -86,7 +86,7 @@ Prepare your environment for the installation commands.
        *Note*: For other providers, see `config/samples/`.
 
 
-### Installing the `ExternalDNS` Operator using a custom index image on OperatorHub
+### Installing the `ExternalDNS` Operator using a custom catalog image on OperatorHub
 1. Build and push the operator image to the registry:
     ```sh
     export IMG=${REGISTRY}/${REPOSITORY}/external-dns-operator:${VERSION}
@@ -99,10 +99,10 @@ Prepare your environment for the installation commands.
     make bundle-image-build bundle-image-push
     ```
 
-3. Build and push the index image to the registry:
+3. Build and push the catalog image to the registry:
    ```sh
-   export INDEX_IMG=${REGISTRY}/${REPOSITORY}/external-dns-operator-bundle-index:${VERSION}
-   make index-image-build index-image-push
+   export CATALOG_IMG=${REGISTRY}/${REPOSITORY}/external-dns-operator-catalog:${VERSION}
+   make catalog-image-build catalog-image-push
    ```
 
 4. _Optional_: you may need to link the registry secret to the pod of `external-dns-operator` created in the `openshift-marketplace` namespace if the image is not made public ([Doc link](https://docs.openshift.com/container-platform/4.10/openshift_images/managing_images/using-image-pull-secrets.html#images-allow-pods-to-reference-images-from-secure-registries_using-image-pull-secrets)). If you are using `podman` then these are the instructions:
@@ -126,7 +126,7 @@ Prepare your environment for the installation commands.
      namespace: openshift-marketplace
    spec:
      sourceType: grpc
-     image: ${INDEX_IMG}
+     image: ${CATALOG_IMG}
    EOF
    ```
 
