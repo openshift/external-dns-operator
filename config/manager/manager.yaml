@@ -38,14 +38,15 @@ spec:
         - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
         - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
         - --leader-elect
+        - --webhook-disable-http2
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          # openshift/external-dns commit: fe00b4b83c2263282a9068655e8e3fbbc167b653
-          value: quay.io/external-dns-operator/external-dns@sha256:a742a727d3a18ffb78c7d0a24fd2c5eebed01479163959169203427514d7aa89
+          # openshift/external-dns commit: 98c4b73979743c7a43a29e518232eada37ea64f5
+          value: quay.io/external-dns-operator/external-dns@sha256:fb8ea3784012a21a1c679c23cd1d4a2dbf499d00517bcfe0c70cb85cd52dd290
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
