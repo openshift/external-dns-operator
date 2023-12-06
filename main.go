@@ -49,6 +49,7 @@ func main() {
 	flag.StringVar(&opCfg.HealthProbeBindAddress, "health-probe-bind-addr", operatorconfig.DefaultHealthProbeAddr, "The address the health endpoint binds to.")
 	flag.IntVar(&opCfg.RequeuePeriodSeconds, "requeue-period", operatorconfig.DefaultRequeuePeriodSeconds, "Requeue period for a failed reconciliation (in seconds).")
 	flag.BoolVar(&opCfg.EnableLeaderElection, "leader-elect", operatorconfig.DefaultEnableLeaderElection, "Enable leader election for controller manager to ensure there is only one active controller manager.")
+	flag.BoolVar(&opCfg.WebhookDisableHTTP2, "webhook-disable-http2", false, "Disable HTTP/2 for the webhook server.")
 	opts := zap.Options{
 		Development: true,
 	}
