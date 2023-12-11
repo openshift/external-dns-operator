@@ -18,7 +18,7 @@ package operator
 
 import (
 	"context"
-
+	"crypto/tls"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
@@ -71,6 +72,16 @@ type Operator struct {
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
+	webhookSrv := &webhook.Server{
+		TLSOpts: []func(config *tls.Config){
+			func(config *tls.Config) {
+				if opCfg.WebhookDisableHTTP2 {
+					config.NextProtos = []string{"http/1.1"}
+				}
+			},
+		},
+	}
+
 	mgrOpts := manager.Options{
 		Scheme:                 GetOperatorScheme(),
 		MetricsBindAddress:     opCfg.MetricsBindAddress,
@@ -93,6 +104,7 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		},
 		LeaderElection:   opCfg.EnableLeaderElection,
 		LeaderElectionID: "leaderelection.externaldns.olm.openshift.io",
+		WebhookServer:    webhookSrv,
 	}
 
 	mgr, err := ctrl.NewManager(cliCfg, mgrOpts)

@@ -96,6 +96,9 @@ type Config struct {
 
 	// EnableLeaderElection enables the controller runtime's leader election.
 	EnableLeaderElection bool
+
+	// WebhookDisableHTTP2 disables HTTP2 for the webhook server.
+	WebhookDisableHTTP2 bool
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields
