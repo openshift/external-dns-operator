@@ -6,7 +6,7 @@ approvers:
   - rfredette
   - alebedev87
   - miheer
-  - lmzuccarelli
+  - gcs278
 reviewers:
   - knobunc
   - Miciah
@@ -15,5 +15,5 @@ reviewers:
   - rfredette
   - alebedev87
   - miheer
-  - lmzuccarelli
+  - gcs278
 component: DNS
