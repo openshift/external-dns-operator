@@ -7,9 +7,15 @@ metadata:
     certified: "false"
     containerImage: quay.io/openshift/origin-external-dns-operator:latest
     createdAt: 2021/09/28
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "false"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     olm.skipRange: <1.2.0
     operatorframework.io/suggested-namespace: external-dns-operator
-    operators.openshift.io/infrastructure-features: '["disconnected","proxy-aware"]'
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
   name: external-dns-operator.v1.2.0
