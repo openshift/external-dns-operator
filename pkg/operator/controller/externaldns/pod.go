@@ -201,7 +201,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		// However it doesn't make much sense as the hostname is retrieved from the route's spec.
 		// Feeding ExternalDNS with some dummy template just to pass the validation.
 		if b.externalDNS.Spec.Source.HostnameAnnotationPolicy == operatorv1beta1.HostnameAnnotationPolicyIgnore &&
-			b.externalDNS.Spec.Source.Type == operatorv1beta1.SourceTypeRoute {
+			(b.externalDNS.Spec.Source.Type == operatorv1beta1.SourceTypeRoute || b.externalDNS.Spec.Source.Type == operatorv1beta1.SourceTypeIngress) {
 			args = append(args, "--fqdn-template={{\"\"}}")
 		}
 	}
