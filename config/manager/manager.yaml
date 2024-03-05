@@ -39,6 +39,7 @@ spec:
         - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
         - --leader-elect
         - --webhook-disable-http2
+        terminationMessagePolicy: FallbackToLogsOnError
         env:
         - name: OPERATOR_NAMESPACE
           valueFrom:
