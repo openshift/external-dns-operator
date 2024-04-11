@@ -35,12 +35,31 @@ openshift-console          console             console-openshift-console.apps.te
 openshift-console          downloads           downloads-openshift-console.apps.test-azure.qe.azure.devcluster.openshift.com                     downloads           http    edge/Redirect          None
 ```
 
-6. Get the list of dns zones w.r.t your resource group to find the one which corresponds to the previously found route’s domain:
+6. Get the list of dns zones w.r.t your resource group to find the one which corresponds to the previously found route’s domain.
+
+For public dns zones:
 ```bash
-$ az network dns zone list --resource-group "${RESOURCE_GROUP}"
+$ az network dns zone list -g "${RESOURCE_GROUP}" -o tsv --query '[].name'
+example.com
+anotherdomain.net
+test-azure.qe.azure.devcluster.openshift.com
+
+$ ZONE_NAME="test-azure.qe.azure.devcluster.openshift.com"
 ```
 
-7. Create [ExternalDNS CR](https://github.com/openshift/external-dns-operator/blob/main/config/samples/azure/operator_v1beta1_externaldns_openshift.yaml) as follows:
+For private dns zones:
+```bash
+$ az network private-dns zone list -g "${RESOURCE_GROUP}" -o tsv --query '[].name'
+example.com
+anotherdomain.net
+test-azure.qe.azure.devcluster.openshift.com
+
+$ ZONE_NAME="test-azure.qe.azure.devcluster.openshift.com"
+```
+
+7. Create an ExternalDNS CR.
+
+For public dns zones:
 ```bash
 $ cat <<EOF | oc create -f -
 apiVersion: externaldns.olm.openshift.io/v1beta1
@@ -49,7 +68,7 @@ metadata:
   name: sample-azure
 spec:
   zones:
-  - "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure.qe.azure.devcluster.openshift.com"
+  - "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Network/dnszones/${ZONE_NAME}"
   provider:
     type: Azure
   source:
@@ -59,7 +78,33 @@ spec:
 EOF
 ```
 
-8. Check the records created for `console` routes:
+For private dns zones:
 ```bash
-$ az network dns record-set list -g "${RESOURCE_GROUP}"  -z test-azure.qe.azure.devcluster.openshift.com | grep console
+$ cat <<EOF | oc create -f -
+apiVersion: externaldns.olm.openshift.io/v1beta1
+kind: ExternalDNS
+metadata:
+  name: sample-azure-private
+spec:
+  zones:
+  - "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Network/privateDnsZones/${ZONE_NAME}"
+  provider:
+    type: Azure
+  source:
+    type: OpenShiftRoute
+    openshiftRouteOptions:
+      routerName: default
+EOF
+```
+
+8. Check the records created for the routes.
+
+For public dns zones:
+```bash
+$ az network dns record-set list -g "${RESOURCE_GROUP}" -z "${ZONE_NAME}" | grep console
+```
+
+For private dns zones:
+```bash
+$ az network private-dns record-set list -g "${RESOURCE_GROUP}" -z "${ZONE_NAME}" | grep console
 ```
