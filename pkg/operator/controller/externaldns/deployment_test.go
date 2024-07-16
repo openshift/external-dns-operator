@@ -116,8 +116,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -242,8 +241,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -319,8 +317,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -428,8 +425,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -560,8 +556,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -662,8 +657,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -763,8 +757,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -841,8 +834,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -983,8 +975,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1089,8 +1080,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1167,8 +1157,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1245,8 +1234,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1345,8 +1333,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1422,8 +1409,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1525,8 +1511,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1600,8 +1585,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1670,8 +1654,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1742,8 +1725,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1851,8 +1833,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1928,8 +1909,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2003,8 +1983,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2079,8 +2058,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2158,8 +2136,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2279,8 +2256,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2351,8 +2327,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2472,8 +2447,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2545,8 +2519,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2641,8 +2614,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2714,8 +2686,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2846,8 +2817,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2947,8 +2917,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3019,8 +2988,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3114,8 +3082,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3186,8 +3153,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3284,8 +3250,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3354,8 +3319,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3423,8 +3387,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3522,8 +3485,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3594,8 +3556,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3664,8 +3625,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3735,8 +3695,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3812,8 +3771,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -4221,8 +4179,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4351,8 +4308,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4482,8 +4438,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4612,8 +4567,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4743,8 +4697,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4874,8 +4827,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4933,8 +4885,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5072,8 +5023,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5232,8 +5182,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5363,8 +5312,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5484,8 +5432,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5614,8 +5561,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5677,8 +5623,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5809,8 +5754,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5932,8 +5876,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{

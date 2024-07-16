@@ -201,8 +201,7 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 	}
 
 	nodeSelectorLbl := map[string]string{
-		osLabel:             linuxOS,
-		masterNodeRoleLabel: "",
+		osLabel: linuxOS,
 	}
 
 	tolerations := []corev1.Toleration{
