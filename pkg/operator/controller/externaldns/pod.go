@@ -59,13 +59,18 @@ const (
 	//
 	// AWS
 	//
-	awsCredentialEnvVarName  = "AWS_SHARED_CREDENTIALS_FILE"
-	awsRegionEnvVarName      = "AWS_REGION"
-	awsCredentialsVolumeName = "aws-credentials"
-	awsCredentialsMountPath  = defaultConfigMountPath
-	awsCredentialsFileKey    = "credentials"
-	awsCredentialsFileName   = "aws-credentials"
-	awsCredentialsFilePath   = awsCredentialsMountPath + "/" + awsCredentialsFileName
+	awsCredentialEnvVarName       = "AWS_SHARED_CREDENTIALS_FILE"
+	awsRegionEnvVarName           = "AWS_REGION"
+	awsCredentialsVolumeName      = "aws-credentials"
+	awsCredentialsMountPath       = defaultConfigMountPath
+	awsCredentialsFileKey         = "credentials"
+	awsCredentialsFileName        = "aws-credentials"
+	awsCredentialsFilePath        = awsCredentialsMountPath + "/" + awsCredentialsFileName
+	boundSATokenVolumeName        = "bound-sa-token"
+	boundSATokenAudience          = "openshift"
+	boundSATokenExpirationSeconds = 3600
+	boundSATokenPath              = "token"
+	boundSATokenMountPath         = "/var/run/secrets/openshift/serviceaccount"
 	//
 	// Azure
 	//
@@ -351,14 +356,20 @@ func (b *externalDNSContainerBuilder) fillAWSFields(container *corev1.Container)
 	}
 
 	for _, v := range b.volumes {
-		if v.Name == awsCredentialsVolumeName {
+		switch v.Name {
+		case awsCredentialsVolumeName:
 			container.Env = append(container.Env, corev1.EnvVar{Name: awsCredentialEnvVarName, Value: awsCredentialsFilePath})
 			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-				Name:      v.Name,
+				Name:      awsCredentialsVolumeName,
 				MountPath: awsCredentialsMountPath,
 				ReadOnly:  true,
-			},
-			)
+			})
+		case boundSATokenVolumeName:
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      boundSATokenVolumeName,
+				MountPath: boundSATokenMountPath,
+				ReadOnly:  true,
+			})
 		}
 	}
 }
@@ -578,6 +589,20 @@ func (b *externalDNSVolumeBuilder) awsVolumes() []corev1.Volume {
 							Path: awsCredentialsFileName,
 						},
 					},
+				},
+			},
+		},
+		{
+			Name: boundSATokenVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{{
+						ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+							Audience:          boundSATokenAudience,
+							ExpirationSeconds: pointer.Int64(boundSATokenExpirationSeconds),
+							Path:              boundSATokenPath,
+						},
+					}},
 				},
 			},
 		},
