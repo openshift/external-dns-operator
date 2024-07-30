@@ -116,8 +116,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -136,6 +135,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												Key:  awsCredentialsFileKey,
 												Path: awsCredentialsFileName,
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "bound-sa-token",
+								VolumeSource: corev1.VolumeSource{
+									Projected: &corev1.ProjectedVolumeSource{
+										Sources: []corev1.VolumeProjection{
+											{
+												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+													Audience:          "openshift",
+													ExpirationSeconds: pointer.Int64(3600),
+													Path:              "token",
+												},
 											},
 										},
 									},
@@ -174,6 +189,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
+										ReadOnly:  true,
+									},
+									{
+										Name:      "bound-sa-token",
+										MountPath: "/var/run/secrets/openshift/serviceaccount",
 										ReadOnly:  true,
 									},
 								},
@@ -221,8 +241,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -298,8 +317,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -407,8 +425,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -427,6 +444,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												Key:  awsCredentialsFileKey,
 												Path: awsCredentialsFileName,
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "bound-sa-token",
+								VolumeSource: corev1.VolumeSource{
+									Projected: &corev1.ProjectedVolumeSource{
+										Sources: []corev1.VolumeProjection{
+											{
+												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+													Audience:          "openshift",
+													ExpirationSeconds: pointer.Int64(3600),
+													Path:              "token",
+												},
 											},
 										},
 									},
@@ -470,6 +503,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
+										ReadOnly:  true,
+									},
+									{
+										Name:      "bound-sa-token",
+										MountPath: "/var/run/secrets/openshift/serviceaccount",
 										ReadOnly:  true,
 									},
 								},
@@ -518,8 +556,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -620,8 +657,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -721,8 +757,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -799,8 +834,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -941,8 +975,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1047,8 +1080,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1125,8 +1157,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1203,8 +1234,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1303,8 +1333,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1380,8 +1409,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1483,8 +1511,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1558,8 +1585,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1628,8 +1654,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1700,8 +1725,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1809,8 +1833,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1886,8 +1909,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -1961,8 +1983,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2037,8 +2058,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2116,8 +2136,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2136,6 +2155,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												Key:  awsCredentialsFileKey,
 												Path: awsCredentialsFileName,
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "bound-sa-token",
+								VolumeSource: corev1.VolumeSource{
+									Projected: &corev1.ProjectedVolumeSource{
+										Sources: []corev1.VolumeProjection{
+											{
+												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+													Audience:          "openshift",
+													ExpirationSeconds: pointer.Int64(3600),
+													Path:              "token",
+												},
 											},
 										},
 									},
@@ -2169,6 +2204,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
+										ReadOnly:  true,
+									},
+									{
+										Name:      "bound-sa-token",
+										MountPath: "/var/run/secrets/openshift/serviceaccount",
 										ReadOnly:  true,
 									},
 								},
@@ -2216,8 +2256,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2288,8 +2327,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2308,6 +2346,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												Key:  awsCredentialsFileKey,
 												Path: awsCredentialsFileName,
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "bound-sa-token",
+								VolumeSource: corev1.VolumeSource{
+									Projected: &corev1.ProjectedVolumeSource{
+										Sources: []corev1.VolumeProjection{
+											{
+												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+													Audience:          "openshift",
+													ExpirationSeconds: pointer.Int64(3600),
+													Path:              "token",
+												},
 											},
 										},
 									},
@@ -2341,6 +2395,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
+										ReadOnly:  true,
+									},
+									{
+										Name:      "bound-sa-token",
+										MountPath: "/var/run/secrets/openshift/serviceaccount",
 										ReadOnly:  true,
 									},
 								},
@@ -2388,8 +2447,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2461,8 +2519,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2557,8 +2614,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2630,8 +2686,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2762,8 +2817,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2863,8 +2917,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -2935,8 +2988,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3030,8 +3082,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3102,8 +3153,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3200,8 +3250,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3270,8 +3319,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3339,8 +3387,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3438,8 +3485,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3510,8 +3556,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3580,8 +3625,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3651,8 +3695,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -3728,8 +3771,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 					Spec: corev1.PodSpec{
 						ServiceAccountName: test.OperandName,
 						NodeSelector: map[string]string{
-							osLabel:             linuxOS,
-							masterNodeRoleLabel: "",
+							osLabel: linuxOS,
 						},
 						Tolerations: []corev1.Toleration{
 							{
@@ -4137,8 +4179,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4157,6 +4198,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -4188,6 +4245,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -4246,8 +4308,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4266,6 +4327,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														Key:  awsCredentialsFileKey,
 														Path: awsCredentialsFileName,
+													},
+												},
+											},
+										},
+									},
+									{
+										Name: "bound-sa-token",
+										VolumeSource: corev1.VolumeSource{
+											Projected: &corev1.ProjectedVolumeSource{
+												Sources: []corev1.VolumeProjection{
+													{
+														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+															Audience:          "openshift",
+															ExpirationSeconds: pointer.Int64(3600),
+															Path:              "token",
+														},
 													},
 												},
 											},
@@ -4297,6 +4374,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+											{
+												Name:      "bound-sa-token",
+												MountPath: "/var/run/secrets/openshift/serviceaccount",
 												ReadOnly:  true,
 											},
 										},
@@ -4356,8 +4438,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4376,6 +4457,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -4409,6 +4506,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											MountPath: awsCredentialsMountPath,
 											ReadOnly:  true,
 										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
+											ReadOnly:  true,
+										},
 									},
 									SecurityContext: &corev1.SecurityContext{
 										Capabilities: &corev1.Capabilities{
@@ -4429,7 +4531,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
-			name:   "Exist as expected with one Router Names added as flag",
+			name:   "Exist as expected with one router name added as flag",
 			extDNS: *testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, "default"),
 			existingObjects: []runtime.Object{
 				&appsv1.Deployment{
@@ -4465,8 +4567,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4485,6 +4586,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														Key:  awsCredentialsFileKey,
 														Path: awsCredentialsFileName,
+													},
+												},
+											},
+										},
+									},
+									{
+										Name: "bound-sa-token",
+										VolumeSource: corev1.VolumeSource{
+											Projected: &corev1.ProjectedVolumeSource{
+												Sources: []corev1.VolumeProjection{
+													{
+														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+															Audience:          "openshift",
+															ExpirationSeconds: pointer.Int64(3600),
+															Path:              "token",
+														},
 													},
 												},
 											},
@@ -4515,6 +4632,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+											{
+												Name:      "bound-sa-token",
+												MountPath: "/var/run/secrets/openshift/serviceaccount",
 												ReadOnly:  true,
 											},
 										},
@@ -4575,8 +4697,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4595,6 +4716,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -4627,6 +4764,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -4685,8 +4827,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -4744,8 +4885,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4764,6 +4904,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -4795,6 +4951,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -4862,8 +5023,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -4898,6 +5058,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  "credentials",
 													Path: "aws-credentials",
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -4938,6 +5114,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      "aws-credentials",
 											MountPath: "/etc/kubernetes",
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -5001,8 +5182,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5021,6 +5201,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -5053,6 +5249,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -5111,8 +5312,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5131,6 +5331,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														Key:  awsCredentialsFileKey,
 														Path: awsCredentialsFileName,
+													},
+												},
+											},
+										},
+									},
+									{
+										Name: "bound-sa-token",
+										VolumeSource: corev1.VolumeSource{
+											Projected: &corev1.ProjectedVolumeSource{
+												Sources: []corev1.VolumeProjection{
+													{
+														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+															Audience:          "openshift",
+															ExpirationSeconds: pointer.Int64(3600),
+															Path:              "token",
+														},
 													},
 												},
 											},
@@ -5163,6 +5379,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
+												ReadOnly:  true,
+											},
+											{
+												Name:      "bound-sa-token",
+												MountPath: "/var/run/secrets/openshift/serviceaccount",
 												ReadOnly:  true,
 											},
 										},
@@ -5211,8 +5432,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5231,6 +5451,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -5263,6 +5499,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -5320,8 +5561,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5383,8 +5623,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5403,6 +5642,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													Key:  awsCredentialsFileKey,
 													Path: awsCredentialsFileName,
+												},
+											},
+										},
+									},
+								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
 												},
 											},
 										},
@@ -5435,6 +5690,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
@@ -5494,8 +5754,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 							Spec: corev1.PodSpec{
 								ServiceAccountName: test.OperandName,
 								NodeSelector: map[string]string{
-									osLabel:             linuxOS,
-									masterNodeRoleLabel: "",
+									osLabel: linuxOS,
 								},
 								Tolerations: []corev1.Toleration{
 									{
@@ -5617,8 +5876,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 						Spec: corev1.PodSpec{
 							ServiceAccountName: test.OperandName,
 							NodeSelector: map[string]string{
-								osLabel:             linuxOS,
-								masterNodeRoleLabel: "",
+								osLabel: linuxOS,
 							},
 							Tolerations: []corev1.Toleration{
 								{
@@ -5656,6 +5914,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: "bound-sa-token",
+									VolumeSource: corev1.VolumeSource{
+										Projected: &corev1.ProjectedVolumeSource{
+											Sources: []corev1.VolumeProjection{
+												{
+													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+														Audience:          "openshift",
+														ExpirationSeconds: pointer.Int64(3600),
+														Path:              "token",
+													},
+												},
+											},
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
@@ -5688,6 +5962,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										{
 											Name:      "unsolicited-vm",
 											MountPath: "somepath",
+											ReadOnly:  true,
+										},
+										{
+											Name:      "bound-sa-token",
+											MountPath: "/var/run/secrets/openshift/serviceaccount",
 											ReadOnly:  true,
 										},
 									},
