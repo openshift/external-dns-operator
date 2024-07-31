@@ -24,12 +24,12 @@ the namespace where the _external-dns_ deployments are created so that they can 
     apiVersion: v1
     kind: Secret
     metadata:
-    name: aws-access-key
-    namespace: external-dns-operator
+      name: aws-access-key
+      namespace: external-dns-operator
     stringData:
-    credentials: |-
+      credentials: |-
         [default]
-        aws_access_key_id = " <AWS_ACCESS_KEY_ID>"
+        aws_access_key_id = "<AWS_ACCESS_KEY_ID>"
         aws_secret_access_key = "<AWS_SECRET_ACCESS_KEY>"
     ```
 
@@ -39,16 +39,16 @@ the namespace where the _external-dns_ deployments are created so that they can 
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: aws-example
+      name: aws-example
     spec:
-    provider:
+      provider:
         type: AWS
         aws:
-        credentials:
+          credentials:
             name: aws-access-key
-    zones: # Replace with the desired hosted zone IDs
+      zones: # Replace with the desired hosted zone IDs
         - "Z3URY6TWQ91KXX"
-    source:
+      source:
         type: Service
         fqdnTemplate:
         - '{{.Name}}.mydomain.net'
@@ -129,7 +129,7 @@ As for the rest: the usage is exactly the same as for [AWS](#aws).
 3. Attach the permission policy to the role:
 
     ```bash
-    curl -o external-dns-permission-policy.json https://raw.githubusercontent.com/openshift/external-dns-operator/main/assets/iam-policy.json
+    curl -o external-dns-permission-policy.json https://raw.githubusercontent.com/openshift/external-dns-operator/main/assets/iam_policy.json
     aws iam put-role-policy --role-name external-dns --policy-name perms-policy-external-dns --policy-document file://external-dns-permission-policy.json
     ```
 
@@ -139,10 +139,10 @@ As for the rest: the usage is exactly the same as for [AWS](#aws).
     apiVersion: v1
     kind: Secret
     metadata:
-    name: aws-sts-creds
-    namespace: external-dns-operator
+      name: aws-sts-creds
+      namespace: external-dns-operator
     stringData:
-    credentials: |-
+      credentials: |-
         [default]
         sts_regional_endpoints = regional
         role_arn = ${EXTERNAL_DNS_ROLEARN}
@@ -155,16 +155,16 @@ As for the rest: the usage is exactly the same as for [AWS](#aws).
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: ${EXTERNAL_DNS_NAME}
+      name: ${EXTERNAL_DNS_NAME}
     spec:
-    provider:
+      provider:
         type: AWS
         aws:
-        credentials:
+          credentials:
             name: aws-sts-creds
-    zones: # Replace with the desired hosted zone IDs
+      zones: # Replace with the desired hosted zone IDs
         - "Z3URY6TWQ91KXX"
-    source:
+      source:
         type: Service
         fqdnTemplate:
         - '{{.Name}}.mydomain.net'
@@ -187,11 +187,11 @@ the following information is required:
     apiVersion: v1
     kind: Secret
     metadata:
-    name: infoblox-credentials
-    namespace: #operator namespace
+      name: infoblox-credentials
+      namespace: external-dns-operator
     data:
-    EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME: # Base-64 encoded username
-    EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD: # Base-64 encoded password
+      EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME: # Base-64 encoded username
+      EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD: # Base-64 encoded password
     ```
 
 2. Create an `ExternalDNS` resource as follows:
@@ -200,19 +200,19 @@ the following information is required:
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: infoblox-example
+      name: infoblox-example
     spec:
-    provider:
+      provider:
         type: Infoblox
         infoblox:
-        credentials:
+          credentials:
             name: infoblox-credentials
-        gridHost: # the grid master host from the previous step. eg: 172.26.1.200
-        wapiPort: # the WAPI port, eg: 80, 443, 8080
-        wapiVersion: # the WAPI version, eg: 2.11, 2.3.1
-    zones: # Replace with the desired hosted zones
+          gridHost: # the grid master host from the previous step. eg: 172.26.1.200
+          wapiPort: # the WAPI port, eg: 80, 443, 8080
+          wapiVersion: # the WAPI version, eg: 2.11, 2.3.1
+      zones: # Replace with the desired hosted zones
         - "ZG5zLm5ldHdvcmtfdmlldyQw"
-    source:
+      source:
         type: Service
         fqdnTemplate:
         - '{{.Name}}.mydomain.net'
@@ -237,13 +237,13 @@ running note down the following details:
 
     ```json
     {
-    "gatewayHost": "https://bluecatgw.example.com",
-    "gatewayUsername": "user",
-    "gatewayPassword": "pass",
-    "dnsConfiguration": "Example",
-    "dnsView": "Internal",
-    "rootZone": "example.com",
-    "skipTLSVerify": false
+      "gatewayHost": "https://bluecatgw.example.com",
+      "gatewayUsername": "user",
+      "gatewayPassword": "pass",
+      "dnsConfiguration": "Example",
+      "dnsView": "Internal",
+      "rootZone": "example.com",
+      "skipTLSVerify": false
     }
     ```
 
@@ -263,15 +263,19 @@ external-dns [documentation for BlueCat](https://github.com/kubernetes-sigs/exte
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: bluecat-example
+      name: bluecat-example
     spec:
-    provider:
+      provider:
         type: BlueCat
         blueCat:
-        config:
+          configFile:
             name: bluecat-config
-    zones: # Replace with the desired hosted zones
+      zones: # Replace with the desired hosted zones
         - "78127234..."
+      source:
+        type: Service
+        fqdnTemplate:
+        - '{{.Name}}.mydomain.net'
     ```
 
 # GCP
@@ -284,10 +288,10 @@ Before creating an ExternalDNS resource for GCP, the following is required:
     apiVersion: v1
     kind: Secret
     metadata:
-        name: gcp-access-key
-        namespace: #operator namespace
+      name: gcp-access-key
+      namespace: external-dns-operator
     data:
-        gcp-credentials.json: # gcp-service-account-key-file
+      gcp-credentials.json: # gcp-service-account-key-file
     ```
 
 2. Create an `ExternalDNS` CR as follows:
@@ -296,18 +300,18 @@ Before creating an ExternalDNS resource for GCP, the following is required:
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: sample-gcp
+      name: sample-gcp
     spec:
-    # DNS provider
-    provider:
+      # DNS provider
+      provider:
         type: GCP
         gcp:
-        credentials:
+          credentials:
             name: gcp-access-key
-        project: gcp-devel
-    zones: # Replace with the desired managed zones
+          project: gcp-devel
+      zones: # Replace with the desired managed zones
         - "3651032588905568971"
-    source:
+      source:
         type: Service
         fqdnTemplate:
         - '{{.Name}}.mydomain.net'
@@ -323,21 +327,21 @@ Before creating an ExternalDNS resource for Azure, the following is required:
     apiVersion: v1
     kind: Secret
     metadata:
-        name: azure-config-file
-        namespace: #operator namespace
+      name: azure-config-file
+      namespace: external-dns-operator
     data:
-        azure.json: # azure-config-file
+      azure.json: # azure-config-file
     ```
 
     The contents of `azure.json` should be similar to this:
 
     ```json
     {
-    "tenantId": "01234abc-de56-ff78-abc1-234567890def",
-    "subscriptionId": "01234abc-de56-ff78-abc1-234567890def",
-    "resourceGroup": "MyDnsResourceGroup",
-    "aadClientId": "01234abc-de56-ff78-abc1-234567890def",
-    "aadClientSecret": "<clientSecret>"
+      "tenantId": "01234abc-de56-ff78-abc1-234567890def",
+      "subscriptionId": "01234abc-de56-ff78-abc1-234567890def",
+      "resourceGroup": "MyDnsResourceGroup",
+      "aadClientId": "01234abc-de56-ff78-abc1-234567890def",
+      "aadClientSecret": "<clientSecret>"
     }
     ```
 
@@ -347,17 +351,17 @@ Before creating an ExternalDNS resource for Azure, the following is required:
     apiVersion: externaldns.olm.openshift.io/v1beta1
     kind: ExternalDNS
     metadata:
-    name: sample-azure
+      name: sample-azure
     spec:
-    # DNS provider
-    provider:
+      # DNS provider
+      provider:
         type: Azure
         azure:
-        configFile:
+          configFile:
             name: azure-config-file
-    zones: # Replace with the desired hosted zones
+      zones: # Replace with the desired hosted zones
         - "myzoneid"
-    source:
+      source:
         type: Service
         fqdnTemplate:
         - '{{.Name}}.mydomain.net'
