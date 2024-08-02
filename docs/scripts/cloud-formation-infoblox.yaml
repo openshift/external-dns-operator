@@ -25,8 +25,8 @@ Parameters:
   NiosAMI:
     Description: Please enter the AMI for NIOS instance
     Type: String
-    # Taken from subscription
-    Default: ami-0c4b0912ad5ffbb3a
+    # AWS Marketplace > Manage subscriptions > Infoblox vNIOS for DNS, DHCP and IPAM > Launch new instance
+    Default: ami-0c1279bff9b1be7f4
 
   NiosKeyPair:
     Description: Please enter the keypair for NIOS instance
