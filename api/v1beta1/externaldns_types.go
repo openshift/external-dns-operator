@@ -369,6 +369,15 @@ type ExternalDNSInfobloxProviderOptions struct {
 	// +kubebuilder:validation:Required
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
+
+	// view is the DNS view to be used.
+	//
+	// The default view of the ExternalDNS is "default".
+	//
+	// +kubebuilder:default:=default
+	// +kubebuilder:validation:Optional
+	// +optional
+	View string `json:"view"`
 }
 
 // SecretReference contains the information to let you locate the desired secret.

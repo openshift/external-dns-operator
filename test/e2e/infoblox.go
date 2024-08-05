@@ -36,6 +36,7 @@ const (
 	trustedCAConfigMapEnvVar         = "TRUSTED_CA_CONFIGMAP_NAME"
 	defaultWAPIPort                  = "443"
 	defaultWAPIVersion               = "2.3.1"
+	defaultView                      = "default"
 	defaultTLSVerify                 = "false"
 	defaultHTTPRequestTimeout        = 20
 	defaultHTTPConnPool              = 10
@@ -153,6 +154,7 @@ func (h *infobloxTestHelper) buildExternalDNS(name, zoneID, zoneDomain string, c
 			GridHost:    h.gridHost,
 			WAPIPort:    wapiPort,
 			WAPIVersion: defaultWAPIVersion,
+			View:        defaultView,
 		},
 	}
 	return resource
@@ -170,6 +172,7 @@ func (h *infobloxTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain,
 			GridHost:    h.gridHost,
 			WAPIPort:    wapiPort,
 			WAPIVersion: defaultWAPIVersion,
+			View:        defaultView,
 		},
 	}
 	return resource

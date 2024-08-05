@@ -691,6 +691,11 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      view:
+                        default: default
+                        description: "view is the DNS view to be used. \n The default
+                          view of the ExternalDNS is \"default\"."
+                        type: string
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
