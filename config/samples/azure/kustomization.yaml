@@ -1,3 +1,4 @@
 resources:
 - operator_v1beta1_externaldns_openshift.yaml
 - operator_v1alpha1_externaldns_openshift.yaml
+- operator_v1beta1_externaldns_openshift_private.yaml
