@@ -90,22 +90,22 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	if err := c.Watch(source.Kind(operatorCache, &operatorv1beta1.ExternalDNS{}), &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &operatorv1beta1.ExternalDNS{}, &handler.EnqueueRequestForObject{})); err != nil {
 		return nil, err
 	}
 
-	if err := c.Watch(source.Kind(operatorCache, &appsv1.Deployment{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &appsv1.Deployment{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
 		return nil, err
 	}
 
-	if err := c.Watch(source.Kind(operatorCache, &corev1.ServiceAccount{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.ServiceAccount{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
 		return nil, err
 	}
 
 	// secret replicated by the credentials controller
 	// needs to trigger the reconciliation of the corresponding ExternalDNS
 	// because of the annotation with the secret's hash in the operand deployment
-	if err := c.Watch(source.Kind(operatorCache, &corev1.Secret{}), handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner())); err != nil {
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Secret{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
 		return nil, err
 	}
 
@@ -131,12 +131,12 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return requests
 	}
 	if err := c.Watch(
-		source.Kind(operatorCache, &corev1.ConfigMap{}),
-		handler.EnqueueRequestsFromMapFunc(allExtDNSInstances),
-		// only the target trusted CA configmap
-		predicate.NewPredicateFuncs(ctrlutils.InNamespace(cfg.Namespace)),
-		predicate.NewPredicateFuncs(ctrlutils.HasName(controlleroperator.ExternalDNSDestTrustedCAConfigMapName(cfg.Namespace).Name)),
-	); err != nil {
+		source.Kind[client.Object](operatorCache, &corev1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(allExtDNSInstances),
+			// only the target trusted CA configmap
+			predicate.NewPredicateFuncs(ctrlutils.InNamespace(cfg.Namespace)),
+			predicate.NewPredicateFuncs(ctrlutils.HasName(controlleroperator.ExternalDNSDestTrustedCAConfigMapName(cfg.Namespace).Name)),
+		)); err != nil {
 		return nil, err
 	}
 
