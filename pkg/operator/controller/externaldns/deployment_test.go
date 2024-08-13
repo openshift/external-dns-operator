@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -148,7 +148,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 													Audience:          "openshift",
-													ExpirationSeconds: pointer.Int64(3600),
+													ExpirationSeconds: ptr.To[int64](3600),
 													Path:              "token",
 												},
 											},
@@ -201,9 +201,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -276,9 +276,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -383,9 +383,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -457,7 +457,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 													Audience:          "openshift",
-													ExpirationSeconds: pointer.Int64(3600),
+													ExpirationSeconds: ptr.To[int64](3600),
 													Path:              "token",
 												},
 											},
@@ -515,9 +515,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -616,9 +616,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -717,9 +717,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -793,9 +793,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -893,9 +893,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -934,9 +934,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1040,9 +1040,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1115,9 +1115,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1193,9 +1193,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1293,9 +1293,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1368,9 +1368,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1471,9 +1471,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1545,9 +1545,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1614,9 +1614,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1685,9 +1685,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1760,9 +1760,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1793,9 +1793,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1869,9 +1869,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -1943,9 +1943,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2018,9 +2018,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2094,9 +2094,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2168,7 +2168,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 													Audience:          "openshift",
-													ExpirationSeconds: pointer.Int64(3600),
+													ExpirationSeconds: ptr.To[int64](3600),
 													Path:              "token",
 												},
 											},
@@ -2216,9 +2216,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2286,9 +2286,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2359,7 +2359,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 											{
 												ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 													Audience:          "openshift",
-													ExpirationSeconds: pointer.Int64(3600),
+													ExpirationSeconds: ptr.To[int64](3600),
 													Path:              "token",
 												},
 											},
@@ -2407,9 +2407,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2478,9 +2478,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2574,9 +2574,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2645,9 +2645,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2740,9 +2740,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2776,9 +2776,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2877,9 +2877,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -2947,9 +2947,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3042,9 +3042,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3112,9 +3112,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3210,9 +3210,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3279,9 +3279,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3347,9 +3347,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3417,9 +3417,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3445,9 +3445,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3516,9 +3516,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3585,9 +3585,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3655,9 +3655,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3726,9 +3726,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3815,9 +3815,9 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									Capabilities: &corev1.Capabilities{
 										Drop: []corev1.Capability{allCapabilities},
 									},
-									Privileged:               pointer.Bool(false),
-									RunAsNonRoot:             pointer.Bool(true),
-									AllowPrivilegeEscalation: pointer.Bool(false),
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
 									SeccompProfile: &corev1.SeccompProfile{
 										Type: corev1.SeccompProfileTypeRuntimeDefault,
 									},
@@ -3963,9 +3963,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{allCapabilities},
 						},
-						Privileged:               pointer.Bool(false),
-						RunAsNonRoot:             pointer.Bool(true),
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						Privileged:               ptr.To[bool](false),
+						RunAsNonRoot:             ptr.To[bool](true),
+						AllowPrivilegeEscalation: ptr.To[bool](false),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -3977,9 +3977,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
 					},
-					Privileged:               pointer.Bool(false),
-					RunAsNonRoot:             pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					Privileged:               ptr.To[bool](false),
+					RunAsNonRoot:             ptr.To[bool](true),
+					AllowPrivilegeEscalation: ptr.To[bool](false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -3993,9 +3993,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
 					},
-					Privileged:               pointer.Bool(false),
-					RunAsNonRoot:             pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(true),
+					Privileged:               ptr.To[bool](false),
+					RunAsNonRoot:             ptr.To[bool](true),
+					AllowPrivilegeEscalation: ptr.To[bool](true),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -4006,9 +4006,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{allCapabilities},
 						},
-						Privileged:               pointer.Bool(false),
-						RunAsNonRoot:             pointer.Bool(true),
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						Privileged:               ptr.To[bool](false),
+						RunAsNonRoot:             ptr.To[bool](true),
+						AllowPrivilegeEscalation: ptr.To[bool](false),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -4020,9 +4020,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
 					},
-					Privileged:               pointer.Bool(false),
-					RunAsNonRoot:             pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					Privileged:               ptr.To[bool](false),
+					RunAsNonRoot:             ptr.To[bool](true),
+					AllowPrivilegeEscalation: ptr.To[bool](false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -4036,9 +4036,9 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 					Capabilities: &corev1.Capabilities{
 						Drop: []corev1.Capability{allCapabilities},
 					},
-					Privileged:               pointer.Bool(false),
-					RunAsNonRoot:             pointer.Bool(true),
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					Privileged:               ptr.To[bool](false),
+					RunAsNonRoot:             ptr.To[bool](true),
+					AllowPrivilegeEscalation: ptr.To[bool](false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
 					},
@@ -4211,7 +4211,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -4257,9 +4257,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -4340,7 +4340,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 															Audience:          "openshift",
-															ExpirationSeconds: pointer.Int64(3600),
+															ExpirationSeconds: ptr.To[int64](3600),
 															Path:              "token",
 														},
 													},
@@ -4386,9 +4386,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											Capabilities: &corev1.Capabilities{
 												Drop: []corev1.Capability{allCapabilities},
 											},
-											Privileged:               pointer.Bool(false),
-											RunAsNonRoot:             pointer.Bool(true),
-											AllowPrivilegeEscalation: pointer.Bool(false),
+											Privileged:               ptr.To[bool](false),
+											RunAsNonRoot:             ptr.To[bool](true),
+											AllowPrivilegeEscalation: ptr.To[bool](false),
 											SeccompProfile: &corev1.SeccompProfile{
 												Type: corev1.SeccompProfileTypeRuntimeDefault,
 											},
@@ -4470,7 +4470,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -4516,9 +4516,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -4599,7 +4599,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 															Audience:          "openshift",
-															ExpirationSeconds: pointer.Int64(3600),
+															ExpirationSeconds: ptr.To[int64](3600),
 															Path:              "token",
 														},
 													},
@@ -4644,9 +4644,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											Capabilities: &corev1.Capabilities{
 												Drop: []corev1.Capability{allCapabilities},
 											},
-											Privileged:               pointer.Bool(false),
-											RunAsNonRoot:             pointer.Bool(true),
-											AllowPrivilegeEscalation: pointer.Bool(false),
+											Privileged:               ptr.To[bool](false),
+											RunAsNonRoot:             ptr.To[bool](true),
+											AllowPrivilegeEscalation: ptr.To[bool](false),
 											SeccompProfile: &corev1.SeccompProfile{
 												Type: corev1.SeccompProfileTypeRuntimeDefault,
 											},
@@ -4729,7 +4729,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -4776,9 +4776,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -4917,7 +4917,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -4963,9 +4963,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -5071,7 +5071,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -5126,9 +5126,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -5214,7 +5214,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -5261,9 +5261,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -5344,7 +5344,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 													{
 														ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 															Audience:          "openshift",
-															ExpirationSeconds: pointer.Int64(3600),
+															ExpirationSeconds: ptr.To[int64](3600),
 															Path:              "token",
 														},
 													},
@@ -5464,7 +5464,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -5511,9 +5511,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -5655,7 +5655,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -5702,9 +5702,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -5922,7 +5922,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 												{
 													ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 														Audience:          "openshift",
-														ExpirationSeconds: pointer.Int64(3600),
+														ExpirationSeconds: ptr.To[int64](3600),
 														Path:              "token",
 													},
 												},
@@ -5974,9 +5974,9 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										Capabilities: &corev1.Capabilities{
 											Drop: []corev1.Capability{allCapabilities},
 										},
-										Privileged:               pointer.Bool(false),
-										RunAsNonRoot:             pointer.Bool(true),
-										AllowPrivilegeEscalation: pointer.Bool(false),
+										Privileged:               ptr.To[bool](false),
+										RunAsNonRoot:             ptr.To[bool](true),
+										AllowPrivilegeEscalation: ptr.To[bool](false),
 										SeccompProfile: &corev1.SeccompProfile{
 											Type: corev1.SeccompProfileTypeRuntimeDefault,
 										},
@@ -6084,109 +6084,109 @@ func TestSecurityContextChanged(t *testing.T) {
 		{
 			name:      "current RunAsNonRoot is nil",
 			currentSC: &corev1.SecurityContext{},
-			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			// should be ignored to handle defaulting
 			name:      "desired RunAsNonRoot is nil",
-			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
 			desiredSC: &corev1.SecurityContext{},
 			updatedSC: &corev1.SecurityContext{},
 			changed:   false,
 		},
 		{
 			name:      "RunAsNonRoot changes true->false",
-			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "RunAsNonRoot changes false->true",
-			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "RunAsNonRoot changes is same",
-			currentSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(true)},
-			updatedSC: &corev1.SecurityContext{RunAsNonRoot: pointer.Bool(true)},
+			currentSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](true)},
+			updatedSC: &corev1.SecurityContext{RunAsNonRoot: ptr.To[bool](true)},
 			changed:   false,
 		},
 		{
 			name:      "current Privileged is nil",
 			currentSC: &corev1.SecurityContext{},
-			desiredSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
+			desiredSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			// should be ignored to handle defaulting
 			name:      "desired Privileged is nil",
 			desiredSC: &corev1.SecurityContext{},
-			currentSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
 			changed:   false,
 		},
 		{
 			name:      "Privileged changes true->false",
-			currentSC: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{Privileged: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "Privileged changes false->true",
-			currentSC: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{Privileged: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{Privileged: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{Privileged: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "Privileged is same",
-			currentSC: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
-			updatedSC: &corev1.SecurityContext{Privileged: pointer.Bool(true)},
+			currentSC: &corev1.SecurityContext{Privileged: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{Privileged: ptr.To[bool](true)},
+			updatedSC: &corev1.SecurityContext{Privileged: ptr.To[bool](true)},
 			changed:   false,
 		},
 		{
 			name:      "current AllowPrivilegeEscalation is nil",
 			currentSC: &corev1.SecurityContext{},
-			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			// should be ignored to handle defaulting
 			name:      "desired AllowPrivilegeEscalation is nil",
 			desiredSC: &corev1.SecurityContext{},
-			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
 			changed:   false,
 		},
 		{
 			name:      "AllowPrivilegeEscalation changes true->false",
-			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "AllowPrivilegeEscalation changes false->true",
-			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
-			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(false)},
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](false)},
 			changed:   true,
 		},
 		{
 			name:      "AllowPrivilegeEscalation is same",
-			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(true)},
-			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(true)},
-			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: pointer.Bool(true)},
+			currentSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](true)},
+			desiredSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](true)},
+			updatedSC: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To[bool](true)},
 			changed:   false,
 		},
 		{
@@ -6302,14 +6302,14 @@ func TestSecurityContextChanged(t *testing.T) {
 			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
 			updatedSC: &corev1.SecurityContext{
 				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
-				RunAsUser:      pointer.Int64(1007),
+				RunAsUser:      ptr.To[int64](1007),
 			},
 			changed: true,
 		},
 		{
 			name:      "Don't update security context if diff in other fields",
 			currentSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}},
-			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}, RunAsUser: pointer.Int64(1007)},
+			desiredSC: &corev1.SecurityContext{SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}, RunAsUser: ptr.To[int64](1007)},
 			updatedSC: &corev1.SecurityContext{
 				SeccompProfile: &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault},
 			},
@@ -6738,7 +6738,7 @@ func testAWSExternalDNSDomainFilter(zones []string, source operatorv1beta1.Exter
 		{
 			ExternalDNSDomainUnion: operatorv1beta1.ExternalDNSDomainUnion{
 				MatchType: operatorv1beta1.DomainMatchTypeExact,
-				Name:      pointer.String("abc.com"),
+				Name:      ptr.To[string]("abc.com"),
 			},
 			FilterType: operatorv1beta1.FilterTypeInclude,
 		},
