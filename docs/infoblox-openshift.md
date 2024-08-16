@@ -92,8 +92,8 @@ Make sure your AWS account is subscribed to the following product:
     aws cloudformation describe-stacks --stack-name infoblox
     ```
     _Note_: NIOS instance takes around 10 minutes to start
-- Once the EC2 instance passed all the checks you can try to connect to the Grid Manager WebUI using the Elastic IP and `admin/${GRID_ADMIN_PASSWORD}` as credentials. Use HTTPS scheme and accept the self signed certificate.
-- You may want to set up the DNS for the newly created public IP. You will need the FQDN later during the setup.
+- Once the EC2 instance passed all the checks you can try to connect to the Grid Manager WebUI using the Elastic IP and `admin/${GRID_ADMIN_PASSWORD}` as credentials. Use HTTPS scheme and accept the self-signed certificate.
+- You may want to set up DNS for the newly created public IP. You will need the FQDN later during the setup.
 
 ### Infoblox configuration
 - Setup a new grid. At the first start a wizard would pop up and propose to do so, you can follow `Use vNIOS Instance for New grid` chapter from the guide in the [links](#links) or follow these notes:
@@ -105,12 +105,12 @@ Make sure your AWS account is subscribed to the following product:
     - Restart will be needed at the end of the setup of the new grid
 - Add name server group with the grid server: `Data Management` top tab -> `DNS` subtab -> `Add` dropdown button on the right panel -> `Group` -> `Authorative` -> Put a name (e.g. `infoblox`) -> `+` button -> `Add Grid Primary` pannel -> `Select` button -> `Add` button -> `Save & Close`
 - Start DNS service: `Grid` top tab -> `Grid manager` subtab -> `DNS` check button -> `Services` subsubtab -> Select `infoblox.localdomain` (or your instance's FQDN) -> Button `Play` (Start) -> Confirm the start
-- Default self signed certificate uses the private IP, you would need to regenerate it with the Elastic IP (or FQDN if any):
+- The default self-signed certificate uses the private IP. Therefore, you will need to regenerate it with the Elastic IP (or FQDN if any):
     - `Grid` top tab -> `Grid Manager` subtab -> `DNS` check button -> `Members` subsubtab -> Click on your server group -> `Certificates` dropdown button on the right panel -> `HTTPS Cert` -> `Generate Self Signed Certificate` -> Fill `Days Valid` -> Add Elastic IP (or FQDN if any) in `Subject Alternative name` -> Accept the restart of the service -> Close the popup window
 
 ### Set licenses
 
-You can set new licenses using the infoblox client which is spawned when you `ssh` into the instance:
+You can set new licenses using the Infoblox client which is spawned when you `ssh` into the instance:
 ```bash
 ssh -i key-from-my-keypair admin@myinfobloxinstance
 Infoblox > set license
