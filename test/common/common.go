@@ -49,7 +49,7 @@ const (
 	dnsProviderEnvVar          = "DNS_PROVIDER"
 	e2eSkipDNSProvidersEnvVar  = "E2E_SKIP_DNS_PROVIDERS"
 	DnsPollingInterval         = 15 * time.Second
-	DnsPollingTimeout          = 3 * time.Minute
+	DnsPollingTimeout          = 7 * time.Minute
 )
 
 var (
