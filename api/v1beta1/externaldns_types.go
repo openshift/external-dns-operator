@@ -250,10 +250,6 @@ type ExternalDNSAWSProviderOptions struct {
 	// * aws_access_key_id
 	// * aws_secret_access_key
 	//
-	// See
-	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
-	// for more information.
-	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default:={"name":""}
 	// +required
@@ -304,7 +300,7 @@ type ExternalDNSAzureProviderOptions struct {
 	// }
 	//
 	// See
-	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/azure.md
+	// https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/azure.md#configuration-file
 	// for more information on the necessary configuration key/values and how to obtain them.
 	//
 	// +kubebuilder:validation:Required
@@ -329,7 +325,7 @@ type ExternalDNSBlueCatProviderOptions struct {
 	// }
 	//
 	// See
-	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/bluecat.md
+	// https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/bluecat.md#using-json-configuration-file
 	// for more information on the necessary configuration values and how to obtain them.
 	//
 	// +kubebuilder:validation:Required
@@ -343,10 +339,6 @@ type ExternalDNSInfobloxProviderOptions struct {
 	//
 	// * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME
 	// * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD
-	//
-	// See
-	// https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/infoblox.md
-	// for more information and configuration options.
 	//
 	// +kubebuilder:validation:Required
 	// +required

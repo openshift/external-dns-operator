@@ -587,8 +587,7 @@ spec:
                           name: ""
                         description: "Credentials is a reference to a secret containing
                           the following keys (with corresponding values): \n * aws_access_key_id
-                          * aws_secret_access_key \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
-                          for more information."
+                          * aws_secret_access_key"
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -610,7 +609,7 @@ spec:
                           `azure.json` similar to the following: \n {   \"tenantId\":
                           \"123\",   \"subscriptionId\": \"456\",   \"resourceGroup\":
                           \"MyDnsResourceGroup\",   \"aadClientId\": \"789\",   \"aadClientSecret\":
-                          \"123\" } \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/azure.md
+                          \"123\" } \n See https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/azure.md#configuration-file
                           for more information on the necessary configuration key/values
                           and how to obtain them."
                         properties:
@@ -635,7 +634,7 @@ spec:
                           \"https://bluecatgw.example.com\",   \"gatewayUsername\":
                           \"user\",   \"gatewayPassword\": \"pass\",   \"dnsConfiguration\":
                           \"Example\",   \"dnsView\": \"Internal\",   \"rootZone\":
-                          \"example.com\",   \"skipTLSVerify\": false } \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/bluecat.md
+                          \"example.com\",   \"skipTLSVerify\": false } \n See https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/bluecat.md#using-json-configuration-file
                           for more information on the necessary configuration values
                           and how to obtain them."
                         properties:
@@ -680,9 +679,7 @@ spec:
                       credentials:
                         description: "Credentials is a reference to a secret containing
                           the following keys (with proper corresponding values): \n
-                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD
-                          \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/infoblox.md
-                          for more information and configuration options."
+                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD"
                         properties:
                           name:
                             description: Name is the name of the secret.
