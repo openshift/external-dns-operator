@@ -1440,7 +1440,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--fqdn-template={{.Name}}.test.com",
 									"--infoblox-wapi-port=443",
 									"--infoblox-grid-host=gridhost.example.com",
-									"--infoblox-wapi-version=2.3.1",
+									"--infoblox-wapi-version=2.12.2",
 									"--txt-prefix=external-dns-",
 								},
 								Env: []corev1.EnvVar{
@@ -3179,7 +3179,7 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									`--fqdn-template={{""}}`,
 									"--infoblox-wapi-port=443",
 									"--infoblox-grid-host=gridhost.example.com",
-									"--infoblox-wapi-version=2.3.1",
+									"--infoblox-wapi-version=2.12.2",
 									"--txt-prefix=external-dns-",
 								},
 								Env: []corev1.EnvVar{
@@ -6727,7 +6727,7 @@ func testInfobloxExternalDNS(source operatorv1beta1.ExternalDNSSourceType) *oper
 	extdns.Spec.Provider.Infoblox = &operatorv1beta1.ExternalDNSInfobloxProviderOptions{
 		GridHost:    "gridhost.example.com",
 		WAPIPort:    443,
-		WAPIVersion: "2.3.1",
+		WAPIVersion: "2.12.2",
 	}
 	return extdns
 }

@@ -14,7 +14,7 @@ spec:
         name: infoblox-credentials
       gridHost: "100.100.100.100"
       wapiPort: 443
-      wapiVersion: "2.3.1"
+      wapiVersion: "2.12.2"
   source:
     # Source Type is route resource of OpenShift
     type: OpenShiftRoute
