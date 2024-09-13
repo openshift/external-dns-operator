@@ -48,7 +48,7 @@ spec:
         - name: RELATED_IMAGE_EXTERNAL_DNS
           # openshift/external-dns commit: 441588e482514db7722f5c793cf70348b68d952d
           # manifest link: https://quay.io/repository/external-dns-operator/external-dns/manifest/sha256:51e2acc81c804468932581379d674273fd2e62798be4e81c5c735bf0161590dd
-          value: quay.io/external-dns-operator/external-dns@sha256:51e2acc81c804468932581379d674273fd2e62798be4e81c5c735bf0161590dd
+          value: quay.io/external-dns-operator/external-dns:rhel9-rc1-224579246
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
