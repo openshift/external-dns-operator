@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/storage/names"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -49,7 +49,7 @@ const (
 	dnsProviderEnvVar          = "DNS_PROVIDER"
 	e2eSkipDNSProvidersEnvVar  = "E2E_SKIP_DNS_PROVIDERS"
 	DnsPollingInterval         = 15 * time.Second
-	DnsPollingTimeout          = 3 * time.Minute
+	DnsPollingTimeout          = 7 * time.Minute
 )
 
 var (
@@ -252,9 +252,9 @@ func buildDigPod(name, namespace, address string, extraArgs ...string) *corev1.P
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
 						},
-						Privileged:               pointer.Bool(false),
-						RunAsNonRoot:             pointer.Bool(true),
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						Privileged:               ptr.To[bool](false),
+						RunAsNonRoot:             ptr.To[bool](true),
+						AllowPrivilegeEscalation: ptr.To[bool](false),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func makeExternalDNS(name string, domains []ExternalDNSDomain) *ExternalDNS {
@@ -139,7 +139,7 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeRegex,
-						Pattern:   pointer.String(`(.*\.test.com`),
+						Pattern:   ptr.To[string](`(.*\.test.com`),
 					},
 					FilterType: FilterTypeInclude,
 				},
@@ -166,14 +166,14 @@ var _ = Describe("ExternalDNS admission webhook", func() {
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeExact,
-						Name:      pointer.String("abc.test.com"),
+						Name:      ptr.To[string]("abc.test.com"),
 					},
 					FilterType: FilterTypeInclude,
 				},
 				{
 					ExternalDNSDomainUnion: ExternalDNSDomainUnion{
 						MatchType: DomainMatchTypeExact,
-						Name:      pointer.String(`(.*)\.test\.com`),
+						Name:      ptr.To[string](`(.*)\.test\.com`),
 					},
 					FilterType: FilterTypeInclude,
 				},

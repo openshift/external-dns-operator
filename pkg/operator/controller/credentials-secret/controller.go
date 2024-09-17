@@ -87,27 +87,27 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// Enqueue if ExternalDNS references a secret or if the secret name changes
 	if err := c.Watch(
-		source.Kind(operatorCache, &operatorv1beta1.ExternalDNS{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.Funcs{
-			CreateFunc: func(e event.CreateEvent) bool {
-				return hasSecret(e.Object, config.IsOpenShift)
+		source.Kind[client.Object](operatorCache, &operatorv1beta1.ExternalDNS{},
+			&handler.EnqueueRequestForObject{},
+			predicate.Funcs{
+				CreateFunc: func(e event.CreateEvent) bool {
+					return hasSecret(e.Object, config.IsOpenShift)
+				},
+				DeleteFunc: func(e event.DeleteEvent) bool {
+					return hasSecret(e.Object, config.IsOpenShift)
+				},
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					oldED := e.ObjectOld.(*operatorv1beta1.ExternalDNS)
+					newED := e.ObjectNew.(*operatorv1beta1.ExternalDNS)
+					oldName := getExternalDNSCredentialsSecretName(oldED, config.IsOpenShift)
+					newName := getExternalDNSCredentialsSecretName(newED, config.IsOpenShift)
+					return oldName != newName || oldED.DeletionTimestamp != newED.DeletionTimestamp
+				},
+				GenericFunc: func(e event.GenericEvent) bool {
+					return hasSecret(e.Object, config.IsOpenShift)
+				},
 			},
-			DeleteFunc: func(e event.DeleteEvent) bool {
-				return hasSecret(e.Object, config.IsOpenShift)
-			},
-			UpdateFunc: func(e event.UpdateEvent) bool {
-				oldED := e.ObjectOld.(*operatorv1beta1.ExternalDNS)
-				newED := e.ObjectNew.(*operatorv1beta1.ExternalDNS)
-				oldName := getExternalDNSCredentialsSecretName(oldED, config.IsOpenShift)
-				newName := getExternalDNSCredentialsSecretName(newED, config.IsOpenShift)
-				return oldName != newName || oldED.DeletionTimestamp != newED.DeletionTimestamp
-			},
-			GenericFunc: func(e event.GenericEvent) bool {
-				return hasSecret(e.Object, config.IsOpenShift)
-			},
-		},
-	); err != nil {
+		)); err != nil {
 		return nil, err
 	}
 
@@ -191,10 +191,10 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// we send the reconcile requests with all the ExternalDNS resources
 	// which referenced it
 	if err := c.Watch(
-		source.Kind(operatorCache, &corev1.Secret{}),
-		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
-		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)),
-	); err != nil {
+		source.Kind[client.Object](operatorCache, &corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(credSecretToExtDNS),
+			predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)),
+		)); err != nil {
 		return nil, err
 	}
 
@@ -203,10 +203,10 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 	// we send the reconcile requests with all the ExternalDNS resources
 	// which referenced it
 	if err := c.Watch(
-		source.Kind(operatorCache, &corev1.Secret{}),
-		handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
-		predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)),
-	); err != nil {
+		source.Kind[client.Object](operatorCache, &corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(credSecretToExtDNSTargetNS),
+			predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)),
+		)); err != nil {
 		return nil, err
 	}
 

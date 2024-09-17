@@ -84,20 +84,20 @@ func New(mgr manager.Manager, config Config) (controller.Controller, error) {
 
 	// Watch the configmap from the source namespace
 	if err := c.Watch(
-		source.Kind(operatorCache, &corev1.ConfigMap{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(config.CAConfigMapName))),
-	); err != nil {
+		source.Kind[client.Object](operatorCache, &corev1.ConfigMap{},
+			&handler.EnqueueRequestForObject{},
+			predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.SourceNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(config.CAConfigMapName))),
+		)); err != nil {
 		return nil, err
 	}
 
 	// Watch the configmap from the target namespace
 	// and enqueue the one from the source namespace
 	if err := c.Watch(
-		source.Kind(operatorCache, &corev1.ConfigMap{}),
-		handler.EnqueueRequestsFromMapFunc(targetToSource),
-		predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(extdnscontroller.ExternalDNSDestTrustedCAConfigMapName("").Name))),
-	); err != nil {
+		source.Kind[client.Object](operatorCache, &corev1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(targetToSource),
+			predicate.And(predicate.NewPredicateFuncs(ctrlutils.InNamespace(config.TargetNamespace)), predicate.NewPredicateFuncs(ctrlutils.HasName(extdnscontroller.ExternalDNSDestTrustedCAConfigMapName("").Name))),
+		)); err != nil {
 		return nil, err
 	}
 

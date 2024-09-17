@@ -25,7 +25,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	configv1 "github.com/openshift/api/config/v1"
 
@@ -146,9 +146,9 @@ func (b *externalDNSContainerBuilder) defaultContainer(name string) *corev1.Cont
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{allCapabilities},
 			},
-			Privileged:               pointer.Bool(false),
-			RunAsNonRoot:             pointer.Bool(true),
-			AllowPrivilegeEscalation: pointer.Bool(false),
+			Privileged:               ptr.To[bool](false),
+			RunAsNonRoot:             ptr.To[bool](true),
+			AllowPrivilegeEscalation: ptr.To[bool](false),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeRuntimeDefault,
 			},
@@ -599,7 +599,7 @@ func (b *externalDNSVolumeBuilder) awsVolumes() []corev1.Volume {
 					Sources: []corev1.VolumeProjection{{
 						ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 							Audience:          boundSATokenAudience,
-							ExpirationSeconds: pointer.Int64(boundSATokenExpirationSeconds),
+							ExpirationSeconds: ptr.To[int64](boundSATokenExpirationSeconds),
 							Path:              boundSATokenPath,
 						},
 					}},

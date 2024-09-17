@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -229,7 +229,7 @@ func newHostNetworkController(name types.NamespacedName, domain string) *operato
 		},
 		Spec: operatorv1.IngressControllerSpec{
 			Domain:   domain,
-			Replicas: pointer.Int32(1),
+			Replicas: ptr.To[int32](1),
 			EndpointPublishingStrategy: &operatorv1.EndpointPublishingStrategy{
 				Type: operatorv1.HostNetworkStrategyType,
 			},

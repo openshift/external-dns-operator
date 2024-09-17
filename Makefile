@@ -41,8 +41,8 @@ endif
 
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
-KUSTOMIZE := go run sigs.k8s.io/kustomize/kustomize/v4
-K8S_ENVTEST_VERSION := 1.21.4
+KUSTOMIZE := go run sigs.k8s.io/kustomize/kustomize/v5
+K8S_ENVTEST_VERSION := 1.30.0
 
 PACKAGE=github.com/openshift/external-dns-operator
 
@@ -112,7 +112,7 @@ vet: ## Run go vet against code.
 ENVTEST_ASSETS_DIR ?= $(shell pwd)/testbin
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p "$(ENVTEST_ASSETS_DIR)"
-	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" go test ./... -race -covermode=atomic -coverprofile coverage.out
+	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" CGO_ENABLED=1 go test ./... -race -covermode=atomic -coverprofile coverage.out
 
 .PHONY: test-e2e
 test-e2e:
@@ -218,7 +218,7 @@ endef
 .PHONY: lint
 ## Checks the code with golangci-lint
 lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --deadline=30m
+	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml
 
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(BIN_DIR)
