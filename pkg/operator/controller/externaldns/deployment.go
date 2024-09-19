@@ -72,6 +72,7 @@ var providerStringTable = map[operatorv1beta1.ExternalDNSProviderType]string{
 var sourceStringTable = map[operatorv1beta1.ExternalDNSSourceType]string{
 	operatorv1beta1.SourceTypeRoute:   "openshift-route",
 	operatorv1beta1.SourceTypeService: "service",
+	operatorv1beta1.SourceTypeIngress: "ingress",
 }
 
 type deploymentConfig struct {
