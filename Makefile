@@ -191,6 +191,7 @@ bundle-image-push:
 
 .PHONY: catalog
 catalog: opm
+	# TODO: make opm use the bundle image built locally
 	$(OPM) render $(BUNDLE_IMG) -o yaml > $(PACKAGE_DIR)/bundle.yaml
 	$(OPM) validate $(CATALOG_DIR)
 
