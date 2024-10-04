@@ -55,12 +55,19 @@ BIN_DIR=$(shell pwd)/bin
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-CONTAINER_ENGINE ?= docker
+COMMIT ?= $(shell git rev-parse HEAD)
+SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
+
+CONTAINER_ENGINE ?= podman
 CONTAINER_PUSH_ARGS ?= $(if $(filter ${CONTAINER_ENGINE}, docker), , --tls-verify=${TLS_VERIFY})
 
 BUNDLE_DIR := bundle
 BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
-BUNDLE_IMG ?= quay.io/external-dns-operator/external-dns-operator-bundle:latest
+# The "catalog" target builds and pushes the bundle image it renders from.
+# To avoid conflicts in CI, different PRs require unique versions of the bundle image.
+# The current commit enables separation of bundle images across PRs.
+BUNDLE_IMG_TAG ?= $(SHORTCOMMIT)
+BUNDLE_IMG ?= quay.io/external-dns-operator/external-dns-operator-bundle:$(BUNDLE_IMG_TAG)
 CATALOG_DIR := catalog
 PACKAGE_DIR := $(CATALOG_DIR)/external-dns-operator
 CATALOG_IMG ?= quay.io/external-dns-operator/external-dns-operator-catalog:latest
@@ -70,8 +77,6 @@ GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
 
 OPERATOR_SDK_BIN=$(BIN_DIR)/operator-sdk
 
-COMMIT ?= $(shell git rev-parse HEAD)
-SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
 GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
 
 E2E_TIMEOUT ?= 1h
@@ -189,8 +194,9 @@ bundle-image-build: bundle
 bundle-image-push:
 	$(CONTAINER_ENGINE) push $(BUNDLE_IMG)
 
+# Build and push the bundle image before rendering.
 .PHONY: catalog
-catalog: opm
+catalog: bundle-image-build bundle-image-push opm
 	$(OPM) render $(BUNDLE_IMG) -o yaml > $(PACKAGE_DIR)/bundle.yaml
 	$(OPM) validate $(CATALOG_DIR)
 
