@@ -50,7 +50,7 @@ openshift-console          downloads           downloads-openshift-console.apps.
             name: infoblox-credentials
           gridHost: ${INFOBLOX_GRID_PUBLIC_IP}
           wapiPort: 443
-          wapiVersion: "2.3.1"
+          wapiVersion: "2.12.2"
       domains:
       - filterType: Include
         matchType: Exact
