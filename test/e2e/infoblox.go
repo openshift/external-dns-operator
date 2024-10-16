@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/openshift/external-dns-operator/test/common"
 
@@ -19,6 +20,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
@@ -267,9 +269,9 @@ func (h *infobloxTestHelper) trustGridTLSCert() error {
 	}
 
 	// inject into subscription if there is one
-	findOperatorSubscription := func() (*olmv1alpha1.Subscription, error) {
+	findOperatorSubscription := func(ctx context.Context) (*olmv1alpha1.Subscription, error) {
 		list := &olmv1alpha1.SubscriptionList{}
-		if err := common.KubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
+		if err := common.KubeClient.List(ctx, list, client.InNamespace(operatorNs)); err != nil {
 			return nil, err
 		}
 		for _, sub := range list.Items {
@@ -284,25 +286,33 @@ func (h *infobloxTestHelper) trustGridTLSCert() error {
 		}
 		return nil, nil
 	}
-	subscription, err := findOperatorSubscription()
-	if err != nil {
-		return fmt.Errorf("failed to find operator subscription: %w", err)
-	}
-	if subscription != nil {
-		if subscription.Spec.Config == nil {
-			subscription.Spec.Config = &olmv1alpha1.SubscriptionConfig{}
+
+	if err := wait.PollUntilContextTimeout(context.TODO(), 2*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		subscription, err := findOperatorSubscription(ctx)
+		if err != nil {
+			fmt.Printf("failed while finding operator subscription: %v, retrying ...\n", err)
+			return false, nil
 		}
-		subscription.Spec.Config.Env = ensureEnvVar(subscription.Spec.Config.Env, trustedCAEnvVar)
-		if err := common.KubeClient.Update(context.TODO(), subscription); err != nil {
-			return fmt.Errorf("failed to inject trusted CA environment variable into the subscription: %w", err)
+		if subscription != nil {
+			if subscription.Spec.Config == nil {
+				subscription.Spec.Config = &olmv1alpha1.SubscriptionConfig{}
+			}
+			subscription.Spec.Config.Env = ensureEnvVar(subscription.Spec.Config.Env, trustedCAEnvVar)
+			if err := common.KubeClient.Update(ctx, subscription); err != nil {
+				fmt.Printf("failed to inject trusted CA environment variable into the subscription: %v, retrying ...\n", err)
+				return false, nil
+			}
+			return true, nil
 		}
-		return nil
+		fmt.Println("no suscription was found, trying to update the deployment directly")
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("timed out trying to inject trusted CA into the subscription")
 	}
 
-	// no subscription was found, try to update the deployment directly
-	findOperatorDeployment := func() (*appsv1.Deployment, error) {
+	findOperatorDeployment := func(ctx context.Context) (*appsv1.Deployment, error) {
 		list := &appsv1.DeploymentList{}
-		if err := common.KubeClient.List(context.TODO(), list, client.InNamespace(operatorNs)); err != nil {
+		if err := common.KubeClient.List(ctx, list, client.InNamespace(operatorNs)); err != nil {
 			return nil, err
 		}
 		for _, depl := range list.Items {
@@ -312,22 +322,29 @@ func (h *infobloxTestHelper) trustGridTLSCert() error {
 		}
 		return nil, nil
 	}
-	deployment, err := findOperatorDeployment()
-	if err != nil {
-		return fmt.Errorf("failed to find operator deployment: %w", err)
-	}
-	if deployment == nil {
-		return fmt.Errorf("no operator deployment found")
-	}
-
-	for i := range deployment.Spec.Template.Spec.Containers {
-		if deployment.Spec.Template.Spec.Containers[i].Name == operatorContainerName {
-			deployment.Spec.Template.Spec.Containers[i].Env = ensureEnvVar(deployment.Spec.Template.Spec.Containers[i].Env, trustedCAEnvVar)
-			break
+	if err := wait.PollUntilContextTimeout(context.TODO(), 2*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		deployment, err := findOperatorDeployment(ctx)
+		if err != nil {
+			fmt.Printf("failed while finding operator deployment: %v, retrying ...\n", err)
+			return false, nil
 		}
-	}
-	if err := common.KubeClient.Update(context.TODO(), deployment); err != nil {
-		return fmt.Errorf("failed to inject trusted CA environment variable into the deployment: %w", err)
+		if deployment == nil {
+			return false, fmt.Errorf("no operator deployment found")
+		}
+
+		for i := range deployment.Spec.Template.Spec.Containers {
+			if deployment.Spec.Template.Spec.Containers[i].Name == operatorContainerName {
+				deployment.Spec.Template.Spec.Containers[i].Env = ensureEnvVar(deployment.Spec.Template.Spec.Containers[i].Env, trustedCAEnvVar)
+				break
+			}
+		}
+		if err := common.KubeClient.Update(ctx, deployment); err != nil {
+			fmt.Printf("failed to inject trusted CA environment variable into the deployment: %v\n", err)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("failed trying to inject trusted CA into the subscription: %w", err)
 	}
 
 	return nil
