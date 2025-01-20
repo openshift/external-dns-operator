@@ -37,15 +37,18 @@ const (
 	infobloxGridMasterHostnameEnvVar = "INFOBLOX_GRID_MASTER_HOSTNAME"
 	trustedCAConfigMapEnvVar         = "TRUSTED_CA_CONFIGMAP_NAME"
 	defaultWAPIPort                  = "443"
-	defaultWAPIVersion               = "2.3.1"
-	defaultTLSVerify                 = "false"
-	defaultHTTPRequestTimeout        = 20
-	defaultHTTPConnPool              = 10
-	defaultHostFilename              = "host"
-	defaultUsernameFilename          = "username"
-	defaultPasswordFilename          = "password"
-	defaultMasterHostnameFilename    = "masterhostname"
-	operatorContainerName            = "operator"
+	// https://community.infoblox.com/cixhp49439/attachments/cixhp49439/IPAM/6153/2/NIOS_8.6.2_ReleaseNotesREVC.pdf
+	// Chapter: "Changes to Infoblox API and Restful API (WAPI)"
+	// "2.12.2" version is recommended for NIOS 8.6.2 (our Infoblox test instance is currently 8.6.4).
+	defaultWAPIVersion            = "2.12.2"
+	defaultTLSVerify              = "false"
+	defaultHTTPRequestTimeout     = 20
+	defaultHTTPConnPool           = 10
+	defaultHostFilename           = "host"
+	defaultUsernameFilename       = "username"
+	defaultPasswordFilename       = "password"
+	defaultMasterHostnameFilename = "masterhostname"
+	operatorContainerName         = "operator"
 )
 
 type infobloxTestHelper struct {
