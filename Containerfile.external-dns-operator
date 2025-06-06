@@ -1,0 +1,29 @@
+# Detect the drift from the upstream Dockerfile
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS drift
+WORKDIR /app
+COPY drift-cache/Dockerfile Dockerfile.cached
+COPY Dockerfile .
+# If the command below fails it means that the upstream Dockerfile changed.
+# You have to update the Konflux Containerfile accordingly.
+# drift-cache/Dockerfile can be updated with the upstream contents once the Konflux version is aligned.
+RUN [ "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile | cut -d' ' -f1)" ]
+
+
+FROM registry.access.redhat.com/ubi8/go-toolset:1.22 as builder
+# dummy copy to trigger the drift detection
+COPY --from=drift /app/Dockerfile.cached .
+COPY . /workspace
+WORKDIR /workspace
+RUN git config --global --add safe.directory /workspace
+# Build
+RUN make build-operator
+
+FROM registry.redhat.io/rhel9-4-els/rhel:9.4
+LABEL maintainer="Red Hat, Inc."
+LABEL com.redhat.component="external-dns-operator-container"
+LABEL name="external-dns-operator"
+LABEL version="${CI_VERSION}"
+WORKDIR /
+COPY --from=builder /workspace/bin/external-dns-operator /
+USER 65532:65532
+ENTRYPOINT ["/external-dns-operator"]
