@@ -106,7 +106,11 @@ func TestExternalDNSAssumeRole(t *testing.T) {
 		t.Fatalf("Failed to create external DNS %q: %v", testExtDNSName, err)
 	}
 	defer func() {
-		_ = common.KubeClient.Delete(context.TODO(), extDNS)
+		if !t.Failed() {
+			_ = common.KubeClient.Delete(context.TODO(), extDNS)
+		} else {
+			t.Logf("Skipping deletion of ExternalDNS %q to gather logs", testExtDNSName)
+		}
 	}()
 
 	// Create a service of type LoadBalancer with the annotation targeted by the ExternalDNS resource.
