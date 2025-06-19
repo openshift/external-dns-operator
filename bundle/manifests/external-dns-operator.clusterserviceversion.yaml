@@ -479,7 +479,7 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: RELATED_IMAGE_EXTERNAL_DNS
-                  value: quay.io/external-dns-operator/external-dns@sha256:42c9f6d6b01d5e45b7d5064d2d6dea1f7b51346198d80e7f7f9821bd7fd072cf
+                  value: quay.io/external-dns-operator/external-dns:latest
                 - name: TRUSTED_CA_CONFIGMAP_NAME
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: external-dns-operator
