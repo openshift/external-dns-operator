@@ -46,9 +46,9 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          # openshift/external-dns commit: 8da2509b922d50ef7b1b8ea2297758888f32448d
-          # manifest link: https://quay.io/repository/external-dns-operator/external-dns/manifest/sha256:42c9f6d6b01d5e45b7d5064d2d6dea1f7b51346198d80e7f7f9821bd7fd072cf
-          value: quay.io/external-dns-operator/external-dns@sha256:42c9f6d6b01d5e45b7d5064d2d6dea1f7b51346198d80e7f7f9821bd7fd072cf
+            # Use "latest" floating tag to avoid problems with the prunning of older mirorred images.
+            # Ref: https://issues.redhat.com/browse/OCPBUGS-57339.
+          value: quay.io/external-dns-operator/external-dns:latest
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
