@@ -6,8 +6,8 @@ toolchain go1.22.3
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.27
-	github.com/Azure/go-autorest/autorest/adal v0.9.20
+	github.com/Azure/go-autorest/autorest v0.11.30
+	github.com/Azure/go-autorest/autorest/adal v0.9.22
 	github.com/aws/aws-sdk-go v1.41.6
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
