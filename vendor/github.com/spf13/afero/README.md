@@ -2,7 +2,11 @@
 
 A FileSystem Abstraction System for Go
 
-[![Build Status](https://travis-ci.org/spf13/afero.svg)](https://travis-ci.org/spf13/afero) [![Build status](https://ci.appveyor.com/api/projects/status/github/spf13/afero?branch=master&svg=true)](https://ci.appveyor.com/project/spf13/afero) [![GoDoc](https://godoc.org/github.com/spf13/afero?status.svg)](https://godoc.org/github.com/spf13/afero) [![Join the chat at https://gitter.im/spf13/afero](https://badges.gitter.im/Dev%20Chat.svg)](https://gitter.im/spf13/afero?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/spf13/afero/ci.yaml?branch=master&style=flat-square)](https://github.com/spf13/afero/actions?query=workflow%3ACI)
+[![Join the chat at https://gitter.im/spf13/afero](https://badges.gitter.im/Dev%20Chat.svg)](https://gitter.im/spf13/afero?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Go Report Card](https://goreportcard.com/badge/github.com/spf13/afero?style=flat-square)](https://goreportcard.com/report/github.com/spf13/afero)
+![Go Version](https://img.shields.io/badge/go%20version-%3E=1.23-61CFDD.svg?style=flat-square)
+[![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/spf13/afero)](https://pkg.go.dev/mod/github.com/spf13/afero)
 
 # Overview
 
@@ -12,7 +16,7 @@ types and methods. Afero has an exceptionally clean interface and simple design
 without needless constructors or initialization methods.
 
 Afero is also a library providing a base set of interoperable backend
-filesystems that make it easy to work with afero while retaining all the power
+filesystems that make it easy to work with, while retaining all the power
 and benefit of the os and ioutil packages.
 
 Afero provides significant improvements over using the os package alone, most
@@ -79,11 +83,11 @@ would.
 
 So if my application before had:
 ```go
-os.Open('/tmp/foo')
+os.Open("/tmp/foo")
 ```
 We would replace it with:
 ```go
-AppFs.Open('/tmp/foo')
+AppFs.Open("/tmp/foo")
 ```
 
 `AppFs` being the variable we defined above.
@@ -259,6 +263,18 @@ system using InMemoryFile.
 Afero has experimental support for secure file transfer protocol (sftp). Which can
 be used to perform file operations over a encrypted channel.
 
+### GCSFs
+
+Afero has experimental support for Google Cloud Storage (GCS). You can either set the
+`GOOGLE_APPLICATION_CREDENTIALS_JSON` env variable to your JSON credentials or use `opts` in
+`NewGcsFS` to configure access to your GCS bucket.
+
+Some known limitations of the existing implementation:
+* No Chmod support - The GCS ACL could probably be mapped to *nix style permissions but that would add another level of complexity and is ignored in this version.
+* No Chtimes support - Could be simulated with attributes (gcs a/m-times are set implicitly) but that's is left for another version.
+* Not thread safe - Also assumes all file operations are done through the same instance of the GcsFs. File operations between different GcsFs instances are not guaranteed to be consistent.
+
+
 ## Filtering Backends
 
 ### BasePathFs
@@ -414,6 +430,39 @@ See the [Releases Page](https://github.com/spf13/afero/releases).
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+## Releasing
+
+As of version 1.14.0, Afero moved implementations with third-party libraries to
+their own submodules.
+
+Releasing a new version now requires a few steps:
+
+```
+VERSION=X.Y.Z
+git tag -a v$VERSION -m "Release $VERSION"
+git push origin v$VERSION
+
+cd gcsfs
+go get github.com/spf13/afero@v$VERSION
+go mod tidy
+git commit -am "Update afero to v$VERSION"
+git tag -a gcsfs/v$VERSION -m "Release gcsfs $VERSION"
+git push origin gcsfs/v$VERSION
+cd ..
+
+cd sftpfs
+go get github.com/spf13/afero@v$VERSION
+go mod tidy
+git commit -am "Update afero to v$VERSION"
+git tag -a sftpfs/v$VERSION -m "Release sftpfs $VERSION"
+git push origin sftpfs/v$VERSION
+cd ..
+
+git push
+```
+
+TODO: move these instructions to a Makefile or something
 
 ## Contributors
 
