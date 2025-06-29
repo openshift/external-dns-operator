@@ -1,8 +1,8 @@
 module github.com/openshift/external-dns-operator
 
-go 1.22.0
+go 1.23.0
 
-toolchain go1.22.3
+toolchain go1.23.9
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
@@ -95,7 +95,7 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/mod v0.15.0 // indirect
+	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
