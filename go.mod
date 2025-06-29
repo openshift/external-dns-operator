@@ -2,7 +2,7 @@ module github.com/openshift/external-dns-operator
 
 go 1.22.0
 
-toolchain go1.22.3
+toolchain go1.24.4
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
