@@ -85,7 +85,7 @@ Make sure your AWS account is subscribed to the following product:
     # EC2 -> Network & Security -> Key Pairs
     export AWS_KEYPAIR=mykey
     export GRID_ADMIN_PASSWORD=MyComplexPassword
-    aws cloudformation create-stack --stack-name infoblox --template-body file://${PWD}/scripts/cloud-formation-infoblox.yaml --parameters ParameterKey=EnvironmentName,ParameterValue=infoblox ParameterKey=NiosKeyPair,ParameterValue=${AWS_KEYPAIR} ParameterKey=GridAdminPassword,ParameterValue=${GRID_ADMIN_PASSWORD}
+    aws cloudformation create-stack --stack-name infoblox --template-url https://raw.githubusercontent.com/openshift/external-dns-operator/refs/heads/infoblox-cloudformation-test-instance/docs/scripts/cloud-formation-infoblox.yaml --parameters ParameterKey=EnvironmentName,ParameterValue=infoblox ParameterKey=NiosKeyPair,ParameterValue=${AWS_KEYPAIR} ParameterKey=GridAdminPassword,ParameterValue=${GRID_ADMIN_PASSWORD}
     ```
 - You can always check the status and the output of CloudFormation script:
     ```sh
