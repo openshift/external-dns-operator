@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.41.6
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
-	github.com/infobloxopen/infoblox-go-client v1.1.1
+	github.com/infobloxopen/infoblox-go-client/v2 v2.10.0
 	github.com/miekg/dns v1.0.14
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
