@@ -13,7 +13,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/infobloxopen/infoblox-go-client v1.1.1
 	github.com/miekg/dns v1.0.14
-	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.32.0
 	github.com/openshift/api v0.0.0-20240812094746-86145edb40cf
 	github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
