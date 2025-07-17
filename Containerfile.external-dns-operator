@@ -1,11 +1,11 @@
-# Detect the drift from the upstream Dockerfile
+# Detect the drift from Dockerfile.
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS drift
 WORKDIR /app
 COPY drift-cache/Dockerfile Dockerfile.cached
 COPY Dockerfile .
 # If the command below fails it means that the Dockerfile from this repository changed.
 # You have to update the Konflux Containerfile accordingly.
-# drift-cache/Dockerfile can be updated with the upstream contents once the Konflux version is aligned.
+# drift-cache/Dockerfile can be updated with latest contents once the Konflux version is aligned.
 RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile | cut -d' ' -f1)"
 
 
