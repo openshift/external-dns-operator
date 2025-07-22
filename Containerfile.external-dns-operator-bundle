@@ -1,0 +1,40 @@
+# Detect the drift from Dockerfile.bundle.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS drift
+WORKDIR /app
+COPY drift-cache/Dockerfile.bundle Dockerfile.cached
+COPY Dockerfile.bundle .
+# If the command below fails it means that Dockerfile.bundle from this repository changed.
+# You have to update the Konflux Containerfile accordingly.
+# drift-cache/Dockerfile.bundle can be updated with latest contents once the Konflux version is aligned.
+RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile.bundle | cut -d' ' -f1)"
+
+# Customize bundle contents.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS update
+RUN microdnf install -y skopeo jq python3 python3-pip
+RUN pip3 install --upgrade pip && pip3 install ruamel.yaml==0.17.9
+
+COPY bundle-hack .
+COPY bundle/manifests /manifests/
+COPY bundle/metadata /metadata/
+
+RUN ./update_bundle.sh
+
+# Based on Dockerfile.bundle file.
+FROM scratch
+
+# Core bundle labels.
+LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
+LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
+LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
+LABEL operators.operatorframework.io.bundle.package.v1=external-dns-operator
+LABEL operators.operatorframework.io.bundle.channels.v1=stable-v1.3,stable-v1
+LABEL operators.operatorframework.io.bundle.channel.default.v1=stable-v1
+
+# Dummy copy to trigger drift detection.
+COPY --from=drift /app/Dockerfile.cached .
+# Dummy copy to trigger bundle update.
+COPY --from=update /update_bundle.sh .
+
+# Copy customized files to locations specified by labels.
+COPY --from=update /manifests /manifests/
+COPY --from=update /metadata /metadata/
