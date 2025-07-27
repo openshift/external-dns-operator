@@ -15,7 +15,7 @@ require (
 	github.com/miekg/dns v1.0.14
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.32.0
-	github.com/openshift/api v0.0.0-20240812094746-86145edb40cf
+	github.com/openshift/api 92b1455121e1
 	github.com/openshift/cloud-credential-operator v0.0.0-20211118210017-9066dcc747fa
 	github.com/operator-framework/api v0.11.0
 	google.golang.org/api v0.126.0
