@@ -1,0 +1,52 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["dockerfile", "gomod"],
+  "packageRules": [
+    {
+      "description": "Disable all Dockerfile updates by default. Only specific files will get targeted.",
+      "matchManagers": ["dockerfile"],
+      "enabled": false
+    },
+    {
+      "description": "Enable Docker image updates for Red Hat UBI images on major version 9",
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": [
+        "Containerfile.external-dns-operator",
+        "Dockerfile",
+        "drift-cache/Dockerfile"
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi9/ubi",
+        "registry.access.redhat.com/ubi9/ubi-minimal",
+        "registry.access.redhat.com/ubi9/ubi-micro"
+      ],
+      "enabled": true,
+      "versioning": "redhat",
+      "allowedVersions": "/^9(\\.|$)/"
+    },
+    {
+      "description": "Keep Go toolset on minor version 1.22",
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": [
+        "Containerfile.external-dns-operator"
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi9/go-toolset"
+      ],
+      "enabled": true,
+      "versioning": "redhat",
+      "allowedVersions": "/^1\\.22(\\.|$)/"
+    },
+    {
+      "description": "Disable regular Go module updates, only allow vulnerability alerts",
+      "matchManagers": ["gomod"],
+      "enabled": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "osvVulnerabilityAlerts": true
+}
