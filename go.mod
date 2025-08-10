@@ -1,8 +1,8 @@
 module github.com/openshift/external-dns-operator
 
-go 1.22.0
+go 1.23.0
 
-toolchain go1.22.3
+toolchain go1.24.4
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
@@ -105,9 +105,9 @@ require (
 	golang.org/x/tools v0.18.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
 	google.golang.org/grpc v1.58.3 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
