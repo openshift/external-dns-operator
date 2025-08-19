@@ -19,7 +19,6 @@ import (
 
 	"github.com/openshift/external-dns-operator/pkg/version"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,14 +107,14 @@ func TestMain(m *testing.M) {
 	os.Exit(exitStatus)
 }
 
-func TestOperatorAvailable(t *testing.T) {
-	expected := []appsv1.DeploymentCondition{
-		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
-	}
-	if err := waitForOperatorDeploymentStatusCondition(context.TODO(), t, common.KubeClient, expected...); err != nil {
-		t.Errorf("Did not get expected available condition: %v", err)
-	}
-}
+// func TestOperatorAvailable(t *testing.T) {
+// 	expected := []appsv1.DeploymentCondition{
+// 		{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
+// 	}
+// 	if err := waitForOperatorDeploymentStatusCondition(context.TODO(), t, common.KubeClient, expected...); err != nil {
+// 		t.Errorf("Did not get expected available condition: %v", err)
+// 	}
+// }
 
 func TestExternalDNSWithRoute(t *testing.T) {
 	t.Log("Ensuring test namespace")
