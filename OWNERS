@@ -8,6 +8,7 @@ approvers:
   - grzpiotrowski
   - Thealisyed
   - rohara
+  - davidesalerno
 reviewers:
   - knobunc
   - Miciah
@@ -18,4 +19,5 @@ reviewers:
   - grzpiotrowski
   - Thealisyed
   - rohara
+  - davidesalerno
 component: DNS
