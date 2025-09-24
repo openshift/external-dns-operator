@@ -23,6 +23,9 @@ RUN ./update_bundle.sh
 # Based on Dockerfile.bundle file.
 FROM scratch
 
+ARG SHORT_COMMIT
+ARG GIT_URL
+
 # Core bundle labels.
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
@@ -30,6 +33,8 @@ LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=external-dns-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable-v1.3,stable-v1
 LABEL operators.operatorframework.io.bundle.channel.default.v1=stable-v1
+LABEL io.openshift.build.commit.id=${SHORT_COMMIT}
+LABEL io.openshift.build.source-location=${GIT_URL}
 
 # Dummy copy to trigger drift detection.
 COPY --from=drift /app/Dockerfile.cached .
