@@ -181,6 +181,10 @@ bundle: $(OPERATOR_SDK_BIN) manifests
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK_BIN) generate bundle -q --overwrite=false --version $(BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK_BIN) bundle validate $(BUNDLE_DIR)
 
+.PHONY: set-version
+set-version: ## Sync VERSION from upstream to all OpenShift Containerfiles.
+	@./hack/sync-version.sh
+
 .PHONY: bundle-image-build
 bundle-image-build: bundle
 	$(CONTAINER_ENGINE) build -t $(BUNDLE_IMG) -f Dockerfile.bundle .
