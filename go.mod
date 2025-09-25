@@ -1,8 +1,8 @@
 module github.com/openshift/external-dns-operator
 
-go 1.22.0
+go 1.23
 
-toolchain go1.22.3
+toolchain go1.24.4
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
@@ -116,7 +116,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.30.3 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.17.3 // indirect
 	sigs.k8s.io/kustomize/cmd/config v0.14.2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect
