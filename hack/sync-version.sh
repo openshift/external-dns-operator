@@ -47,7 +47,8 @@ for containerfile in "${containerfiles[@]}"; do
         echo "[OK] $(basename "$containerfile"): already in sync ($version)"
     else
         echo "[UPDATE] $(basename "$containerfile"): updating from $current_version to $version"
-        exit 1
+        sed -i "s/version=\"[^\"]*\"/version=\"$version\"/" "$containerfile"
+        any_updated=true
     fi
 done
 
