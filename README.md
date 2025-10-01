@@ -1,5 +1,5 @@
 # ExternalDNS Operator
-
+hack
 The `ExternalDNS` Operator allows you to deploy and manage [ExternalDNS](https://github.com/kubernetes-sigs/external-dns), a cluster-internal component which makes Kubernetes resources discoverable through public DNS servers. For more information about the initial motivation, see [ExternalDNS Operator OpenShift Enhancement Proposal](https://github.com/openshift/enhancements/pull/786).
 
 - [Deploying the ExternalDNS Operator](#deploying-the-externaldns-operator)
