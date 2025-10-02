@@ -23,6 +23,10 @@ RUN ./update_bundle.sh
 # Based on Dockerfile.bundle file.
 FROM scratch
 
+# Define build arguments to receive dynamic values
+ARG SHORT_COMMIT
+ARG GIT_URL
+
 # Core bundle labels.
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
