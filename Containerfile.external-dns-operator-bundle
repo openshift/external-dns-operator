@@ -34,6 +34,23 @@ LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=external-dns-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable-v1.3,stable-v1
 LABEL operators.operatorframework.io.bundle.channel.default.v1=stable-v1
+LABEL com.redhat.component=external-dns-operator-bundle-container
+
+# should this operator be supported on OCP 4.4 and earlier (old appregistry format)
+LABEL com.redhat.delivery.backport: false
+
+# this is a bundle image and should be delivered via an index image
+LABEL com.redhat.delivery.operator.bundle: true
+
+LABEL name=external-dns-operator-bundle
+LABEL version="1.3.1"
+LABEL maintainer='NetworkEdge team <aos-network-edge-staff@redhat.com>'
+LABEL io.k8s.display-name='ExternalDNS Operator'
+LABEL io.k8s.description='Operator bundle for the ExternalDNS Operator'
+LABEL io.openshift.tags='networking,dns'
+LABEL io.openshift.build.commit.id=${FULL_COMMIT}
+LABEL io.openshift.build.source-location=${GIT_URL}
+LABEL io.openshift.build.commit.url=${GIT_URL}/commit/${FULL_COMMIT}
 
 # Dummy copy to trigger drift detection.
 COPY --from=drift /app/Dockerfile.cached .

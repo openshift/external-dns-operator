@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the BUNDLE_VERSION as arg of the bundle target (e.g make bundle BUNDLE_VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export BUNDLE_VERSION=0.0.2)
-BUNDLE_VERSION ?= 1.3.0
+BUNDLE_VERSION ?= $(shell cat VERSION)
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -134,6 +134,7 @@ verify: lint
 	hack/verify-deps.sh
 	hack/verify-generated.sh
 	hack/verify-olm.sh
+	hack/verify-version.sh
 
 ##@ Build
 GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
@@ -179,7 +180,13 @@ bundle: $(OPERATOR_SDK_BIN) manifests
 	$(OPERATOR_SDK_BIN) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image quay.io/openshift/origin-external-dns-operator=$(IMG)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK_BIN) generate bundle -q --overwrite=false --version $(BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
+	@# Generate skipRange from BUNDLE_VERSION
+	sed -i "s/\(olm\.skipRange: <\).*/\1$(BUNDLE_VERSION)/" bundle/manifests/external-dns-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK_BIN) bundle validate $(BUNDLE_DIR)
+
+.PHONY: set-version
+set-version: ## Sync VERSION from upstream to all OpenShift Containerfiles.
+	@./hack/sync-version.sh
 
 .PHONY: bundle-image-build
 bundle-image-build: bundle
