@@ -14,6 +14,9 @@ function print_failure {
 if [ "${OPENSHIFT_CI:-false}" = true ]; then
   echo "> generating the OLM bundle and catalog"
   make bundle catalog
+  # `make generate-catalog` cannot be verified in the CI cluster due to the inaccessible by CI pull specification
+  # of the bundle images for previous operator releases at registry.redhat.io/albo/aws-load-balancer-operator-bundle.
+  # The catalog is validated in the FBC pipeline in Konflux cluster.
   test -z "$(git status --porcelain | \grep -v '^??')" || print_failure
   echo "> verified generated bundle and catalog"
 fi

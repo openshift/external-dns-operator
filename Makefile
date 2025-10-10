@@ -62,9 +62,10 @@ BUNDLE_DIR := bundle
 BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
 BUNDLE_IMG ?= quay.io/external-dns-operator/external-dns-operator-bundle:latest
 CATALOG_DIR := catalog
+CATALOG_VERSION_DIR := $(CATALOG_DIR)/ext-dns-optr-$(shell echo $(BUNDLE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\)\..*/\1-\2/')
 PACKAGE_DIR := $(CATALOG_DIR)/external-dns-operator
 CATALOG_IMG ?= quay.io/external-dns-operator/external-dns-operator-catalog:latest
-OPM_VERSION ?= v1.31.0
+OPM_VERSION ?= v1.52.0
 
 GOLANGCI_LINT_BIN=$(BIN_DIR)/golangci-lint
 
@@ -196,11 +197,15 @@ bundle-image-build: bundle
 bundle-image-push:
 	$(CONTAINER_ENGINE) push $(BUNDLE_IMG)
 
+generate-catalog: opm ## Generate catalog for the Konflux-built operator
+	mkdir -p $(CATALOG_VERSION_DIR)
+	$(OPM) alpha render-template basic --migrate-level bundle-object-to-csv-metadata -o yaml $(CATALOG_DIR)/catalog-template.yaml > $(CATALOG_VERSION_DIR)/catalog.yaml
+
 .PHONY: catalog
 catalog: opm
 	# TODO: make opm use the bundle image built locally
-	$(OPM) render $(BUNDLE_IMG) -o yaml > $(PACKAGE_DIR)/bundle.yaml
-	$(OPM) validate $(CATALOG_DIR)
+	$(OPM) render $(BUNDLE_IMG) --migrate-level bundle-object-to-csv-metadata -o yaml > $(PACKAGE_DIR)/bundle.yaml
+	$(OPM) validate $(PACKAGE_DIR)
 
 .PHONY: catalog-image-build
 catalog-image-build: catalog
