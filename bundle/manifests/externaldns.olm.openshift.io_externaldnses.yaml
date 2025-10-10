@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.6.2
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   name: externaldnses.externaldns.olm.openshift.io
 spec:
@@ -17,19 +17,25 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ExternalDNS describes a managed ExternalDNS controller instance
-          for a cluster. The controller is responsible for creating external DNS records
-          in supported DNS providers based off of instances of select Kubernetes resources.
+        description: |-
+          ExternalDNS describes a managed ExternalDNS controller instance for a cluster.
+          The controller is responsible for creating external DNS records in supported
+          DNS providers based off of instances of select Kubernetes resources.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -38,55 +44,82 @@ spec:
               ExternalDNS.
             properties:
               domains:
-                description: "Domains specifies which domains that ExternalDNS should
-                  create DNS records for. Multiple domain values can be specified
-                  such that subdomains of an included domain can effectively be ignored
-                  using the \"Include\" and \"Exclude\" domain filter options. \n
-                  An empty list of domains means ExternalDNS will create DNS records
-                  for any included source resource regardless of the resource's desired
-                  hostname. \n Populating Domains with only excluded options means
-                  ExternalDNS will create DNS records for any included source resource
-                  that do not match the provided excluded domain options. \n Excluding
-                  DNS records that were previous included via a resource update will
-                  *not* result in the original DNS records being deleted."
+                description: |-
+                  Domains specifies which domains that ExternalDNS should
+                  create DNS records for. Multiple domain values
+                  can be specified such that subdomains of an included domain
+                  can effectively be ignored using the "Include" and "Exclude"
+                  domain filter options.
+
+                  An empty list of domains means ExternalDNS will create
+                  DNS records for any included source resource regardless
+                  of the resource's desired hostname.
+
+                  Populating Domains with only excluded options means ExternalDNS
+                  will create DNS records for any included source resource that do not
+                  match the provided excluded domain options.
+
+                  Excluding DNS records that were previous included via a resource update
+                  will *not* result in the original DNS records being deleted.
                 items:
-                  description: ExternalDNSDomain describes how sets of included or
-                    excluded domains are to be constructed.
+                  description: |-
+                    ExternalDNSDomain describes how sets of included
+                    or excluded domains are to be constructed.
                   properties:
                     filterType:
-                      description: "FilterType marks the Name or Pattern field as
-                        an included or excluded set of domains. \n In the event of
-                        contradicting domain options, preference is given to excluded
-                        domains. \n This field accepts the following values: \n  \"Include\":
-                        Include the domain set specified  by name or pattern. \n  \"Exclude\":
-                        Exclude the domain set specified  by name or pattern."
+                      description: |-
+                        FilterType marks the Name or Pattern field
+                        as an included or excluded set of domains.
+
+                        In the event of contradicting domain options,
+                        preference is given to excluded domains.
+
+                        This field accepts the following values:
+
+                         "Include": Include the domain set specified
+                         by name or pattern.
+
+                         "Exclude": Exclude the domain set specified
+                         by name or pattern.
                       enum:
                       - Include
                       - Exclude
                       type: string
                     matchType:
-                      description: "MatchType specifies the type of match to be performed
-                        by ExternalDNS when determining whether or not to publish
-                        DNS records for a given source resource based on the resource's
-                        requested hostname. \n This field accepts the following values:
-                        \n  \"Exact\": Explicitly match the full domain string   specified
-                        via the Name field, including any subdomains   of Name. \n
-                        \ \"Pattern\": Match potential domains against  the provided
-                        regular expression pattern string."
+                      description: |-
+                        MatchType specifies the type of match to be performed
+                        by ExternalDNS when determining whether or not to publish DNS
+                        records for a given source resource based on the resource's
+                        requested hostname.
+
+                        This field accepts the following values:
+
+                         "Exact": Explicitly match the full domain string
+                          specified via the Name field, including any subdomains
+                          of Name.
+
+                         "Pattern": Match potential domains against
+                         the provided regular expression pattern string.
                       enum:
                       - Exact
                       - Pattern
                       type: string
                     name:
-                      description: "Name is a string representing a single domain
-                        value. Subdomains are included. \n e.g. my-app.my-cluster-domain.com
-                        would also include foo.my-app.my-cluster-domain.com"
+                      description: |-
+                        Name is a string representing a single domain
+                        value. Subdomains are included.
+
+                        e.g. my-app.my-cluster-domain.com
+                        would also include
+                        foo.my-app.my-cluster-domain.com
                       type: string
                     pattern:
-                      description: Pattern is a regular expression used to match a
-                        set of domains. Any provided regular expressions should follow
-                        the syntax used by the go regexp package (RE2). See https://golang.org/pkg/regexp/
-                        for more information.
+                      description: |-
+                        Pattern is a regular expression used to
+                        match a set of domains. Any provided
+                        regular expressions should follow the syntax
+                        used by the go regexp package (RE2).
+                        See https://golang.org/pkg/regexp/ for more information.
                       type: string
                   required:
                   - filterType
@@ -94,21 +127,28 @@ spec:
                   type: object
                 type: array
               provider:
-                description: Provider refers to the DNS provider that ExternalDNS
-                  should publish records to. Note that each ExternalDNS is tied to
-                  a single provider.
+                description: |-
+                  Provider refers to the DNS provider that ExternalDNS
+                  should publish records to. Note that each ExternalDNS
+                  is tied to a single provider.
                 properties:
                   aws:
-                    description: AWS describes provider configuration options specific
-                      to AWS (Route 53).
+                    description: |-
+                      AWS describes provider configuration options
+                      specific to AWS (Route 53).
                     properties:
                       credentials:
-                        description: "Credentials is a reference to a secret containing
+                        description: |-
+                          Credentials is a reference to a secret containing
                           the shared credentials file (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
-                          under `credentials` key or following keys (with corresponding
-                          values): \n * aws_access_key_id * aws_secret_access_key
-                          \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
-                          for more information."
+                          under `credentials` key or following keys (with corresponding values):
+
+                          * aws_access_key_id
+                          * aws_secret_access_key
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/aws.md
+                          for more information.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -120,19 +160,28 @@ spec:
                     - credentials
                     type: object
                   azure:
-                    description: Azure describes provider configuration options specific
-                      to Azure DNS.
+                    description: |-
+                      Azure describes provider configuration options
+                      specific to Azure DNS.
                     properties:
                       configFile:
-                        description: "ConfigFile is a reference to a secret containing
-                          the necessary information to use the Azure provider. The
-                          secret referenced by ConfigFile should contain a key named
-                          `azure.json` similar to the following: \n {   \"tenantId\":
-                          \"123\",   \"subscriptionId\": \"456\",   \"resourceGroup\":
-                          \"MyDnsResourceGroup\",   \"aadClientId\": \"789\",   \"aadClientSecret\":
-                          \"123\" } \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/azure.md
-                          for more information on the necessary configuration key/values
-                          and how to obtain them."
+                        description: |-
+                          ConfigFile is a reference to a secret containing
+                          the necessary information to use the Azure provider.
+                          The secret referenced by ConfigFile should contain
+                          a key named `azure.json` similar to the following:
+
+                          {
+                            "tenantId": "123",
+                            "subscriptionId": "456",
+                            "resourceGroup": "MyDnsResourceGroup",
+                            "aadClientId": "789",
+                            "aadClientSecret": "123"
+                          }
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/azure.md
+                          for more information on the necessary configuration key/values and how to obtain them.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -144,20 +193,30 @@ spec:
                     - configFile
                     type: object
                   blueCat:
-                    description: BlueCat describes provider configuration options
+                    description: |-
+                      BlueCat describes provider configuration options
                       specific to BlueCat DNS.
                     properties:
                       configFile:
-                        description: "ConfigFile is a reference to a secret containing
-                          the necessary information to use the BlueCat provider. The
-                          secret referenced by ConfigFile should contain an object
-                          named `bluecat.json` similar to the following: \n {   \"gatewayHost\":
-                          \"https://bluecatgw.example.com\",   \"gatewayUsername\":
-                          \"user\",   \"gatewayPassword\": \"pass\",   \"dnsConfiguration\":
-                          \"Example\",   \"dnsView\": \"Internal\",   \"rootZone\":
-                          \"example.com\",   \"skipTLSVerify\": false } \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/bluecat.md
-                          for more information on the necessary configuration values
-                          and how to obtain them."
+                        description: |-
+                          ConfigFile is a reference to a secret containing
+                          the necessary information to use the BlueCat provider.
+                          The secret referenced by ConfigFile should contain
+                          an object named `bluecat.json` similar to the following:
+
+                          {
+                            "gatewayHost": "https://bluecatgw.example.com",
+                            "gatewayUsername": "user",
+                            "gatewayPassword": "pass",
+                            "dnsConfiguration": "Example",
+                            "dnsView": "Internal",
+                            "rootZone": "example.com",
+                            "skipTLSVerify": false
+                          }
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/bluecat.md
+                          for more information on the necessary configuration values and how to obtain them.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -169,13 +228,16 @@ spec:
                     - configFile
                     type: object
                   gcp:
-                    description: GCP describes provider configuration options specific
-                      to GCP (Google DNS).
+                    description: |-
+                      GCP describes provider configuration options
+                      specific to GCP (Google DNS).
                     properties:
                       credentials:
-                        description: Credentials is a reference to a secret containing
-                          the necessary GCP service account keys. The secret referenced
-                          by Credentials should contain a key named `gcp-credentials.json`
+                        description: |-
+                          Credentials is a reference to a secret containing
+                          the necessary GCP service account keys.
+                          The secret referenced by Credentials should
+                          contain a key named `gcp-credentials.json`
                           presumably generated by the gcloud CLI.
                         properties:
                           name:
@@ -185,24 +247,31 @@ spec:
                         - name
                         type: object
                       project:
-                        description: Project is the GCP project to use for creating
-                          DNS records. This field is not necessary when running on
-                          GCP as externalDNS auto-detects the GCP project to use when
-                          running on GCP.
+                        description: |-
+                          Project is the GCP project to use for
+                          creating DNS records. This field is not necessary
+                          when running on GCP as externalDNS auto-detects
+                          the GCP project to use when running on GCP.
                         type: string
                     required:
                     - credentials
                     type: object
                   infoblox:
-                    description: Infoblox describes provider configuration options
+                    description: |-
+                      Infoblox describes provider configuration options
                       specific to Infoblox DNS.
                     properties:
                       credentials:
-                        description: "Credentials is a reference to a secret containing
-                          the following keys (with proper corresponding values): \n
-                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD
-                          \n See https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/infoblox.md
-                          for more information and configuration options."
+                        description: |-
+                          Credentials is a reference to a secret containing
+                          the following keys (with proper corresponding values):
+
+                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME
+                          * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/master/docs/tutorials/infoblox.md
+                          for more information and configuration options.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -226,10 +295,16 @@ spec:
                     - wapiVersion
                     type: object
                   type:
-                    description: "Type describes which DNS provider ExternalDNS should
-                      publish records to. The following DNS providers are supported:
-                      \n  * AWS (Route 53)  * GCP (Google DNS)  * Azure  * BlueCat
-                      \ * Infoblox"
+                    description: |-
+                      Type describes which DNS provider
+                      ExternalDNS should publish records to.
+                      The following DNS providers are supported:
+
+                       * AWS (Route 53)
+                       * GCP (Google DNS)
+                       * Azure
+                       * BlueCat
+                       * Infoblox
                     enum:
                     - AWS
                     - GCP
@@ -241,73 +316,85 @@ spec:
                 - type
                 type: object
               source:
-                description: "Source describes which source resource ExternalDNS will
-                  be configured to create DNS records for. \n Multiple ExternalDNS
-                  CRs must be created if multiple ExternalDNS source resources are
-                  desired."
+                description: |-
+                  Source describes which source resource
+                  ExternalDNS will be configured to create
+                  DNS records for.
+
+                  Multiple ExternalDNS CRs must be
+                  created if multiple ExternalDNS source resources
+                  are desired.
                 properties:
                   fqdnTemplate:
-                    description: "FQDNTemplate sets a templated string that's used
-                      to generate DNS names from sources that don't define a hostname
-                      themselves. Multiple global FQDN templates are possible. \n
-                      This field must be specified with a nonempty value if the source
-                      type is Service or CRD and HostnameAnnotationPolicy is set to
-                      Ignore.  The field value may be omitted or empty if HostnameAnnotationPolicy
-                      is set to Allow or if the source type is OpenShiftRoute. \n
-                      Provided templates should follow the syntax defined for text/template
-                      Go package, see https://pkg.go.dev/text/template. Annotations
-                      inside the template correspond to the definition of the source
-                      resource object (e.g. Kubernetes service, OpenShift route).
-                      Example: \"{{.Name}}.example.com\" would be expanded to \"myservice.example.com\"
-                      for service source"
+                    description: |-
+                      FQDNTemplate sets a templated string that's used to generate DNS names
+                      from sources that don't define a hostname themselves.
+                      Multiple global FQDN templates are possible.
+
+                      This field must be specified with a nonempty value if the source type
+                      is Service or CRD and HostnameAnnotationPolicy is set to Ignore.  The
+                      field value may be omitted or empty if HostnameAnnotationPolicy is
+                      set to Allow or if the source type is OpenShiftRoute.
+
+                      Provided templates should follow the syntax defined for text/template Go package,
+                      see https://pkg.go.dev/text/template.
+                      Annotations inside the template correspond to the definition of the source resource object (e.g. Kubernetes service, OpenShift route).
+                      Example: "{{.Name}}.example.com" would be expanded to "myservice.example.com" for service source
                     items:
                       type: string
                     type: array
                   hostnameAnnotation:
                     default: Ignore
-                    description: "HostnameAnnotationPolicy specifies whether or not
-                      ExternalDNS should ignore the \"external-dns.alpha.kubernetes.io/hostname\"
-                      annotation, which overrides DNS hostnames on a given source
-                      resource. \n The following values are accepted: \n  \"Ignore\":
-                      Ignore any hostname annotation overrides.  \"Allow\": Allow
-                      all hostname annotation overrides. \n The default behavior of
-                      the ExternalDNS is \"Ignore\". \n Note that by setting a HostnameAnnotationPolicy
-                      of \"Allow\", may grant privileged DNS permissions to under-privileged
-                      cluster users."
+                    description: |-
+                      HostnameAnnotationPolicy specifies whether or not ExternalDNS
+                      should ignore the "external-dns.alpha.kubernetes.io/hostname"
+                      annotation, which overrides DNS hostnames on a given source resource.
+
+                      The following values are accepted:
+
+                       "Ignore": Ignore any hostname annotation overrides.
+                       "Allow": Allow all hostname annotation overrides.
+
+                      The default behavior of the ExternalDNS is "Ignore".
+
+                      Note that by setting a HostnameAnnotationPolicy of "Allow",
+                      may grant privileged DNS permissions to under-privileged cluster
+                      users.
                     enum:
                     - Ignore
                     - Allow
                     type: string
                   labelFilter:
-                    description: LabelFilter specifies a label selector for filtering
-                      the objects for which ExternalDNS publishes records. The filter
-                      uses label selector semantics against object labels.  Specifying
-                      a null or empty label selector causes ExternalDNS to publish
-                      records for all objects of the source type resource.
+                    description: |-
+                      LabelFilter specifies a label selector for filtering the objects for
+                      which ExternalDNS publishes records. The filter uses label selector
+                      semantics against object labels.  Specifying a null or empty label
+                      selector causes ExternalDNS to publish records for all objects of the
+                      source type resource.
                     properties:
                       matchExpressions:
                         description: matchExpressions is a list of label selector
                           requirements. The requirements are ANDed.
                         items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
                           properties:
                             key:
                               description: key is the label key that the selector
                                 applies to.
                               type: string
                             operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
                               type: string
                             values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
                               items:
                                 type: string
                               type: array
@@ -321,53 +408,69 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   openshiftRouteOptions:
-                    description: OpenShiftRoute describes source configuration options
-                      specific to the routes.route.openshift.io resource.
+                    description: |-
+                      OpenShiftRoute describes source configuration options specific to the
+                      routes.route.openshift.io resource.
                     properties:
                       routerName:
-                        description: RouterName is the name of a router (AKA ingress
-                          controller) as reported in Route.status.ingress[].routerName.  External-dns
-                          will use the canonical hostname of the router identified
-                          by this name when publishing records for a given route.
+                        description: |-
+                          RouterName is the name of a router (AKA ingress controller) as
+                          reported in Route.status.ingress[].routerName.  External-dns will use
+                          the canonical hostname of the router identified by this name when
+                          publishing records for a given route.
                         type: string
                     required:
                     - routerName
                     type: object
                   service:
-                    description: Service describes source configuration options specific
+                    description: |-
+                      Service describes source configuration options specific
                       to the service source resource.
                     properties:
                       serviceType:
                         default:
                         - LoadBalancer
-                        description: "ServiceType determines what types of Service
-                          resources are watched by ExternalDNS. The following types
-                          are available options: \n  \"NodePort\"  \"ExternalName\"
-                          \ \"LoadBalancer\"  \"ClusterIP\" \n One or more Service
-                          types can be specified, if desired. \n Note that using the
-                          \"ClusterIP\" service type will enable the ExternalDNS \"--publish-internal-services\"
-                          flag, which allows ExternalDNS to publish DNS records for
-                          ClusterIP services. \n If no service types are provided,
-                          ExternalDNS will be configured to create DNS records for
-                          LoadBalancer services only by default."
+                        description: |-
+                          ServiceType determines what types of Service resources
+                          are watched by ExternalDNS. The following types are
+                          available options:
+
+                           "NodePort"
+                           "ExternalName"
+                           "LoadBalancer"
+                           "ClusterIP"
+
+                          One or more Service types can be specified, if desired.
+
+                          Note that using the "ClusterIP" service type will enable
+                          the ExternalDNS "--publish-internal-services" flag,
+                          which allows ExternalDNS to publish DNS records
+                          for ClusterIP services.
+
+                          If no service types are provided, ExternalDNS will be
+                          configured to create DNS records for LoadBalancer services
+                          only by default.
                         items:
                           description: Service Type string describes ingress methods
                             for a service
                           type: string
                         minItems: 1
                         type: array
+                    required:
+                    - serviceType
                     type: object
                   type:
-                    description: Type specifies an ExternalDNS source resource to
-                      create DNS records for.
+                    description: |-
+                      Type specifies an ExternalDNS source resource
+                      to create DNS records for.
                     enum:
                     - OpenShiftRoute
                     - Service
@@ -377,13 +480,19 @@ spec:
                 - type
                 type: object
               zones:
-                description: "Zones describes which DNS Zone IDs ExternalDNS should
-                  publish records to. \n Updating this field after creation will cause
-                  all DNS records in the previous zone(s) to be left behind. \n An
-                  empty list of zones means that the ExternalDNS will publish to all
-                  zones (i.e public and private), unless the operator runs on a platform
-                  on which the operator can lookup a default set of zones e.g on OpenShift
-                  with its cluster DNS config"
+                description: |-
+                  Zones describes which DNS Zone IDs
+                  ExternalDNS should publish records to.
+
+                  Updating this field after creation
+                  will cause all DNS records in the previous
+                  zone(s) to be left behind.
+
+                  An empty list of zones means that the ExternalDNS will
+                  publish to all zones (i.e public and private), unless the
+                  operator runs on a platform on which the operator can
+                  lookup a default set of zones e.g on OpenShift with its cluster
+                  DNS config
                 items:
                   type: string
                 maxItems: 10
@@ -396,48 +505,39 @@ spec:
             description: status is the most recently observed status of the ExternalDNS.
             properties:
               conditions:
-                description: Conditions is a list of operator-specific conditions
+                description: |-
+                  Conditions is a list of operator-specific conditions
                   and their status.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource. --- This struct is intended for direct
-                    use as an array at the field path .status.conditions.  For example,
-                    \n \ttype FooStatus struct{ \t    // Represents the observations
-                    of a foo's current state. \t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
-                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
-                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
-                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
-                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
-                    \t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
                       maxLength: 32768
                       type: string
                     observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       minimum: 0
                       type: integer
                     reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
                         This field may not be empty.
                       maxLength: 1024
                       minLength: 1
@@ -452,10 +552,6 @@ spec:
                       type: string
                     type:
                       description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -487,19 +583,25 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: ExternalDNS describes a managed ExternalDNS controller instance
-          for a cluster. The controller is responsible for creating external DNS records
-          in supported DNS providers based off of instances of select Kubernetes resources.
+        description: |-
+          ExternalDNS describes a managed ExternalDNS controller instance for a cluster.
+          The controller is responsible for creating external DNS records in supported
+          DNS providers based off of instances of select Kubernetes resources.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -508,55 +610,82 @@ spec:
               ExternalDNS.
             properties:
               domains:
-                description: "Domains specifies which domains that ExternalDNS should
-                  create DNS records for. Multiple domain values can be specified
-                  such that subdomains of an included domain can effectively be ignored
-                  using the \"Include\" and \"Exclude\" domain filter options. \n
-                  An empty list of domains means ExternalDNS will create DNS records
-                  for any included source resource regardless of the resource's desired
-                  hostname. \n Populating Domains with only excluded options means
-                  ExternalDNS will create DNS records for any included source resource
-                  that do not match the provided excluded domain options. \n Excluding
-                  DNS records that were previous included via a resource update will
-                  *not* result in the original DNS records being deleted."
+                description: |-
+                  Domains specifies which domains that ExternalDNS should
+                  create DNS records for. Multiple domain values
+                  can be specified such that subdomains of an included domain
+                  can effectively be ignored using the "Include" and "Exclude"
+                  domain filter options.
+
+                  An empty list of domains means ExternalDNS will create
+                  DNS records for any included source resource regardless
+                  of the resource's desired hostname.
+
+                  Populating Domains with only excluded options means ExternalDNS
+                  will create DNS records for any included source resource that do not
+                  match the provided excluded domain options.
+
+                  Excluding DNS records that were previous included via a resource update
+                  will *not* result in the original DNS records being deleted.
                 items:
-                  description: ExternalDNSDomain describes how sets of included or
-                    excluded domains are to be constructed.
+                  description: |-
+                    ExternalDNSDomain describes how sets of included
+                    or excluded domains are to be constructed.
                   properties:
                     filterType:
-                      description: "FilterType marks the Name or Pattern field as
-                        an included or excluded set of domains. \n In the event of
-                        contradicting domain options, preference is given to excluded
-                        domains. \n This field accepts the following values: \n  \"Include\":
-                        Include the domain set specified  by name or pattern. \n  \"Exclude\":
-                        Exclude the domain set specified  by name or pattern."
+                      description: |-
+                        FilterType marks the Name or Pattern field
+                        as an included or excluded set of domains.
+
+                        In the event of contradicting domain options,
+                        preference is given to excluded domains.
+
+                        This field accepts the following values:
+
+                         "Include": Include the domain set specified
+                         by name or pattern.
+
+                         "Exclude": Exclude the domain set specified
+                         by name or pattern.
                       enum:
                       - Include
                       - Exclude
                       type: string
                     matchType:
-                      description: "MatchType specifies the type of match to be performed
-                        by ExternalDNS when determining whether or not to publish
-                        DNS records for a given source resource based on the resource's
-                        requested hostname. \n This field accepts the following values:
-                        \n  \"Exact\": Explicitly match the full domain string   specified
-                        via the Name field, including any subdomains   of Name. \n
-                        \ \"Pattern\": Match potential domains against  the provided
-                        regular expression pattern string."
+                      description: |-
+                        MatchType specifies the type of match to be performed
+                        by ExternalDNS when determining whether or not to publish DNS
+                        records for a given source resource based on the resource's
+                        requested hostname.
+
+                        This field accepts the following values:
+
+                         "Exact": Explicitly match the full domain string
+                          specified via the Name field, including any subdomains
+                          of Name.
+
+                         "Pattern": Match potential domains against
+                         the provided regular expression pattern string.
                       enum:
                       - Exact
                       - Pattern
                       type: string
                     name:
-                      description: "Name is a string representing a single domain
-                        value. Subdomains are included. \n e.g. my-app.my-cluster-domain.com
-                        would also include foo.my-app.my-cluster-domain.com"
+                      description: |-
+                        Name is a string representing a single domain
+                        value. Subdomains are included.
+
+                        e.g. my-app.my-cluster-domain.com
+                        would also include
+                        foo.my-app.my-cluster-domain.com
                       type: string
                     pattern:
-                      description: Pattern is a regular expression used to match a
-                        set of domains. Any provided regular expressions should follow
-                        the syntax used by the go regexp package (RE2). See https://golang.org/pkg/regexp/
-                        for more information.
+                      description: |-
+                        Pattern is a regular expression used to
+                        match a set of domains. Any provided
+                        regular expressions should follow the syntax
+                        used by the go regexp package (RE2).
+                        See https://golang.org/pkg/regexp/ for more information.
                       type: string
                   required:
                   - filterType
@@ -564,30 +693,39 @@ spec:
                   type: object
                 type: array
               provider:
-                description: Provider refers to the DNS provider that ExternalDNS
-                  should publish records to. Note that each ExternalDNS is tied to
-                  a single provider.
+                description: |-
+                  Provider refers to the DNS provider that ExternalDNS
+                  should publish records to. Note that each ExternalDNS
+                  is tied to a single provider.
                 properties:
                   aws:
-                    description: AWS describes provider configuration options specific
-                      to AWS (Route 53).
+                    description: |-
+                      AWS describes provider configuration options
+                      specific to AWS (Route 53).
                     properties:
                       assumeRole:
-                        description: assumeRole is a reference to the IAM role that
-                          ExternalDNS will be assuming in order to perform any DNS
-                          updates.
+                        description: |-
+                          assumeRole is a reference to the IAM role that
+                          ExternalDNS will be assuming in order to perform
+                          any DNS updates.
                         properties:
                           arn:
-                            description: arn is an IAM role ARN that the ExternalDNS
+                            description: |-
+                              arn is an IAM role ARN that the ExternalDNS
                               operator will assume when making DNS updates.
                             type: string
+                        required:
+                        - arn
                         type: object
                       credentials:
                         default:
                           name: ""
-                        description: "Credentials is a reference to a secret containing
-                          the following keys (with corresponding values): \n * aws_access_key_id
-                          * aws_secret_access_key"
+                        description: |-
+                          Credentials is a reference to a secret containing
+                          the following keys (with corresponding values):
+
+                          * aws_access_key_id
+                          * aws_secret_access_key
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -599,19 +737,28 @@ spec:
                     - credentials
                     type: object
                   azure:
-                    description: Azure describes provider configuration options specific
-                      to Azure DNS.
+                    description: |-
+                      Azure describes provider configuration options
+                      specific to Azure DNS.
                     properties:
                       configFile:
-                        description: "ConfigFile is a reference to a secret containing
-                          the necessary information to use the Azure provider. The
-                          secret referenced by ConfigFile should contain a key named
-                          `azure.json` similar to the following: \n {   \"tenantId\":
-                          \"123\",   \"subscriptionId\": \"456\",   \"resourceGroup\":
-                          \"MyDnsResourceGroup\",   \"aadClientId\": \"789\",   \"aadClientSecret\":
-                          \"123\" } \n See https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/azure.md#configuration-file
-                          for more information on the necessary configuration key/values
-                          and how to obtain them."
+                        description: |-
+                          ConfigFile is a reference to a secret containing
+                          the necessary information to use the Azure provider.
+                          The secret referenced by ConfigFile should contain
+                          a key named `azure.json` similar to the following:
+
+                          {
+                            "tenantId": "123",
+                            "subscriptionId": "456",
+                            "resourceGroup": "MyDnsResourceGroup",
+                            "aadClientId": "789",
+                            "aadClientSecret": "123"
+                          }
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/azure.md#configuration-file
+                          for more information on the necessary configuration key/values and how to obtain them.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -623,20 +770,30 @@ spec:
                     - configFile
                     type: object
                   blueCat:
-                    description: BlueCat describes provider configuration options
+                    description: |-
+                      BlueCat describes provider configuration options
                       specific to BlueCat DNS.
                     properties:
                       configFile:
-                        description: "ConfigFile is a reference to a secret containing
-                          the necessary information to use the BlueCat provider. The
-                          secret referenced by ConfigFile should contain an object
-                          named `bluecat.json` similar to the following: \n {   \"gatewayHost\":
-                          \"https://bluecatgw.example.com\",   \"gatewayUsername\":
-                          \"user\",   \"gatewayPassword\": \"pass\",   \"dnsConfiguration\":
-                          \"Example\",   \"dnsView\": \"Internal\",   \"rootZone\":
-                          \"example.com\",   \"skipTLSVerify\": false } \n See https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/bluecat.md#using-json-configuration-file
-                          for more information on the necessary configuration values
-                          and how to obtain them."
+                        description: |-
+                          ConfigFile is a reference to a secret containing
+                          the necessary information to use the BlueCat provider.
+                          The secret referenced by ConfigFile should contain
+                          an object named `bluecat.json` similar to the following:
+
+                          {
+                            "gatewayHost": "https://bluecatgw.example.com",
+                            "gatewayUsername": "user",
+                            "gatewayPassword": "pass",
+                            "dnsConfiguration": "Example",
+                            "dnsView": "Internal",
+                            "rootZone": "example.com",
+                            "skipTLSVerify": false
+                          }
+
+                          See
+                          https://github.com/kubernetes-sigs/external-dns/blob/226dbb931f7a2019810b3703aec096c4ea4f40ea/docs/tutorials/bluecat.md#using-json-configuration-file
+                          for more information on the necessary configuration values and how to obtain them.
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -648,13 +805,16 @@ spec:
                     - configFile
                     type: object
                   gcp:
-                    description: GCP describes provider configuration options specific
-                      to GCP (Google DNS).
+                    description: |-
+                      GCP describes provider configuration options
+                      specific to GCP (Google DNS).
                     properties:
                       credentials:
-                        description: Credentials is a reference to a secret containing
-                          the necessary GCP service account keys. The secret referenced
-                          by Credentials should contain a key named `gcp-credentials.json`
+                        description: |-
+                          Credentials is a reference to a secret containing
+                          the necessary GCP service account keys.
+                          The secret referenced by Credentials should
+                          contain a key named `gcp-credentials.json`
                           presumably generated by the gcloud CLI.
                         properties:
                           name:
@@ -664,22 +824,27 @@ spec:
                         - name
                         type: object
                       project:
-                        description: Project is the GCP project to use for creating
-                          DNS records. This field is not necessary when running on
-                          GCP as externalDNS auto-detects the GCP project to use when
-                          running on GCP.
+                        description: |-
+                          Project is the GCP project to use for
+                          creating DNS records. This field is not necessary
+                          when running on GCP as externalDNS auto-detects
+                          the GCP project to use when running on GCP.
                         type: string
                     required:
                     - credentials
                     type: object
                   infoblox:
-                    description: Infoblox describes provider configuration options
+                    description: |-
+                      Infoblox describes provider configuration options
                       specific to Infoblox DNS.
                     properties:
                       credentials:
-                        description: "Credentials is a reference to a secret containing
-                          the following keys (with proper corresponding values): \n
-                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD"
+                        description: |-
+                          Credentials is a reference to a secret containing
+                          the following keys (with proper corresponding values):
+
+                          * EXTERNAL_DNS_INFOBLOX_WAPI_USERNAME
+                          * EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD
                         properties:
                           name:
                             description: Name is the name of the secret.
@@ -703,10 +868,16 @@ spec:
                     - wapiVersion
                     type: object
                   type:
-                    description: "Type describes which DNS provider ExternalDNS should
-                      publish records to. The following DNS providers are supported:
-                      \n  * AWS (Route 53)  * GCP (Google DNS)  * Azure  * BlueCat
-                      \ * Infoblox"
+                    description: |-
+                      Type describes which DNS provider
+                      ExternalDNS should publish records to.
+                      The following DNS providers are supported:
+
+                       * AWS (Route 53)
+                       * GCP (Google DNS)
+                       * Azure
+                       * BlueCat
+                       * Infoblox
                     enum:
                     - AWS
                     - GCP
@@ -718,73 +889,85 @@ spec:
                 - type
                 type: object
               source:
-                description: "Source describes which source resource ExternalDNS will
-                  be configured to create DNS records for. \n Multiple ExternalDNS
-                  CRs must be created if multiple ExternalDNS source resources are
-                  desired."
+                description: |-
+                  Source describes which source resource
+                  ExternalDNS will be configured to create
+                  DNS records for.
+
+                  Multiple ExternalDNS CRs must be
+                  created if multiple ExternalDNS source resources
+                  are desired.
                 properties:
                   fqdnTemplate:
-                    description: "FQDNTemplate sets a templated string that's used
-                      to generate DNS names from sources that don't define a hostname
-                      themselves. Multiple global FQDN templates are possible. \n
-                      This field must be specified with a nonempty value if the source
-                      type is Service or CRD and HostnameAnnotationPolicy is set to
-                      Ignore.  The field value may be omitted or empty if HostnameAnnotationPolicy
-                      is set to Allow or if the source type is OpenShiftRoute. \n
-                      Provided templates should follow the syntax defined for text/template
-                      Go package, see https://pkg.go.dev/text/template. Annotations
-                      inside the template correspond to the definition of the source
-                      resource object (e.g. Kubernetes service, OpenShift route).
-                      Example: \"{{.Name}}.example.com\" would be expanded to \"myservice.example.com\"
-                      for service source"
+                    description: |-
+                      FQDNTemplate sets a templated string that's used to generate DNS names
+                      from sources that don't define a hostname themselves.
+                      Multiple global FQDN templates are possible.
+
+                      This field must be specified with a nonempty value if the source type
+                      is Service or CRD and HostnameAnnotationPolicy is set to Ignore.  The
+                      field value may be omitted or empty if HostnameAnnotationPolicy is
+                      set to Allow or if the source type is OpenShiftRoute.
+
+                      Provided templates should follow the syntax defined for text/template Go package,
+                      see https://pkg.go.dev/text/template.
+                      Annotations inside the template correspond to the definition of the source resource object (e.g. Kubernetes service, OpenShift route).
+                      Example: "{{.Name}}.example.com" would be expanded to "myservice.example.com" for service source
                     items:
                       type: string
                     type: array
                   hostnameAnnotation:
                     default: Ignore
-                    description: "HostnameAnnotationPolicy specifies whether or not
-                      ExternalDNS should ignore the \"external-dns.alpha.kubernetes.io/hostname\"
-                      annotation, which overrides DNS hostnames on a given source
-                      resource. \n The following values are accepted: \n  \"Ignore\":
-                      Ignore any hostname annotation overrides.  \"Allow\": Allow
-                      all hostname annotation overrides. \n The default behavior of
-                      the ExternalDNS is \"Ignore\". \n Note that by setting a HostnameAnnotationPolicy
-                      of \"Allow\", may grant privileged DNS permissions to under-privileged
-                      cluster users."
+                    description: |-
+                      HostnameAnnotationPolicy specifies whether or not ExternalDNS
+                      should ignore the "external-dns.alpha.kubernetes.io/hostname"
+                      annotation, which overrides DNS hostnames on a given source resource.
+
+                      The following values are accepted:
+
+                       "Ignore": Ignore any hostname annotation overrides.
+                       "Allow": Allow all hostname annotation overrides.
+
+                      The default behavior of the ExternalDNS is "Ignore".
+
+                      Note that by setting a HostnameAnnotationPolicy of "Allow",
+                      may grant privileged DNS permissions to under-privileged cluster
+                      users.
                     enum:
                     - Ignore
                     - Allow
                     type: string
                   labelFilter:
-                    description: LabelFilter specifies a label selector for filtering
-                      the objects for which ExternalDNS publishes records. The filter
-                      uses label selector semantics against object labels.  Specifying
-                      a null or empty label selector causes ExternalDNS to publish
-                      records for all objects of the source type resource.
+                    description: |-
+                      LabelFilter specifies a label selector for filtering the objects for
+                      which ExternalDNS publishes records. The filter uses label selector
+                      semantics against object labels.  Specifying a null or empty label
+                      selector causes ExternalDNS to publish records for all objects of the
+                      source type resource.
                     properties:
                       matchExpressions:
                         description: matchExpressions is a list of label selector
                           requirements. The requirements are ANDed.
                         items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
                           properties:
                             key:
                               description: key is the label key that the selector
                                 applies to.
                               type: string
                             operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
                               type: string
                             values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
                               items:
                                 type: string
                               type: array
@@ -798,53 +981,69 @@ spec:
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   openshiftRouteOptions:
-                    description: OpenShiftRoute describes source configuration options
-                      specific to the routes.route.openshift.io resource.
+                    description: |-
+                      OpenShiftRoute describes source configuration options specific to the
+                      routes.route.openshift.io resource.
                     properties:
                       routerName:
-                        description: RouterName is the name of a router (AKA ingress
-                          controller) as reported in Route.status.ingress[].routerName.  External-dns
-                          will use the canonical hostname of the router identified
-                          by this name when publishing records for a given route.
+                        description: |-
+                          RouterName is the name of a router (AKA ingress controller) as
+                          reported in Route.status.ingress[].routerName.  External-dns will use
+                          the canonical hostname of the router identified by this name when
+                          publishing records for a given route.
                         type: string
                     required:
                     - routerName
                     type: object
                   service:
-                    description: Service describes source configuration options specific
+                    description: |-
+                      Service describes source configuration options specific
                       to the service source resource.
                     properties:
                       serviceType:
                         default:
                         - LoadBalancer
-                        description: "ServiceType determines what types of Service
-                          resources are watched by ExternalDNS. The following types
-                          are available options: \n  \"NodePort\"  \"ExternalName\"
-                          \ \"LoadBalancer\"  \"ClusterIP\" \n One or more Service
-                          types can be specified, if desired. \n Note that using the
-                          \"ClusterIP\" service type will enable the ExternalDNS \"--publish-internal-services\"
-                          flag, which allows ExternalDNS to publish DNS records for
-                          ClusterIP services. \n If no service types are provided,
-                          ExternalDNS will be configured to create DNS records for
-                          LoadBalancer services only by default."
+                        description: |-
+                          ServiceType determines what types of Service resources
+                          are watched by ExternalDNS. The following types are
+                          available options:
+
+                           "NodePort"
+                           "ExternalName"
+                           "LoadBalancer"
+                           "ClusterIP"
+
+                          One or more Service types can be specified, if desired.
+
+                          Note that using the "ClusterIP" service type will enable
+                          the ExternalDNS "--publish-internal-services" flag,
+                          which allows ExternalDNS to publish DNS records
+                          for ClusterIP services.
+
+                          If no service types are provided, ExternalDNS will be
+                          configured to create DNS records for LoadBalancer services
+                          only by default.
                         items:
                           description: Service Type string describes ingress methods
                             for a service
                           type: string
                         minItems: 1
                         type: array
+                    required:
+                    - serviceType
                     type: object
                   type:
-                    description: Type specifies an ExternalDNS source resource to
-                      create DNS records for.
+                    description: |-
+                      Type specifies an ExternalDNS source resource
+                      to create DNS records for.
                     enum:
                     - OpenShiftRoute
                     - Service
@@ -854,13 +1053,19 @@ spec:
                 - type
                 type: object
               zones:
-                description: "Zones describes which DNS Zone IDs ExternalDNS should
-                  publish records to. \n Updating this field after creation will cause
-                  all DNS records in the previous zone(s) to be left behind. \n An
-                  empty list of zones means that the ExternalDNS will publish to all
-                  zones (i.e public and private), unless the operator runs on a platform
-                  on which the operator can lookup a default set of zones e.g on OpenShift
-                  with its cluster DNS config"
+                description: |-
+                  Zones describes which DNS Zone IDs
+                  ExternalDNS should publish records to.
+
+                  Updating this field after creation
+                  will cause all DNS records in the previous
+                  zone(s) to be left behind.
+
+                  An empty list of zones means that the ExternalDNS will
+                  publish to all zones (i.e public and private), unless the
+                  operator runs on a platform on which the operator can
+                  lookup a default set of zones e.g on OpenShift with its cluster
+                  DNS config
                 items:
                   type: string
                 maxItems: 10
@@ -873,48 +1078,39 @@ spec:
             description: status is the most recently observed status of the ExternalDNS.
             properties:
               conditions:
-                description: Conditions is a list of operator-specific conditions
+                description: |-
+                  Conditions is a list of operator-specific conditions
                   and their status.
                 items:
-                  description: "Condition contains details for one aspect of the current
-                    state of this API Resource. --- This struct is intended for direct
-                    use as an array at the field path .status.conditions.  For example,
-                    \n \ttype FooStatus struct{ \t    // Represents the observations
-                    of a foo's current state. \t    // Known .status.conditions.type
-                    are: \"Available\", \"Progressing\", and \"Degraded\" \t    //
-                    +patchMergeKey=type \t    // +patchStrategy=merge \t    // +listType=map
-                    \t    // +listMapKey=type \t    Conditions []metav1.Condition
-                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
-                    protobuf:\"bytes,1,rep,name=conditions\"` \n \t    // other fields
-                    \t}"
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
                   properties:
                     lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
                       maxLength: 32768
                       type: string
                     observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       minimum: 0
                       type: integer
                     reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
                         This field may not be empty.
                       maxLength: 1024
                       minLength: 1
@@ -929,10 +1125,6 @@ spec:
                       type: string
                     type:
                       description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string
@@ -965,5 +1157,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null
