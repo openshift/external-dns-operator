@@ -30,7 +30,7 @@ IMG ?= quay.io/openshift/origin-external-dns-operator:latest
 TLS_VERIFY ?= true
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -42,7 +42,7 @@ endif
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
 KUSTOMIZE := go run sigs.k8s.io/kustomize/kustomize/v5
-K8S_ENVTEST_VERSION := 1.30.0
+K8S_ENVTEST_VERSION := 1.33.0
 
 PACKAGE=github.com/openshift/external-dns-operator
 
