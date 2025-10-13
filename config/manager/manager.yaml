@@ -48,7 +48,7 @@ spec:
         - name: RELATED_IMAGE_EXTERNAL_DNS
             # Use "latest" floating tag to avoid problems with the prunning of older mirorred images.
             # Ref: https://issues.redhat.com/browse/OCPBUGS-57339.
-          value: quay.io/external-dns-operator/external-dns:latest
+          value: quay.io/alebedev/openshift-external-dns:ubi9-1.24
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
