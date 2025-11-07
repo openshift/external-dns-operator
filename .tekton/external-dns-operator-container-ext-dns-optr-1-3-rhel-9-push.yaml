@@ -9,7 +9,8 @@ metadata:
     pipelinesascode.tekton.dev/cancel-in-progress: "false"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "main"
+      == "main" && body.repository.full_name == "openshift/external-dns-operator"
+      && !"bundle-hack/container_digest.sh".pathChanged()
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: ext-dns-optr-1-3-rhel-9
