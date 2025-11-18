@@ -9,7 +9,7 @@ spec:
     resolver: git
     params:
       - name: url
-        value: https://github.com/konflux-ci/tekton-integration-catalog.git
+        value: https://github.com/Thealisyed/external-dns-operator/tree/intpipeline
       - name: revision
         value: main
       - name: pathInRepo

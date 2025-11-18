@@ -89,7 +89,7 @@ spec:
       when:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskRef:
         resolver: git
         params:
@@ -110,7 +110,7 @@ spec:
       when:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskSpec:
         results:
           - name: mirrorSetYaml
@@ -232,7 +232,7 @@ spec:
       when:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskSpec:
         results:
           - name: unreleasedBundle
@@ -358,7 +358,7 @@ spec:
           values: [""]
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskSpec:
         results:
           - name: ocpVersion
@@ -422,7 +422,7 @@ spec:
           values: [""]
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskSpec:
         results:
           - name: clusterName
@@ -469,7 +469,7 @@ spec:
           values: [""]
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       params:
         - name: eaasSpaceSecretRef
           value: $(tasks.provision-eaas-space.results.secretRef)
@@ -904,7 +904,7 @@ spec:
       when:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
-          values: ["push", "Push"]
+          values: ["pull_request"]
       taskRef:
         resolver: git
         params:
