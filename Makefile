@@ -62,7 +62,8 @@ BUNDLE_DIR := bundle
 BUNDLE_MANIFEST_DIR := $(BUNDLE_DIR)/manifests
 BUNDLE_IMG ?= quay.io/external-dns-operator/external-dns-operator-bundle:latest
 CATALOG_DIR := catalog
-CATALOG_VERSION_DIR := $(CATALOG_DIR)/ext-dns-optr-$(shell echo $(BUNDLE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\)\..*/\1-\2/')
+OCP_VERSION ?= 4.21
+OCP_CATALOG_DIR := $(CATALOG_DIR)/v$(OCP_VERSION)
 PACKAGE_DIR := $(CATALOG_DIR)/external-dns-operator
 CATALOG_IMG ?= quay.io/external-dns-operator/external-dns-operator-catalog:latest
 OPM_VERSION ?= v1.52.0
@@ -197,9 +198,9 @@ bundle-image-build: bundle
 bundle-image-push:
 	$(CONTAINER_ENGINE) push $(BUNDLE_IMG)
 
-generate-catalog: opm ## Generate catalog for the Konflux-built operator
-	mkdir -p $(CATALOG_VERSION_DIR)
-	$(OPM) alpha render-template basic --migrate-level bundle-object-to-csv-metadata -o yaml $(CATALOG_DIR)/catalog-template.yaml > $(CATALOG_VERSION_DIR)/catalog.yaml
+generate-catalog: opm ## Generate OCP version-based catalog for the Konflux-built operator
+	mkdir -p $(OCP_CATALOG_DIR)
+	$(OPM) alpha render-template basic --migrate-level bundle-object-to-csv-metadata -o yaml $(OCP_CATALOG_DIR)/catalog-template.yaml > $(OCP_CATALOG_DIR)/catalog.yaml
 
 .PHONY: catalog
 catalog: opm
