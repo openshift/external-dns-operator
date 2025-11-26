@@ -124,7 +124,7 @@ spec:
             image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
             env:
               - name: SOURCE_GIT_URL
-                value: https://github.com/Thealisyed/external-dns-operator.git
+                value: https://github.com/Thealisyed/external-dns-operator
               - name: REPO_TOKEN
                 value: $(params.REPO_TOKEN)
               - name: REPO_KEY
@@ -169,7 +169,7 @@ spec:
                 cpu: 100m
             env:
               - name: SOURCE_GIT_URL
-                value: https://github.com/Thealisyed/external-dns-operator.git
+                value: https://github.com/Thealisyed/external-dns-operator
               - name: SOURCE_GIT_REVISION
                 value: intpipeline
               - name: PATH_TO_MIRROR_SET
