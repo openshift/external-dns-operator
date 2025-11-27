@@ -2800,7 +2800,7 @@ relatedImages:
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
-image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9:149856086eacb3b8cbae571a9abc87dbb92aed6d
+image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9:d47dd0c1a70d757d6ce96f54c01d229f634e3a85
 name: external-dns-operator.v1.3.2
 package: external-dns-operator
 properties:
@@ -3148,8 +3148,8 @@ properties:
         ]
       capabilities: Basic Install
       certified: "false"
-      containerImage: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:57a7943bb90a43538068ded1b908c60c1720fdc9fc7267e33774d93c6347767b
-      createdAt: 2025-10-17T23:02:10
+      containerImage: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:58f4aa12222dd947e48ab224e55176361f9ea870809373bc920fdb1fa02b8379
+      createdAt: 2025-11-27T20:30:07
       features.operators.openshift.io/disconnected: "true"
       features.operators.openshift.io/fips-compliant: "false"
       features.operators.openshift.io/proxy-aware: "true"
@@ -3208,15 +3208,15 @@ properties:
     provider:
       name: Red Hat, Inc.
 relatedImages:
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-container-ext-dns-optr-1-3-rhel-9@sha256:3418ea5a4a6e07bd739d28a58010b1f39bbe98d8d38bba31bef7dd1378020365
+- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-container-ext-dns-optr-1-3-rhel-9@sha256:8a88bc8c4ad8e5cf2da8b003040a9d7e3e353e52982e3588b6539a5135763cb2
   name: external_dns
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9:149856086eacb3b8cbae571a9abc87dbb92aed6d
+- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9:d47dd0c1a70d757d6ce96f54c01d229f634e3a85
   name: ""
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:57a7943bb90a43538068ded1b908c60c1720fdc9fc7267e33774d93c6347767b
-  name: external-dns-rhel9-operator-57a7943bb90a43538068ded1b908c60c1720fdc9fc7267e33774d93c6347767b-annotation
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:57a7943bb90a43538068ded1b908c60c1720fdc9fc7267e33774d93c6347767b
+- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:58f4aa12222dd947e48ab224e55176361f9ea870809373bc920fdb1fa02b8379
+  name: external-dns-rhel9-operator-58f4aa12222dd947e48ab224e55176361f9ea870809373bc920fdb1fa02b8379-annotation
+- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:58f4aa12222dd947e48ab224e55176361f9ea870809373bc920fdb1fa02b8379
   name: external-dns-operator
-- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:56653df97e4498ecd67b9645d75e44f65c625594e312dbcf0f09937b57d76010
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ba9ff4c933739f1774bc8277d636053c5306863221a8c7b7b9ddc4470eb7feff
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
