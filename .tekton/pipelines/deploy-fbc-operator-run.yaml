@@ -14,9 +14,6 @@ spec:
         value: intpipeline
       - name: pathInRepo
         value: .tekton/pipelines/deploy-fbc-operator.yaml
-  params:
-    - name: OCP_VERSION
-      value: "4.19"
   workspaces:
     - name: shared-data
       volumeClaimTemplate:
@@ -25,4 +22,3 @@ spec:
           resources:
             requests:
               storage: 1Gi
-              
