@@ -1,0 +1,16 @@
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageDigestMirrorSet
+metadata:
+  name: external-dns-operator-mirrors
+spec:
+  imageDigestMirrors:
+    - source: registry.redhat.io/openshift4/ose-cli
+      mirrors:
+        - brew.registry.redhat.io/openshift4/ose-cli
+    - source: registry.redhat.io/ubi9/ubi
+      mirrors:
+        - brew.registry.redhat.io/ubi9/ubi
+    - source: registry.redhat.io/ubi9/ubi-minimal
+      mirrors:
+        - brew.registry.redhat.io/ubi9/ubi-minimal

@@ -1,0 +1,900 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: deploy-fbc-operator
+  labels:
+    upstream-usable: "true"
+spec:
+  description: |
+    The deploy-fbc-operator pipeline automates the provisioning of a EaaS Hypershift cluster and the deployment of an operator from a given FBC (File-Based Catalog) fragment.
+    It automates the process of retrieving an unreleased bundle from the FBC, selecting an appropriate OpenShift version and architecture for cluster provisioning,
+    installing the operator, and gathering cluster artifacts.
+  params:
+    - description: |
+        Spec section of an ApplicationSnapshot resource. Not all fields of the
+        resource are required. A minimal example:
+          {
+            "components": [
+              {
+                "containerImage": "quay.io/example/repo:latest",
+                "source": {
+                  "git": {
+                    "url": "https://github.com/org/repo",
+                    "revision": "6c1cbf4193930582d998770411f81d5c70aea29b"
+                  }
+                }
+              }
+            ]
+          }
+      name: SNAPSHOT
+      type: string
+    - description: |
+        An OLM package name present in the fragment or leave it empty so the step will determine the default package name.
+        * If there is only one 'olm.package', it's name is returned.
+        * If multiple 'olm.package' entries contain unreleased bundles, user input is required; the PACKAGE_NAME parameter must be set by the user.
+      name: PACKAGE_NAME
+      default: ""
+      type: string
+    - description: |
+        An OLM channel name or leave it empty so the step will determine the default channel name.
+        * The default channel name corresponds to the 'defaultChannel' entry of the selected package.
+      name: CHANNEL_NAME
+      default: ""
+      type: string
+    - description: |
+        Name of the secret containing the oci-storage-dockerconfigjson key with registry credentials in .dockerconfigjson format, used for pushing artifacts to an OCI registry.
+        Example:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: example
+            namespace: sample-tenant
+          type: Opaque
+          data:
+            oci-storage-dockerconfigjson: <BASE64_ENCODED_DOCKERCONFIGJSON>
+      name: CREDENTIALS_SECRET_NAME
+      type: string
+    - description: Full OCI artifact reference in a format "quay.io/org/repo:tag"
+      name: OCI_REF
+      type: string
+    - description: Name of the Kubernetes Secret that contains the access token for a private GitHub or GitLab repository
+      name: REPO_TOKEN
+      default: ""
+      type: string
+    - description: Key within the Secret's "data" field that holds the GitHub/GitLab access token
+      name: REPO_KEY
+      default: ""
+      type: string
+    - description: Path to where the image digest mirror set is saved in the repository
+      name: PATH_TO_MIRROR_SET
+      default: ".tekton/images-mirror-set.yaml"
+      type: string
+  tasks:
+    - name: parse-metadata
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/integration-examples
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: tasks/test_metadata.yaml
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+    - name: provision-eaas-space
+      runAfter:
+        - parse-metadata
+      when:
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/build-definitions.git
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+    - name: fetch-config-files
+      runAfter:
+        - provision-eaas-space
+      when:
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      taskSpec:
+        results:
+          - name: mirrorSetYaml
+            description: "Contents of the image mirror set yaml file"
+          - name: serializedMirrorSetYaml
+            description: "A serialized string of an ImageDigestMirrorSet YAML, where each mirror entry is formatted with escaped newlines to preserve structure in a single-line format"
+          - name: scorecardConfigImages
+            description: "Images pulled from the scorecard config YAML."
+        steps:
+          - name: retrieve-auth-header
+            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            env:
+              - name: SOURCE_GIT_URL
+                value: https://github.com/Thealisyed/external-dns-operator
+              - name: REPO_TOKEN
+                value: $(params.REPO_TOKEN)
+              - name: REPO_KEY
+                value: $(params.REPO_KEY)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              . /utils.sh
+
+              AUTH_HEADER=""
+
+              # If REPO_TOKEN and REPO_KEY are defined, assume the source code repo is private and requires a token
+              if [[ -n "${REPO_TOKEN}" && -n "${REPO_KEY}" ]]; then
+                echo "Source code repository is private and requires a token to access it"
+
+                # Decode the token from the Kubernetes secret
+                TOKEN=$(kubectl get secret "$REPO_TOKEN" -o jsonpath="{.data.$REPO_KEY}" | base64 -d)
+                if [[ -z "$TOKEN" ]]; then
+                  echo "Failed to retrieve or decode token from secret '$REPO_TOKEN' key '$REPO_KEY'"
+                  exit 1
+                fi
+
+                # Determine token header type
+                if [[ "$SOURCE_GIT_URL" == *"github.com"* ]]; then
+                  AUTH_HEADER="Authorization: token $TOKEN"
+                elif [[ "$SOURCE_GIT_URL" == *"gitlab."* ]]; then
+                  AUTH_HEADER="PRIVATE-TOKEN: $TOKEN"
+                else
+                  echo "Unknown Git provider. Cannot determine proper authorization header."
+                  exit 1
+                fi
+              fi
+
+              echo "$AUTH_HEADER" > /tmp/auth_header.txt
+          - name: retrieve-mirror-set-and-scorecard-config
+            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            computeResources:
+              limits:
+                memory: 512Mi
+              requests:
+                memory: 512Mi
+                cpu: 100m
+            env:
+              - name: SOURCE_GIT_URL
+                value: https://github.com/Thealisyed/external-dns-operator
+              - name: SOURCE_GIT_REVISION
+                value: intpipeline
+              - name: PATH_TO_MIRROR_SET
+                value: $(params.PATH_TO_MIRROR_SET)
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              . /utils.sh
+
+              set +x  # Disable debug tracing to protect tokens
+
+              auth_header=""
+              if [[ -s "/tmp/auth_header.txt" ]]; then
+                auth_header=$(cat /tmp/auth_header.txt)
+              fi
+
+              # Fetch image mirror set
+              mirror_set_url="${SOURCE_GIT_URL}/raw/${SOURCE_GIT_REVISION}/${PATH_TO_MIRROR_SET}"
+
+              if [[ -n "$auth_header" ]]; then
+                mirror_set_yaml=$(curl -kfLs -H "$auth_header" "$mirror_set_url" 2>/dev/null)
+              else
+                mirror_set_yaml=$(curl -kfLs "$mirror_set_url" 2>/dev/null)
+              fi
+
+              if [[ -z "$mirror_set_yaml" ]]; then
+                echo "Could not fetch image mirror set at ${mirror_set_url}."
+                exit 1
+              fi
+
+              echo -n "$mirror_set_yaml" > "$(results.mirrorSetYaml.path)"
+
+              serialized_mirror_set=$(serialize_image_mirrors_yaml "${mirror_set_yaml}")
+              echo "Serialized image mirror set: $serialized_mirror_set"
+
+              echo -e "$serialized_mirror_set" > "$(results.serializedMirrorSetYaml.path)"
+
+              # Fetch scorecard config
+              scorecard_config_url="${SOURCE_GIT_URL}/raw/${SOURCE_GIT_REVISION}/bundle/tests/scorecard/config.yaml"
+
+              if [[ -n "$auth_header" ]]; then
+                scorecard_config_yaml=$(curl -kfLs -H "$auth_header" "$scorecard_config_url" 2>/dev/null) || true
+              else
+                scorecard_config_yaml=$(curl -kfLs "$scorecard_config_url" 2>/dev/null) || true
+              fi
+
+              if [[ -z "$scorecard_config_yaml" ]]; then
+                echo "Scorecard config not found at $scorecard_config_url – skipping scorecard images retrieval."
+                scorecard_config_images=""
+              else
+                echo "Successfully fetched scorecard config"
+                scorecard_config_images=$(collect_scorecard_config_images "${scorecard_config_yaml}")
+                echo "Scorecard config images: $scorecard_config_images"
+              fi
+
+              echo -e "$scorecard_config_images" > "$(results.scorecardConfigImages.path)"
+    - name: get-unreleased-bundle
+      runAfter:
+        - fetch-config-files
+      when:
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      taskSpec:
+        results:
+          - name: unreleasedBundle
+            description: "Unreleased bundle image (may be mirrored)"
+          - name: packageName
+            value: "$(steps.get-unreleased-bundle.results.packageName)"
+          - name: channelName
+            value: "$(steps.get-unreleased-bundle.results.channelName)"
+        steps:
+          - name: get-unreleased-bundle
+            computeResources:
+              limits:
+                memory: 8Gi
+              requests:
+                memory: 8Gi
+                cpu: '1'
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/bundles/get-unreleased-bundle/0.1/get-unreleased-bundle.yaml
+            params:
+              - name: fbcFragment
+                value: "$(tasks.parse-metadata.results.component-container-image)"
+              - name: packageName
+                value: $(params.PACKAGE_NAME)
+              - name: channelName
+                value: $(params.CHANNEL_NAME)
+          - name: process-image-mirror-set
+            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            computeResources:
+              limits:
+                memory: 512Mi
+              requests:
+                memory: 512Mi
+                cpu: 100m
+            env:
+              - name: BUNDLE_IMAGE
+                value: "$(steps.get-unreleased-bundle.results.unreleasedBundle)"
+              - name: MIRROR_SET_YAML
+                value: "$(tasks.fetch-config-files.results.mirrorSetYaml)"
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              . /utils.sh
+
+              replaced_image=""
+
+              if [[ -z "${BUNDLE_IMAGE}" || "${BUNDLE_IMAGE}" == "null" ]]; then
+                echo "Unreleased bundle was not found. Cannot proceed with mirror substitution."
+                echo -n "$replaced_image" > "$(results.unreleasedBundle.path)"
+                exit 0
+              fi
+
+              # Check if the bundle image is pullable before anything else
+              if skopeo inspect --no-tags --config "docker://${BUNDLE_IMAGE}" > /dev/null 2>&1; then
+                echo "Bundle image $BUNDLE_IMAGE is pullable. Using as-is, without applying mirror substitution."
+                echo -n "$BUNDLE_IMAGE" > "$(results.unreleasedBundle.path)"
+                exit 0
+              fi
+              echo "Could not inspect original pullspec $BUNDLE_IMAGE. Checking if there's a mirror present"
+
+              process_image_digest_mirror_set "$MIRROR_SET_YAML" > /tekton/home/mirror-map.txt
+
+              if [ ! -s /tekton/home/mirror-map.txt ]; then
+                echo "Mirror map file is empty or not found."
+                exit 1
+              fi
+
+              echo "Image Mirror Map found:"
+              cat /tekton/home/mirror-map.txt
+              echo
+
+              # Get registry and repo (without digest or tag)
+              reg_and_repo=$(get_image_registry_and_repository "${BUNDLE_IMAGE}")
+
+              #  Look up mirrors for this upstream image
+              mirrors=$(jq -r --arg source "${reg_and_repo}" '.[$source][]?' /tekton/home/mirror-map.txt)
+
+              if [[ -n "$mirrors" ]]; then
+                echo "Found mirrors for $reg_and_repo:"
+                echo "$mirrors"
+                echo
+
+                mirror_found=0
+
+                for mirror in $mirrors; do
+                  replaced_image=$(replace_image_pullspec "$BUNDLE_IMAGE" "$mirror")
+                  echo "Attempting to inspect mirror image: $replaced_image"
+
+                  if skopeo inspect --no-tags --config "docker://${replaced_image}" > /dev/null 2>&1; then
+                    echo "Successfully using mirror image $replaced_image"
+                    mirror_found=1
+
+                    # Write the selected mirror to Tekton result
+                    echo -n "$replaced_image" > "$(results.unreleasedBundle.path)"
+
+                    break
+                  else
+                    echo "Mirror image $replaced_image is inaccessible, trying next..."
+                    echo
+                  fi
+                done
+
+                if [[ $mirror_found -eq 0 ]]; then
+                  echo "No working mirrors found for $reg_and_repo"
+                  exit 1
+                fi
+              else
+                echo "No mirrors listed for $reg_and_repo in mirror map."
+                exit 1
+              fi
+    - name: pick-cluster-params
+      runAfter:
+        - get-unreleased-bundle
+      when:
+        - input: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
+          operator: notin
+          values: [""]
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      taskSpec:
+        results:
+          - name: ocpVersion
+            value: "$(steps.pick-cluster-version.results.ocpVersion)"
+          - name: bundleArch
+            value: "$(steps.pick-cluster-arch.results.bundleArch)"
+        steps:
+          - name: get-supported-versions
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-supported-ephemeral-cluster-versions/0.1/eaas-get-supported-ephemeral-cluster-versions.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: "$(tasks.provision-eaas-space.results.secretRef)"
+          - name: pick-cluster-version
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/bundles/pick-cluster-version/0.1/pick-cluster-version.yaml
+            params:
+              - name: fbcFragment
+                value: "$(tasks.parse-metadata.results.component-container-image)"
+              - name: clusterVersions
+                value: ["$(steps.get-supported-versions.results.versions[*])"]
+          - name: pick-cluster-arch
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/bundles/pick-cluster-arch/0.1/pick-cluster-arch.yaml
+            params:
+              - name: bundleImage
+                value: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
+    - name: provision-cluster
+      runAfter:
+        - pick-cluster-params
+      when:
+        - input: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
+          operator: notin
+          values: [""]
+        - input: "$(tasks.pick-cluster-params.results.ocpVersion)"
+          operator: notin
+          values: [""]
+        - input: "$(tasks.pick-cluster-params.results.bundleArch)"
+          operator: notin
+          values: [""]
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      taskSpec:
+        results:
+          - name: clusterName
+            value: "$(steps.create-cluster.results.clusterName)"
+        steps:
+          - name: get-latest-version-tag
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-latest-openshift-version-by-prefix/0.1/eaas-get-latest-openshift-version-by-prefix.yaml
+            params:
+              - name: prefix
+                value: "$(tasks.pick-cluster-params.results.ocpVersion)"
+          - name: create-cluster
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-create-ephemeral-cluster-hypershift-aws/0.1/eaas-create-ephemeral-cluster-hypershift-aws.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(tasks.provision-eaas-space.results.secretRef)
+              - name: version
+                value: "$(steps.get-latest-version-tag.results.version)"
+              - name: instanceType
+                value: "$(tasks.pick-cluster-params.results.bundleArch)"
+              - name: imageContentSources
+                value: "$(tasks.fetch-config-files.results.serializedMirrorSetYaml)"
+    - name: deploy-operator
+      runAfter:
+        - provision-cluster
+      when:
+        - input: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
+          operator: notin
+          values: [""]
+        - input: $(tasks.parse-metadata.results.test-event-type)
+          operator: in
+          values: ["pull_request"]
+      params:
+        - name: eaasSpaceSecretRef
+          value: $(tasks.provision-eaas-space.results.secretRef)
+        - name: clusterName
+          value: "$(tasks.provision-cluster.results.clusterName)"
+        - name: fbcFragment
+          value: "$(tasks.parse-metadata.results.component-container-image)"
+        - name: bundleImage
+          value: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
+        - name: packageName
+          value: "$(tasks.get-unreleased-bundle.results.packageName)"
+        - name: channelName
+          value: "$(tasks.get-unreleased-bundle.results.channelName)"
+      taskSpec:
+        results:
+          - name: imagesPulledAfterDeploymentStart
+            description: "Images pulled to the cluster after the deployment start time"
+        params:
+          - name: eaasSpaceSecretRef
+            type: string
+          - name: clusterName
+            type: string
+          - name: fbcFragment
+            type: string
+          - name: bundleImage
+            type: string
+          - name: packageName
+            type: string
+          - name: channelName
+            type: string
+        volumes:
+          - name: credentials
+            emptyDir: {}
+          - name: oci-auth
+            secret:
+              secretName: $(params.CREDENTIALS_SECRET_NAME)
+        steps:
+          - name: get-kubeconfig
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/build-definitions.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+            params:
+              - name: eaasSpaceSecretRef
+                value: $(params.eaasSpaceSecretRef)
+              - name: clusterName
+                value: $(params.clusterName)
+              - name: credentials
+                value: credentials
+          - name: install-operator
+            # In case the test fails, we don't want to fail the TaskRun immediately,
+            # because we want to proceed with archiving the artifacts in a following step.
+            onError: continue
+            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            computeResources:
+              limits:
+                memory: 4Gi
+              requests:
+                memory: 4Gi
+                cpu: 500m
+            env:
+              - name: FBC_FRAGMENT
+                value: "$(params.fbcFragment)"
+              - name: BUNDLE_IMAGE
+                value: "$(params.bundleImage)"
+              - name: PACKAGE_NAME
+                value: "$(params.packageName)"
+              - name: CHANNEL_NAME
+                value: "$(params.channelName)"
+              - name: KUBECONFIG
+                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+            volumeMounts:
+              - name: credentials
+                mountPath: /credentials
+            script: |
+              #!/usr/bin/env bash
+              set -euo pipefail
+              . /utils.sh
+
+              echo "[INFO] Using kubeconfig at $KUBECONFIG"
+              oc whoami || { echo "Failed to connect to cluster"; exit 1; }
+
+              for var in FBC_FRAGMENT BUNDLE_IMAGE PACKAGE_NAME CHANNEL_NAME; do
+                if [[ -z "${!var}" ]]; then
+                    echo "Error: $var parameter is required." >&2
+                    exit 1
+                fi
+              done
+
+              # Run opm render on a bundle image
+              if ! bundle_render_out=$(opm render "$BUNDLE_IMAGE"); then
+                echo "Failed to render the bundle image" >&2
+                exit 1
+              fi
+
+              # Set the artifact directory path relative to current working directory
+              ARTIFACT_DIR="workspace/konflux-artifacts"
+
+              # Ensure the directory exists
+              mkdir -p "$ARTIFACT_DIR"
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Retrieving 'operatorframework.io/suggested-namespace' metadata annotation if exists..."
+              INSTALL_NAMESPACE=$(get_bundle_suggested_namespace "$bundle_render_out")
+
+              if [[ -z "$INSTALL_NAMESPACE" || "$INSTALL_NAMESPACE" == null ]]; then
+                echo "[$(date --utc +%FT%T.%3NZ)] No suggested namespace found, creating a new one"
+                NS_NAMESTANZA="generateName: oo-"
+              elif ! oc get namespace "$INSTALL_NAMESPACE"; then
+                echo "[$(date --utc +%FT%T.%3NZ)] Suggested namespace is '$INSTALL_NAMESPACE' which does not exist: creating"
+                NS_NAMESTANZA="name: $INSTALL_NAMESPACE"
+              else
+                echo "[$(date --utc +%FT%T.%3NZ)] INSTALL_NAMESPACE is '$INSTALL_NAMESPACE'"
+              fi
+
+              if [[ -n "${NS_NAMESTANZA:-}" ]]; then
+                INSTALL_NAMESPACE=$(
+                  oc create -f - -o jsonpath='{.metadata.name}' <<EOF
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                $NS_NAMESTANZA
+              EOF
+                )
+              fi
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Retrieving bundle install modes..."
+              if ! TARGET_NAMESPACES=$(get_bundle_install_modes "$bundle_render_out"); then
+                echo "Could not get target namespaces for the bundle" >&2
+                exit 1
+              fi
+
+              TARGET_NAMESPACES_FINAL=""
+
+              # Prioritize install modes in the correct order
+              if echo "$TARGET_NAMESPACES" | grep -q "AllNamespaces"; then
+                  echo "AllNamespaces is supported"
+                  TARGET_NAMESPACES_FINAL=""
+              elif echo "$TARGET_NAMESPACES" | grep -q "SingleNamespace"; then
+                  echo "SingleNamespace is supported"
+                  TARGET_NAMESPACES_FINAL="default"
+              elif echo "$TARGET_NAMESPACES" | grep -q "OwnNamespace"; then
+                  echo "OwnNamespace is supported"
+                  TARGET_NAMESPACES_FINAL="$INSTALL_NAMESPACE"
+              elif echo "$TARGET_NAMESPACES" | grep -q "MultiNamespace"; then
+                  echo "MultiNamespace is supported"
+                  TARGET_NAMESPACES_FINAL="openshift-marketplace,default"
+              else
+                  echo "Error: Unsupported TARGET_NAMESPACES value: $TARGET_NAMESPACES" >&2
+                  exit 1
+              fi
+
+              TARGET_NAMESPACES="$TARGET_NAMESPACES_FINAL"
+
+              OPERATORGROUP=$(oc -n "$INSTALL_NAMESPACE" get operatorgroup -o jsonpath="{.items[*].metadata.name}" || true)
+
+              if [[ $(echo "$OPERATORGROUP" | wc -w) -gt 1 ]]; then
+                  echo "[$(date --utc +%FT%T.%3NZ)] Error: multiple OperatorGroups in namespace \"$INSTALL_NAMESPACE\": $OPERATORGROUP" 1>&2
+                  oc -n "$INSTALL_NAMESPACE" get operatorgroup -o yaml >"$ARTIFACT_DIR/operatorgroups-$INSTALL_NAMESPACE.yaml"
+                  echo "[$(date --utc +%FT%T.%3NZ)] Script Completed Execution With Failures!"
+                  exit 1
+              elif [[ -n "$OPERATORGROUP" ]]; then
+                  echo "[$(date --utc +%FT%T.%3NZ)] OperatorGroup \"$OPERATORGROUP\" exists: modifying it"
+                  OG_OPERATION=apply
+                  OG_NAMESTANZA="name: $OPERATORGROUP"
+              else
+                  echo "[$(date --utc +%FT%T.%3NZ)] OperatorGroup does not exist: creating it"
+                  OG_OPERATION=create
+                  OG_NAMESTANZA="generateName: oo-"
+              fi
+
+              OPERATORGROUP=$(
+                  oc $OG_OPERATION -f - -o jsonpath='{.metadata.name}' <<EOF
+              apiVersion: operators.coreos.com/v1
+              kind: OperatorGroup
+              metadata:
+                $OG_NAMESTANZA
+                namespace: $INSTALL_NAMESPACE
+              spec:
+                targetNamespaces: [$TARGET_NAMESPACES]
+              EOF
+              )
+
+              echo "[$(date --utc +%FT%T.%3NZ)] OperatorGroup name is \"$OPERATORGROUP\""
+
+              # Update the image digest with the 0th manifest digest
+              if updated_fbc_image=$(resolve_to_0th_manifest_digest "$FBC_FRAGMENT"); then
+                  echo "Updating FBC fragment image from $FBC_FRAGMENT to $updated_fbc_image"
+                  FBC_FRAGMENT="$updated_fbc_image"
+              else
+                  echo "Failed to resolve 0th manifest digest" >&2
+                  exit 1
+              fi
+
+              CS_NAMESTANZA="generateName: oo-"
+
+              CS_MANIFEST=$(cat <<EOF
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: CatalogSource
+              metadata:
+                $CS_NAMESTANZA
+                namespace: $INSTALL_NAMESPACE
+              spec:
+                sourceType: grpc
+                image: $FBC_FRAGMENT
+                grpcPodConfig:
+                  securityContextConfig: restricted
+                  extractContent:
+                    catalogDir: /configs
+                    cacheDir: /tmp/cache
+              EOF
+              )
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Creating CatalogSource:"
+              echo "$CS_MANIFEST"
+              CATSRC=$(oc create -f - -o jsonpath='{.metadata.name}' <<< "${CS_MANIFEST}" )
+              echo "[$(date --utc +%FT%T.%3NZ)] CatalogSource name is \"$CATSRC\""
+
+              # Waits up to 10 minutes until the Catalog source state is 'READY'
+              IS_CATSRC_CREATED=false
+              for i in $(seq 1 120); do
+                CATSRC_STATE=$(oc get catalogsources/"$CATSRC" -n "$INSTALL_NAMESPACE" -o jsonpath='{.status.connectionState.lastObservedState}')
+                echo $CATSRC_STATE
+                if [ "$CATSRC_STATE" = "READY" ]; then
+                  echo "[$(date --utc +%FT%T.%3NZ)] Catalogsource created successfully after waiting $((5*i)) seconds"
+                  echo "[$(date --utc +%FT%T.%3NZ)] Current state of catalogsource is \"$CATSRC_STATE\""
+                  IS_CATSRC_CREATED=true
+                  break
+                fi
+                sleep 5
+              done
+
+              if [ $IS_CATSRC_CREATED = false ]; then
+                echo "[$(date --utc +%FT%T.%3NZ)] Timed out waiting for the catalog source $CATSRC to become ready after 10 minutes."
+                echo "[$(date --utc +%FT%T.%3NZ)] Catalogsource state at timeout is \"$CATSRC_STATE\""
+                CS_ART="$ARTIFACT_DIR/catalogsource-$CATSRC.yaml"
+                echo "[$(date --utc +%FT%T.%3NZ)] Dumping CatalogSource $CATSRC as $CS_ART"
+                oc get -n "$INSTALL_NAMESPACE" catalogsource "$CATSRC" -o yaml >"$CS_ART"
+                echo "[$(date --utc +%FT%T.%3NZ)] Script Completed Execution With Failures!"
+                exit 1
+              fi
+
+              DEPLOYMENT_START_TIME=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+              echo "[$(date --utc +%FT%T.%3NZ)] Set the deployment start time: ${DEPLOYMENT_START_TIME}"
+
+              SUB_NAMESTANZA="generateName: oo-"
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Getting bundle name from image"
+              if ! bundleName=$(get_bundle_name "$bundle_render_out"); then
+                echo "Could not get a bundle name from a given image" >&2
+                exit 1
+              fi
+
+              SUB_MANIFEST=$(cat <<EOF
+              apiVersion: operators.coreos.com/v1alpha1
+              kind: Subscription
+              metadata:
+                $SUB_NAMESTANZA
+                namespace: $INSTALL_NAMESPACE
+              spec:
+                name: $PACKAGE_NAME
+                channel: $CHANNEL_NAME
+                source: $CATSRC
+                sourceNamespace: $INSTALL_NAMESPACE
+                installPlanApproval: Manual
+                startingCSV: $bundleName
+              EOF
+              )
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Creating Subscription:"
+              echo "${SUB_MANIFEST}"
+
+              SUB=$(oc create -f - -o jsonpath='{.metadata.name}' <<< "${SUB_MANIFEST}" )
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Subscription name is \"$SUB\""
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Waiting up to 5 minutes for installPlan to be created"
+              FOUND_INSTALLPLAN=false
+              for _ in $(seq 1 60); do
+                INSTALL_PLAN=$(oc -n "$INSTALL_NAMESPACE" get subscription "$SUB" -o jsonpath='{.status.installplan.name}' || true)
+
+                if [[ -n "$INSTALL_PLAN" ]]; then
+                  oc -n "$INSTALL_NAMESPACE" patch installPlan "${INSTALL_PLAN}" --type merge --patch '{"spec":{"approved":true}}'
+                  FOUND_INSTALLPLAN=true
+                  break
+                fi
+                sleep 5
+              done
+
+              if [ "$FOUND_INSTALLPLAN" = true ]; then
+                echo "[$(date --utc +%FT%T.%3NZ)] Install Plan approved"
+                echo "[$(date --utc +%FT%T.%3NZ)] Waiting up to 10 minutes for ClusterServiceVersion to become ready..."
+
+                for _ in $(seq 1 60); do
+                  CSV=$(oc -n "$INSTALL_NAMESPACE" get subscription "$SUB" -o jsonpath="{.status.installedCSV}" || true)
+                  if [[ -n "$CSV" ]]; then
+                    if [[ "$(oc -n "$INSTALL_NAMESPACE" get csv "$CSV" -o jsonpath='{.status.phase}')" == "Succeeded" ]]; then
+                      echo "[$(date --utc +%FT%T.%3NZ)] ClusterServiceVersion \"$CSV\" ready"
+                      echo "[$(date --utc +%FT%T.%3NZ)] Script Completed Execution Successfully !"
+
+                      IMAGE_PULL_EVENTS="$ARTIFACT_DIR/image_pull_events.txt"
+                      echo "[$(date --utc +%FT%T.%3NZ)] Dumping cluster image pull events as $IMAGE_PULL_EVENTS"
+                      oc get events --all-namespaces --field-selector reason==Pulling -o go-template='{{range .items}}{{.lastTimestamp}},{{.message}}{{"\n"}}{{end}}' >"$IMAGE_PULL_EVENTS"
+
+                      images_pulled_after_deployment_start=$(parse_collected_image_pulls "$IMAGE_PULL_EVENTS" "$DEPLOYMENT_START_TIME")
+                      echo -e "Images pulled after deployment start: $images_pulled_after_deployment_start"
+
+                      echo "$images_pulled_after_deployment_start" > "$(results.imagesPulledAfterDeploymentStart.path)"
+
+                      exit 0
+                    fi
+                  fi
+                  sleep 10
+                done
+
+                echo "[$(date --utc +%FT%T.%3NZ)] Timed out waiting for CSV to become ready"
+              else
+                echo "[$(date --utc +%FT%T.%3NZ)] Failed to find installPlan for subscription"
+              fi
+
+              # Saving artifacts before failing
+              NS_ART="$ARTIFACT_DIR/namespace-$INSTALL_NAMESPACE.yaml"
+              echo "[$(date --utc +%FT%T.%3NZ)] Dumping Namespace $INSTALL_NAMESPACE as $NS_ART"
+              oc get namespace "$INSTALL_NAMESPACE" -o yaml >"$NS_ART"
+
+              OG_ART="$ARTIFACT_DIR/operatorgroup-$OPERATORGROUP.yaml"
+              echo "[$(date --utc +%FT%T.%3NZ)] Dumping OperatorGroup $OPERATORGROUP as $OG_ART"
+              oc get -n "$INSTALL_NAMESPACE" operatorgroup "$OPERATORGROUP" -o yaml >"$OG_ART"
+
+              CS_ART="$ARTIFACT_DIR/catalogsource-$CATSRC.yaml"
+              echo "[$(date --utc +%FT%T.%3NZ)] Dumping CatalogSource $CATSRC as $CS_ART"
+              oc get -n "$INSTALL_NAMESPACE" catalogsource "$CATSRC" -o yaml >"$CS_ART"
+              for field in message reason; do
+                  VALUE="$(oc get -n "$INSTALL_NAMESPACE" catalogsource "$CATSRC" -o jsonpath="{.status.$field}" || true)"
+                  if [[ -n "$VALUE" ]]; then
+                      echo "[$(date --utc +%FT%T.%3NZ)] CatalogSource $CATSRC status $field: $VALUE"
+                  fi
+              done
+
+              SUB_ART="$ARTIFACT_DIR/subscription-$SUB.yaml"
+              echo "[$(date --utc +%FT%T.%3NZ)] Dumping Subscription $SUB as $SUB_ART"
+              oc get -n "$INSTALL_NAMESPACE" subscription "$SUB" -o yaml >"$SUB_ART"
+              for field in state reason; do
+                  VALUE="$(oc get -n "$INSTALL_NAMESPACE" subscription "$SUB" -o jsonpath="{.status.$field}" || true)"
+                  if [[ -n "$VALUE" ]]; then
+                      echo "[$(date --utc +%FT%T.%3NZ)] Subscription $SUB status $field: $VALUE"
+                  fi
+              done
+
+              if [[ -n "${CSV:-}" ]]; then
+                  CSV_ART="$ARTIFACT_DIR/csv-$CSV.yaml"
+                  echo "[$(date --utc +%FT%T.%3NZ)] ClusterServiceVersion $CSV was created but never became ready"
+                  echo "[$(date --utc +%FT%T.%3NZ)] Dumping ClusterServiceVersion $CSV as $CSV_ART"
+                  oc get -n "$INSTALL_NAMESPACE" csv "$CSV" -o yaml >"$CSV_ART"
+                  for field in phase message reason; do
+                      VALUE="$(oc get -n "$INSTALL_NAMESPACE" csv "$CSV" -o jsonpath="{.status.$field}" || true)"
+                      if [[ -n "$VALUE" ]]; then
+                          echo "[$(date --utc +%FT%T.%3NZ)] ClusterServiceVersion $CSV status $field: $VALUE"
+                      fi
+                  done
+              else
+                  CSV_ART="$ARTIFACT_DIR/all-csvs-$INSTALL_NAMESPACE.yaml"
+                  echo "[$(date --utc +%FT%T.%3NZ)] ClusterServiceVersion was never created"
+                  echo "[$(date --utc +%FT%T.%3NZ)] Dumping all ClusterServiceVersions in namespace $INSTALL_NAMESPACE to $CSV_ART"
+                  oc get -n "$INSTALL_NAMESPACE" csv -o yaml >"$CSV_ART"
+              fi
+
+              INSTALLPLANS_ART="$ARTIFACT_DIR/installPlans-$INSTALL_NAMESPACE.yaml"
+              echo "[$(date --utc +%FT%T.%3NZ)] Dumping all installPlans in namespace $INSTALL_NAMESPACE as $INSTALLPLANS_ART"
+              oc get -n "$INSTALL_NAMESPACE" installplans -o yaml >"$INSTALLPLANS_ART"
+
+              echo "[$(date --utc +%FT%T.%3NZ)] Script Completed Execution With Failures!"
+              exit 1
+          - name: gather-cluster-resources
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/gather-cluster-resources/0.1/gather-cluster-resources.yaml
+            params:
+              - name: credentials
+                value: "credentials"
+              - name: kubeconfig
+                value: "$(steps.get-kubeconfig.results.kubeconfig)"
+              - name: artifact-dir
+                value: "/workspace/konflux-artifacts"
+          # validate that the cluster resources are available in another tekton step
+          - name: list-artifacts
+            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            workingDir: "/workspace"
+            script: |
+              #!/bin/bash
+              ls -la /workspace
+          - name: push-artifacts
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/secure-push-oci/0.1/secure-push-oci.yaml
+            params:
+              - name: workdir-path
+                value: /workspace
+              - name: oci-ref
+                value: $(params.OCI_REF):$(tasks.parse-metadata.results.source-git-revision)-$(context.taskRun.uid)
+              - name: credentials-volume-name
+                value: oci-auth
+          - name: fail-if-any-step-failed
+            ref:
+              resolver: git
+              params:
+                - name: url
+                  value: https://github.com/konflux-ci/tekton-integration-catalog.git
+                - name: revision
+                  value: main
+                - name: pathInRepo
+                  value: stepactions/fail-if-any-step-failed/0.1/fail-if-any-step-failed.yaml
