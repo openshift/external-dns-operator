@@ -372,6 +372,8 @@ spec:
         value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
       - name: CACHI2_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+      - name: ARGS
+        value: "--project-name=ExternalDNS-operator --report --org=88687b7b-11e9-4e1a-8a95-2a4f8e6dec15"
       runAfter:
       - build-image-index
       taskRef:
