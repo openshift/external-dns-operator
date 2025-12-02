@@ -3,10 +3,10 @@ schema: olm.channel
 name: stable-v1
 package: external-dns-operator
 entries:
-  - name: external-dns-operator.v1.3.2
+  - name: external-dns-operator.v1.3.3
 ---
 schema: olm.channel
 name: stable-v1.3
 package: external-dns-operator
 entries:
-  - name: external-dns-operator.v1.3.2
+  - name: external-dns-operator.v1.3.3
