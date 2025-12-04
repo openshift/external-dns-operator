@@ -1,0 +1,60 @@
+# Detect the drift from Dockerfile.bundle.
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS drift
+WORKDIR /app
+COPY drift-cache/Dockerfile.bundle Dockerfile.cached
+COPY Dockerfile.bundle .
+# If the command below fails it means that Dockerfile.bundle from this repository changed.
+# You have to update the Konflux Containerfile accordingly.
+# drift-cache/Dockerfile.bundle can be updated with latest contents once the Konflux version is aligned.
+RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile.bundle | cut -d' ' -f1)"
+
+# Customize bundle contents.
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS update
+RUN microdnf install -y skopeo jq python3 python3-pip
+RUN pip3 install --upgrade pip && pip3 install ruamel.yaml==0.17.9
+
+COPY VERSION .
+COPY bundle-hack .
+COPY bundle/manifests /manifests/
+COPY bundle/metadata /metadata/
+
+RUN ./update_bundle.sh
+
+# Based on Dockerfile.bundle file.
+FROM scratch
+
+# Core bundle labels.
+LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
+LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
+LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
+LABEL operators.operatorframework.io.bundle.package.v1=external-dns-operator
+LABEL operators.operatorframework.io.bundle.channels.v1=stable-v1.2,stable-v1
+LABEL operators.operatorframework.io.bundle.channel.default.v1=stable-v1
+LABEL com.redhat.component=external-dns-operator-bundle-container
+# should this operator be supported on OCP 4.4 and earlier (old appregistry format)
+LABEL com.redhat.delivery.backport: false
+# this is a bundle image and should be delivered via an index image
+LABEL com.redhat.delivery.operator.bundle: true
+
+# Define build arguments to receive dynamic values
+ARG FULL_COMMIT
+ARG GIT_URL
+
+LABEL name=external-dns-operator-bundle
+LABEL version="1.2.2"
+LABEL maintainer='NetworkEdge team <aos-network-edge-staff@redhat.com>'
+LABEL io.k8s.display-name='ExternalDNS Operator'
+LABEL io.k8s.description='Operator bundle for the ExternalDNS Operator'
+LABEL io.openshift.tags='networking,dns'
+LABEL io.openshift.build.commit.id=${FULL_COMMIT}
+LABEL io.openshift.build.source-location=${GIT_URL}
+LABEL io.openshift.build.commit.url=${GIT_URL}/commit/${FULL_COMMIT}
+
+# Dummy copy to trigger drift detection.
+COPY --from=drift /app/Dockerfile.cached .
+# Dummy copy to trigger bundle update.
+COPY --from=update /update_bundle.sh .
+
+# Copy customized files to locations specified by labels.
+COPY --from=update /manifests /manifests/
+COPY --from=update /metadata /metadata/
