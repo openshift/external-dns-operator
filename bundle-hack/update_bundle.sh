@@ -100,9 +100,6 @@ csv['spec']['relatedImages'] = [
     {'name': 'external_dns', 'image': operand_pullspec}
 ]
 
-if 'operators.openshift.io/valid-subscription' in csv['metadata']['annotations']:
-    del csv['metadata']['annotations']['operators.openshift.io/valid-subscription']
-
 dump_manifest(os.getenv('TARGET_CSV_FILE'), csv)
 CSV_UPDATE
 
