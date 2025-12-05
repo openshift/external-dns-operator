@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: deploy-fbc-operator-run
+  labels:
+    upstream-usable: "true"
+spec:
+  pipelineRef:
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/Thealisyed/external-dns-operator.git
+      - name: revision
+        value: intpipeline
+      - name: pathInRepo
+        value: .tekton/pipelines/deploy-fbc-operator.yaml
+      - name: CREDENTIALS_SECRET_NAME
+        value: ext-dns-optr-fbc-v4-21-pull
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
