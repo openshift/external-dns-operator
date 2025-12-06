@@ -3198,7 +3198,7 @@ relatedImages:
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
-image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9@sha256:06f62dd397f7d6c1a21e558dd64b826aad38eed410c5c7103d81ff849a0b45ac
+image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:d844f9a6739d3b92bd25d7c3ad84f933db7c905365e016d15d1933c2f4ada31f
 name: external-dns-operator.v1.3.3
 package: external-dns-operator
 properties:
@@ -3546,8 +3546,8 @@ properties:
         ]
       capabilities: Basic Install
       certified: "false"
-      containerImage: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:2f2c2f56cac0c993293cbb2f1460313e19bf6c757267bf107ded07b8718695b3
-      createdAt: 2025-12-03T11:17:48
+      containerImage: registry.stage.redhat.io/edo/external-dns-rhel9-operator@sha256:e93c9273342e383f728f605303daccb37e6f1185375872d0725aef80d623a7c9
+      createdAt: 2025-12-05T20:33:58
       features.operators.openshift.io/disconnected: "true"
       features.operators.openshift.io/fips-compliant: "false"
       features.operators.openshift.io/proxy-aware: "true"
@@ -3557,6 +3557,8 @@ properties:
       features.operators.openshift.io/token-auth-gcp: "false"
       olm.skipRange: <1.3.3
       operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
       operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
       operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
       repository: https://github.com/openshift/external-dns-operator
@@ -3606,16 +3608,16 @@ properties:
     provider:
       name: Red Hat, Inc.
 relatedImages:
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-container-ext-dns-optr-1-3-rhel-9@sha256:01ada09821f11b7ca474a3e2f7e6b03fc15f41ba9f78529a586fd2b80b9dbb3d
-  name: external_dns
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-bundle-container-ext-dns-optr-1-3-rhel-9@sha256:06f62dd397f7d6c1a21e558dd64b826aad38eed410c5c7103d81ff849a0b45ac
-  name: ""
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:2f2c2f56cac0c993293cbb2f1460313e19bf6c757267bf107ded07b8718695b3
-  name: external-dns-rhel9-operator-2f2c2f56cac0c993293cbb2f1460313e19bf6c757267bf107ded07b8718695b3-annotation
-- image: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9@sha256:2f2c2f56cac0c993293cbb2f1460313e19bf6c757267bf107ded07b8718695b3
-  name: external-dns-operator
 - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ba9ff4c933739f1774bc8277d636053c5306863221a8c7b7b9ddc4470eb7feff
   name: kube-rbac-proxy
+- image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:d844f9a6739d3b92bd25d7c3ad84f933db7c905365e016d15d1933c2f4ada31f
+  name: ""
+- image: registry.stage.redhat.io/edo/external-dns-rhel9-operator@sha256:e93c9273342e383f728f605303daccb37e6f1185375872d0725aef80d623a7c9
+  name: external-dns-rhel9-operator-e93c9273342e383f728f605303daccb37e6f1185375872d0725aef80d623a7c9-annotation
+- image: registry.stage.redhat.io/edo/external-dns-rhel9-operator@sha256:e93c9273342e383f728f605303daccb37e6f1185375872d0725aef80d623a7c9
+  name: external-dns-operator
+- image: registry.stage.redhat.io/edo/external-dns-rhel9@sha256:7c118dc2dc23eef9a039770ea45c863e56728ab3295c14bc48ebb222b9df256c
+  name: external_dns
 schema: olm.bundle
 ---
 entries:
