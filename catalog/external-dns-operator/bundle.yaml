@@ -350,7 +350,7 @@ properties:
       containerImage: quay.io/openshift/origin-external-dns-operator:latest
       createdAt: 2021/09/28
       features.operators.openshift.io/disconnected: "true"
-      features.operators.openshift.io/fips-compliant: "false"
+      features.operators.openshift.io/fips-compliant: "true"
       features.operators.openshift.io/proxy-aware: "true"
       features.operators.openshift.io/tls-profiles: "false"
       features.operators.openshift.io/token-auth-aws: "false"
