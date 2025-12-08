@@ -74,7 +74,8 @@ OPERATOR_SDK_BIN=$(BIN_DIR)/operator-sdk
 
 COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
-GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
+GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)" -tags strictfipsruntime
+CHECK_PAYLOAD_IMG ?= registry.ci.openshift.org/ci/check-payload:latest
 
 E2E_TIMEOUT ?= 1h
 TEST_PKG ?= ./test/e2e
@@ -139,7 +140,7 @@ verify: lint
 	hack/verify-version.sh
 
 ##@ Build
-GO=GO111MODULE=on GOFLAGS=-mod=vendor CGO_ENABLED=0 go
+GO=GO111MODULE=on GOFLAGS=-mod=vendor go
 
 build-operator: ## Build operator binary, no additional checks or code generation
 	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
@@ -154,6 +155,10 @@ image-build: test ## Build container image with the operator.
 
 image-push: ## Push container image with the operator.
 	$(CONTAINER_ENGINE) push ${IMG} ${CONTAINER_PUSH_ARGS}
+
+.PHONY: image-fips-scan
+image-fips-scan:
+	$(CONTAINER_ENGINE) run --privileged $(CHECK_PAYLOAD_IMG) scan operator --spec $(IMG)
 
 ##@ Deployment
 
