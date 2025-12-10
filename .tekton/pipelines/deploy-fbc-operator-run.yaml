@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: deploy-fbc-operator-run
+  labels:
+    upstream-usable: "true"
+spec:
+  pipelineRef:
+    resolver: git
+    params:
+      - name: url
+        value: https://github.com/openshift/external-dns-operator.git
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: .tekton/pipelines/deploy-fbc-operator.yaml
+  workspaces:
+    - name: shared-data
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
