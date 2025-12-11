@@ -99,7 +99,7 @@ entries:
   - image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:de5eb0f13e34a0aa9c16e2f57be6ddb2d159c638151ff9a4874cf671909f5223
     name: external-dns-operator.v1.3.2
     schema: olm.bundle
-  - image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:f05caf960172ccfad3eaf18e25ba60036ebfc37a0021a436e6b2def1d5e8681e
+  - image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:07520162925e260338ac84df2beaa6c9a26775663f27305e6f66bbc68f3493bc
     name: external-dns-operator.v1.3.3
     schema: olm.bundle
   - schema: olm.deprecations
