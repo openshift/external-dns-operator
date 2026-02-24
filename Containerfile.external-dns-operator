@@ -9,7 +9,7 @@ COPY Dockerfile .
 RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile | cut -d' ' -f1)"
 
 
-FROM registry.access.redhat.com/ubi8/go-toolset:1.19.13 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.25.7-1771287729 as builder
 # dummy copy to trigger the drift detection
 COPY --from=drift /app/Dockerfile.cached .
 WORKDIR /workspace
