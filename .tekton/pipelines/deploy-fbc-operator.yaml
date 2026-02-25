@@ -121,7 +121,7 @@ spec:
             description: "Images pulled from the scorecard config YAML."
         steps:
           - name: retrieve-auth-header
-            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            image: quay.io/konflux-ci/konflux-test:v1.4.48@sha256:9b815268fb2bf10b5d745518da1c6568944f15816efe51adc192972b42a6e74d
             env:
               - name: SOURCE_GIT_URL
                 value: https://github.com/Thealisyed/external-dns-operator
@@ -160,7 +160,7 @@ spec:
 
               echo "$AUTH_HEADER" > /tmp/auth_header.txt
           - name: retrieve-mirror-set-and-scorecard-config
-            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            image: quay.io/konflux-ci/konflux-test:v1.4.48@sha256:9b815268fb2bf10b5d745518da1c6568944f15816efe51adc192972b42a6e74d
             computeResources:
               limits:
                 memory: 512Mi
@@ -266,7 +266,7 @@ spec:
               - name: channelName
                 value: $(params.CHANNEL_NAME)
           - name: process-image-mirror-set
-            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            image: quay.io/konflux-ci/konflux-test:v1.4.48@sha256:9b815268fb2bf10b5d745518da1c6568944f15816efe51adc192972b42a6e74d
             computeResources:
               limits:
                 memory: 512Mi
@@ -528,7 +528,7 @@ spec:
             # In case the test fails, we don't want to fail the TaskRun immediately,
             # because we want to proceed with archiving the artifacts in a following step.
             onError: continue
-            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            image: quay.io/konflux-ci/konflux-test:v1.4.48@sha256:9b815268fb2bf10b5d745518da1c6568944f15816efe51adc192972b42a6e74d
             computeResources:
               limits:
                 memory: 4Gi
@@ -866,7 +866,7 @@ spec:
                 value: "/workspace/konflux-artifacts"
           # validate that the cluster resources are available in another tekton step
           - name: list-artifacts
-            image: quay.io/konflux-ci/konflux-test:v1.4.31@sha256:a7cae9e96663e277a3904d0c78630508ddb6cc8eebaa912a840bd20f68dcaad1
+            image: quay.io/konflux-ci/konflux-test:v1.4.48@sha256:9b815268fb2bf10b5d745518da1c6568944f15816efe51adc192972b42a6e74d
             workingDir: "/workspace"
             script: |
               #!/bin/bash
