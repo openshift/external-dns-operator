@@ -1,6 +1,6 @@
 module github.com/openshift/external-dns-operator
 
-go 1.19
+go 1.24
 
 require (
 	github.com/Azure/azure-sdk-for-go v60.1.0+incompatible
