@@ -157,7 +157,7 @@ func routeExternalDNS(name, zoneID, zoneDomain, routerName string) operatorv1bet
 	// this additional check can be removed with latest external-dns image (>v0.10.1)
 	// instantiate the route additional information at ExternalDNS initiation level.
 	if routerName != "" {
-		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1beta1.ExternalDNSOpenShiftRouteOptions{
+		extDns.Spec.Source.OpenShiftRoute = &operatorv1beta1.ExternalDNSOpenShiftRouteOptions{
 			RouterName: routerName,
 		}
 	}
@@ -183,7 +183,7 @@ func routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string) opera
 	// this additional check can be removed with latest external-dns image (>v0.10.1)
 	// instantiate the route additional information at ExternalDNS initiation level.
 	if routerName != "" {
-		extDns.Spec.Source.ExternalDNSSourceUnion.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
+		extDns.Spec.Source.OpenShiftRoute = &operatorv1alpha1.ExternalDNSOpenShiftRouteOptions{
 			RouterName: routerName,
 		}
 	}
