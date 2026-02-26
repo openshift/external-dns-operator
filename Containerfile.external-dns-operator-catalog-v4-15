@@ -1,0 +1,33 @@
+# Detect the drift from the upstream Dockerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS drift
+WORKDIR /app
+COPY drift-cache/Dockerfile.catalog Dockerfile.cached
+COPY Dockerfile.catalog .
+# If the command below fails it means that the Dockerfile.catalog from this repository changed.
+# You have to update the Konflux Containerfile accordingly.
+# drift-cache/Dockerfile.catalog can be updated with the upstream contents once the Konflux version is aligned.
+RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile.catalog | cut -d' ' -f1)"
+
+# The base image is expected to contain
+# /bin/opm (with a serve subcommand) and /bin/grpc_health_probe
+# Note: The base image version should match the targeted OCP version
+FROM registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.15
+COPY LICENSE /licenses/
+# dummy copy to trigger the drift detection
+COPY --from=drift /app/Dockerfile.catalog .
+
+# Configure the entrypoint and command
+ENTRYPOINT ["/bin/opm"]
+
+# Copy the EDO FBC catalog (OCP version-based)
+COPY catalog/v4.15/catalog.yaml /configs/external-dns-operator/catalog.yaml
+
+# Pre-populate serve cache
+RUN ["/bin/opm", "serve", "/configs/external-dns-operator", "--cache-dir=/tmp/cache", "--cache-only"]
+
+# Set DC-specific label for the location of the DC root directory
+# in the image
+LABEL operators.operatorframework.io.index.configs.v1=/configs
+
+# Configure the command to serve the catalog
+CMD ["serve", "/configs/external-dns-operator", "--cache-dir=/tmp/cache"]
