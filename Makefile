@@ -42,7 +42,7 @@ endif
 CONTROLLER_GEN := go run sigs.k8s.io/controller-tools/cmd/controller-gen
 SETUP_ENVTEST := go run sigs.k8s.io/controller-runtime/tools/setup-envtest
 KUSTOMIZE := go run sigs.k8s.io/kustomize/kustomize/v4
-K8S_ENVTEST_VERSION := 1.21.4
+K8S_ENVTEST_VERSION := 1.27.0
 
 PACKAGE=github.com/openshift/external-dns-operator
 
@@ -211,7 +211,7 @@ endef
 .PHONY: lint
 ## Checks the code with golangci-lint
 lint: $(GOLANGCI_LINT_BIN)
-	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml --deadline=30m
+	$(GOLANGCI_LINT_BIN) run -c .golangci.yaml
 
 $(GOLANGCI_LINT_BIN):
 	mkdir -p $(BIN_DIR)
