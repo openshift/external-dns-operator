@@ -7,17 +7,12 @@ approvers:
   - gcs278
   - grzpiotrowski
   - Thealisyed
-  - rohara
   - davidesalerno
 reviewers:
-  - knobunc
-  - Miciah
-  - candita
   - rfredette
   - alebedev87
   - gcs278
   - grzpiotrowski
   - Thealisyed
-  - rohara
   - davidesalerno
 component: DNS
