@@ -69,6 +69,12 @@ spec:
       name: PATH_TO_MIRROR_SET
       default: ".tekton/images-mirror-set.yaml"
       type: string
+    - description: |
+        The directory inside the FBC fragment image that contains the catalog configuration.
+        This value is used in the CatalogSource's extractContent.catalogDir field.
+      name: CATALOG_DIR
+      default: "/configs"
+      type: string
   tasks:
     - name: parse-metadata
       taskRef:
@@ -682,7 +688,7 @@ spec:
                 grpcPodConfig:
                   securityContextConfig: restricted
                   extractContent:
-                    catalogDir: /configs
+                    catalogDir: $(params.CATALOG_DIR)
                     cacheDir: /tmp/cache
               EOF
               )
