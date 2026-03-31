@@ -45,8 +45,9 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RELATED_IMAGE_EXTERNAL_DNS
-          # openshift/external-dns commit: 0e095a3db5ae9518a1744dd85d3f7ed2e359768d
-          value: quay.io/external-dns-operator/external-dns@sha256:6fa3afebbc99926163d4c827a638473e106e6589e9f3d3d3accd3e426693f04f
+          # Use "1.2" floating tag to avoid problems with the pruning of older mirrored images.
+          # Ref: https://issues.redhat.com/browse/OCPBUGS-57339.
+          value: quay.io/external-dns-operator/external-dns:1.2
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:
