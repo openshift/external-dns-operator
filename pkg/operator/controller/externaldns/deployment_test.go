@@ -3002,7 +3002,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			expect:             false,
 			originalDeployment: testDeploymentWithVolumes(testSecretVolume("testcreds", "testsecret", "creds", "/run/secrets")),
 			mutate: func(dep *appsv1.Deployment) {
-				dep.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.DefaultMode = nil
+				dep.Spec.Template.Spec.Volumes[0].Secret.DefaultMode = nil
 			},
 		},
 		{
@@ -3010,7 +3010,7 @@ func TestExternalDNSDeploymentChanged(t *testing.T) {
 			expect:             false,
 			originalDeployment: testDeploymentWithVolumes(testConfigMapVolume("testcerts", "testcerts", "key", "/etc/pki/trust")),
 			mutate: func(dep *appsv1.Deployment) {
-				dep.Spec.Template.Spec.Volumes[0].VolumeSource.ConfigMap.DefaultMode = nil
+				dep.Spec.Template.Spec.Volumes[0].ConfigMap.DefaultMode = nil
 			},
 		},
 		{
