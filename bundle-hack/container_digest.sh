@@ -1,6 +1,6 @@
 # Do not remove comment lines, they are there to reduce conflicts
 # Operator
-export OPERATOR_IMAGE_PULLSPEC='quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-operator-container-ext-dns-optr-1-2-rhel-8@sha256:add347fb3d8cc0ee0d516e3de429e7684b8a3cb804ed279c130f33163331f6b0'
+export OPERATOR_IMAGE_PULLSPEC='quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-operator-container-ext-dns-optr-1-2-rhel-8@sha256:c08df118fae3d9c426de3cb11f4a42a4982bacef5640952d83f743e8adc258f9'
 # Controller
 export OPERAND_IMAGE_PULLSPEC='quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-container-ext-dns-optr-1-2-rhel-8@sha256:bf19f2bb53b98da650bd6251e53972a706f5502f2338fd9c26aea77cf742792d'
 # kube-rbac-proxy
