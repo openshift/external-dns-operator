@@ -79,7 +79,7 @@
       }
     ],
     "schedule": [
-      "after 5am on tuesday"
+      "at any time"
     ],
     "postUpgradeTasks": {
       "commands": [
