@@ -29,7 +29,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:41c6aeb7c681d89b6
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="external-dns-operator"
-LABEL version="1.2.2"
+LABEL version="1.2.1"
 WORKDIR /
 COPY --from=builder /workspace/bin/external-dns-operator /
 # Red Hat certified container images have licenses.

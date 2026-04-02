@@ -92,7 +92,7 @@ if '@sha256:' not in operator_pullspec:
     exit(3)
 
 operator_sha = operator_pullspec.split('@sha256:')[1]
-annotation_image_name = f'external-dns-rhel9-operator-{operator_sha}-annotation'
+annotation_image_name = f'external-dns-rhel8-operator-{operator_sha}-annotation'
 csv['spec']['relatedImages'] = [
     {'name': annotation_image_name, 'image': operator_pullspec},
     {'name': 'external-dns-operator', 'image': operator_pullspec},
