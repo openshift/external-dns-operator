@@ -319,7 +319,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
-  name: external-dns-operator.v1.1.0
+  name: external-dns-operator.v1.1.2
   namespace: external-dns-operator
 spec:
   apiservicedefinitions: {}
@@ -598,7 +598,7 @@ spec:
   minKubeVersion: 1.22.0
   provider:
     name: Red Hat, Inc.
-  version: 1.1.0
+  version: 1.1.2
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
