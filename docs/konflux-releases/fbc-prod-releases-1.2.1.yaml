@@ -1,0 +1,129 @@
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-12/releases/ext-dns-optr-fbc-v4-12-20260416-205444-000-580413e-l6wgk
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-12-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-12-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-12-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-13/releases/ext-dns-optr-fbc-v4-13-20260416-205444-000-580413e-562z9
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-13-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-13-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-13-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-14/releases/ext-dns-optr-fbc-v4-14-20260416-205444-000-580413e-qds7q
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-14-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-14-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-14-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-15/releases/ext-dns-optr-fbc-v4-15-20260416-205444-000-580413e-67qks
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-15-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-15-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-15-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-16/releases/ext-dns-optr-fbc-v4-16-20260416-205444-000-580413e-dkkf9
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-16-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-16-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-16-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-17/releases/ext-dns-optr-fbc-v4-17-20260416-205444-000-580413e-qz8rl
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-17-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-17-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-17-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-18/releases/ext-dns-optr-fbc-v4-18-20260416-205444-000-580413e-bl4hx
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-18-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-18-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-18-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-19/releases/ext-dns-optr-fbc-v4-19-20260416-205444-000-580413e-279cw
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-19-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-19-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-19-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-20/releases/ext-dns-optr-fbc-v4-20-20260416-205444-000-580413e-rstsr
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-20-20260416-205444-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-20-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-20-20260416-205444-000
+---
+# Stage release: https://konflux-ui.apps.kflux-prd-rh03.nnv1.p1.openshiftapps.com/ns/external-dns-operator-tenant/applications/ext-dns-optr-fbc-v4-21/releases/ext-dns-optr-fbc-v4-21-20260416-205445-000-580413e-kl2sw
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  generateName: ext-dns-optr-fbc-v4-21-20260416-205445-000-
+  namespace: external-dns-operator-tenant
+  labels:
+    release.appstudio.openshift.io/automated: "false"
+    release.appstudio.openshift.io/author: alebedev
+spec:
+  releasePlan: external-dns-fbc-v4-21-release-plan-prod
+  snapshot: ext-dns-optr-fbc-v4-21-20260416-205445-000
