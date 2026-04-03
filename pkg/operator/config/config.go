@@ -35,6 +35,7 @@ import (
 
 const (
 	DefaultExternalDNSImage        = "quay.io/external-dns-operator/external-dns:latest"
+	DefaultKubeRBACProxyImage      = "quay.io/openshift/origin-kube-rbac-proxy:latest"
 	DefaultMetricsAddr             = "127.0.0.1:8080"
 	DefaultOperatorNamespace       = "external-dns-operator"
 	DefaultOperandNamespace        = "external-dns"
@@ -58,6 +59,10 @@ type Config struct {
 	// ExternalDNSImage is the ExternalDNS image for the ExternalDNS container(s) managed
 	// by the operator.
 	ExternalDNSImage string
+
+	// KubeRBACProxyImage is the kube-rbac-proxy image for the metrics sidecar container
+	// in the ExternalDNS operand deployment.
+	KubeRBACProxyImage string
 
 	// MetricsBindAddress is the TCP address that the operator should bind to for
 	// serving prometheus metrics. It can be set to "0" to disable the metrics serving.

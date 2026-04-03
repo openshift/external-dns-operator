@@ -42,6 +42,7 @@ func main() {
 	flag.StringVar(&opCfg.OperatorNamespace, "operator-namespace", operatorconfig.DefaultOperatorNamespace, "The namespace that the operator is running in.")
 	flag.StringVar(&opCfg.OperandNamespace, "operand-namespace", operatorconfig.DefaultOperandNamespace, "The namespace that ExternalDNS containers should run in.")
 	flag.StringVar(&opCfg.ExternalDNSImage, "externaldns-image", operatorconfig.DefaultExternalDNSImage, "The container image used for running ExternalDNS.")
+	flag.StringVar(&opCfg.KubeRBACProxyImage, "kube-rbac-proxy-image", operatorconfig.DefaultKubeRBACProxyImage, "The container image used for the kube-rbac-proxy metrics sidecar.")
 	flag.StringVar(&opCfg.CertDir, "cert-dir", operatorconfig.DefaultCertDir, "The directory for keys and certificates for serving the webhook.")
 	flag.StringVar(&opCfg.TrustedCAConfigMapName, "trusted-ca-configmap", operatorconfig.DefaultTrustedCAConfigMapName, "The name of the config map containing TLS CA(s) which should be trusted by ExternalDNS containers. PEM encoded file under \"ca-bundle.crt\" key is expected.")
 	flag.BoolVar(&opCfg.EnableWebhook, "enable-webhook", operatorconfig.DefaultEnableWebhook, "Enable the validating webhook server. Defaults to true.")
