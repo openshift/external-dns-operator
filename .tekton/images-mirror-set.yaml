@@ -14,3 +14,12 @@ spec:
     - source: registry.redhat.io/ubi9/ubi-minimal
       mirrors:
         - brew.registry.redhat.io/ubi9/ubi-minimal
+    - source: registry.stage.redhat.io/edo/external-dns-operator-bundle
+      mirrors:
+        - quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-operator-bundle-container-ext-dns-optr-1-2-rhel-8
+    - source: registry.stage.redhat.io/edo/external-dns-rhel8-operator
+      mirrors:
+        - quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-operator-container-ext-dns-optr-1-2-rhel-8
+    - source: registry.stage.redhat.io/edo/external-dns-rhel8
+      mirrors:
+        - quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-2-rhel-8/external-dns-container-ext-dns-optr-1-2-rhel-8
