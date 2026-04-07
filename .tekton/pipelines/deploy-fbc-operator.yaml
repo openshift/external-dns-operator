@@ -175,9 +175,9 @@ spec:
                 cpu: 100m
             env:
               - name: SOURCE_GIT_URL
-                value: https://github.com/Thealisyed/external-dns-operator
+                value: https://github.com/openshift/external-dns-operator
               - name: SOURCE_GIT_REVISION
-                value: intpipeline
+                value: main
               - name: PATH_TO_MIRROR_SET
                 value: $(params.PATH_TO_MIRROR_SET)
             script: |
