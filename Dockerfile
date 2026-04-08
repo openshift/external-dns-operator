@@ -1,14 +1,15 @@
 # Build the manager binary
-FROM golang:1.25 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.25 as builder
 
 WORKDIR /opt/app-root/src
 COPY . .
+RUN git config --global --add safe.directory /opt/app-root/src
 
 # Build
 RUN make build-operator
 
 # Use minimal base image to package the manager binary
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
 COPY --from=builder /opt/app-root/src/bin/external-dns-operator .
 
