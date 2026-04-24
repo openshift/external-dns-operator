@@ -118,13 +118,14 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 
 	// Create and register the externaldns controller with the operator manager.
 	if _, err := externaldnsctrl.New(mgr, externaldnsctrl.Config{
-		Namespace:         opCfg.OperandNamespace,
-		Image:             opCfg.ExternalDNSImage,
-		OperatorNamespace: opCfg.OperatorNamespace,
-		IsOpenShift:       opCfg.IsOpenShift,
-		PlatformStatus:    opCfg.PlatformStatus,
-		InjectTrustedCA:   opCfg.InjectTrustedCA(),
-		RequeuePeriod:     opCfg.RequeuePeriod(),
+		Namespace:          opCfg.OperandNamespace,
+		Image:              opCfg.ExternalDNSImage,
+		KubeRBACProxyImage: opCfg.KubeRBACProxyImage,
+		OperatorNamespace:  opCfg.OperatorNamespace,
+		IsOpenShift:        opCfg.IsOpenShift,
+		PlatformStatus:     opCfg.PlatformStatus,
+		InjectTrustedCA:    opCfg.InjectTrustedCA(),
+		RequeuePeriod:      opCfg.RequeuePeriod(),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}
