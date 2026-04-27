@@ -9,6 +9,8 @@ spec:
     The deploy-fbc-operator pipeline automates the provisioning of a EaaS Hypershift cluster and the deployment of an operator from a given FBC (File-Based Catalog) fragment.
     It automates the process of retrieving an unreleased bundle from the FBC, selecting an appropriate OpenShift version and architecture for cluster provisioning,
     installing the operator, and gathering cluster artifacts.
+  workspaces:
+    - name: shared-data
   params:
     - description: |
         Spec section of an ApplicationSnapshot resource. Not all fields of the
@@ -117,10 +119,12 @@ spec:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
           values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
+      workspaces:
+        - name: shared-data
       taskSpec:
+        workspaces:
+          - name: shared-data
         results:
-          - name: mirrorSetYaml
-            description: "Contents of the image mirror set yaml file"
           - name: serializedMirrorSetYaml
             description: "A serialized string of an ImageDigestMirrorSet YAML, where each mirror entry is formatted with escaped newlines to preserve structure in a single-line format"
           - name: scorecardConfigImages
@@ -206,7 +210,8 @@ spec:
                 exit 1
               fi
 
-              echo -n "$mirror_set_yaml" > "$(results.mirrorSetYaml.path)"
+              echo "Image mirror set: $mirror_set_yaml"
+              echo -n "$mirror_set_yaml" > "$(workspaces.shared-data.path)/mirrorSetYaml"
 
               serialized_mirror_set=$(serialize_image_mirrors_yaml "${mirror_set_yaml}")
               echo "Serialized image mirror set: $serialized_mirror_set"
@@ -239,7 +244,11 @@ spec:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
           values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
+      workspaces:
+        - name: shared-data
       taskSpec:
+        workspaces:
+          - name: shared-data
         results:
           - name: unreleasedBundle
             description: "Unreleased bundle image (may be mirrored)"
@@ -282,12 +291,12 @@ spec:
             env:
               - name: BUNDLE_IMAGE
                 value: "$(steps.get-unreleased-bundle.results.unreleasedBundle)"
-              - name: MIRROR_SET_YAML
-                value: "$(tasks.fetch-config-files.results.mirrorSetYaml)"
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
               . /utils.sh
+
+              MIRROR_SET_YAML=$(cat "$(workspaces.shared-data.path)/mirrorSetYaml")
 
               replaced_image=""
 
