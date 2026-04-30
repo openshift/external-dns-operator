@@ -118,6 +118,7 @@ func ExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1beta1.E
 func hashString(str string) string {
 	hasher := getHasher()
 	hasher.Write([]byte(str))
+	//nolint:staticcheck // QF1010: fmt.Sprint is used intentionally to get string representation of byte slice
 	return rand.SafeEncodeString(fmt.Sprint(hasher.Sum(nil)))
 }
 
