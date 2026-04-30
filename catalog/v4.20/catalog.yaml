@@ -1648,7 +1648,7 @@ relatedImages:
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
-image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:e7573d0076a72f04f70418033f6b15c3f5b18dc02e46b67ae7de9ab3878d322f
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:196d0e7068f2113ebbf1a99a9b50e19934384ffa6edbf7cd7eabe7b8a3cd3547
 name: external-dns-operator.v1.1.2
 package: external-dns-operator
 properties:
@@ -1968,8 +1968,8 @@ properties:
         ]
       capabilities: Basic Install
       certified: "false"
-      containerImage: registry.stage.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
-      createdAt: 2026-04-24T10:47:33
+      containerImage: registry.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
+      createdAt: 2026-04-29T10:12:26
       features.operators.openshift.io/disconnected: "true"
       features.operators.openshift.io/fips-compliant: "true"
       features.operators.openshift.io/proxy-aware: "true"
@@ -2031,16 +2031,16 @@ properties:
     provider:
       name: Red Hat, Inc.
 relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:196d0e7068f2113ebbf1a99a9b50e19934384ffa6edbf7cd7eabe7b8a3cd3547
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
+  name: external-dns-rhel8-operator-0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d-annotation
+- image: registry.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel8@sha256:83d04f540dce7130faec6c5befcc3b4314c007a7c11eb59c77e5507dc6f7fdd5
+  name: external_dns
 - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ba9ff4c933739f1774bc8277d636053c5306863221a8c7b7b9ddc4470eb7feff
   name: kube-rbac-proxy
-- image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:e7573d0076a72f04f70418033f6b15c3f5b18dc02e46b67ae7de9ab3878d322f
-  name: ""
-- image: registry.stage.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
-  name: external-dns-rhel8-operator-0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d-annotation
-- image: registry.stage.redhat.io/edo/external-dns-rhel8-operator@sha256:0cdc439a39fb8998c61290686226738b5185e1a663a936021edbb5208a13619d
-  name: external-dns-operator
-- image: registry.stage.redhat.io/edo/external-dns-rhel8@sha256:7c5b02e47f3f15d9cebeb0f0165616ad40ee5979e38a0aafc1678b6a3c69f9ce
-  name: external_dns
 schema: olm.bundle
 ---
 image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:a614ec94c2468e34e129e9ecd4bc0d1895eb67b96e77eb5ad94cd8bd507860f5
