@@ -62,6 +62,21 @@ func ExternalDNSGlobalResourceName() string {
 	return ExternalDNSBaseName
 }
 
+// ExternalDNSMetricsServiceName returns the name for the metrics service of the given ExternalDNS instance.
+func ExternalDNSMetricsServiceName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return ExternalDNSBaseName + "-" + externalDNS.Name + "-metrics"
+}
+
+// ExternalDNSServiceMonitorName returns the name for the service monitor of the given ExternalDNS instance.
+func ExternalDNSServiceMonitorName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return ExternalDNSBaseName + "-" + externalDNS.Name + "-metrics-monitor"
+}
+
+// ExternalDNSMetricsSecretName returns the name for the metrics serving cert secret of the given ExternalDNS instance.
+func ExternalDNSMetricsSecretName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return ExternalDNSBaseName + "-" + externalDNS.Name + "-metrics-cert"
+}
+
 // ExternalDNSContainerName returns the container name unique for the given DNS zone.
 func ExternalDNSContainerName(zone string) string {
 	return ExternalDNSBaseName + "-" + hashString(zone)
