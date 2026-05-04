@@ -43,7 +43,7 @@ LABEL com.redhat.delivery.operator.bundle: true
 ARG FULL_COMMIT
 ARG GIT_URL
 
-LABEL name=external-dns-operator-bundle
+LABEL name="edo/external-dns-operator-bundle"
 LABEL version="1.3.3"
 LABEL release="1.3.3"
 LABEL maintainer='NetworkEdge team <aos-network-edge-staff@redhat.com>'
