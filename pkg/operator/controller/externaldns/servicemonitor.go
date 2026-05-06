@@ -22,10 +22,10 @@ import (
 	"reflect"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
@@ -41,9 +41,9 @@ var serviceMonitorGVK = schema.GroupVersionKind{
 func (r *reconciler) ensureExternalDNSServiceMonitor(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) error {
 	desired := desiredServiceMonitor(namespace, externalDNS)
 
-	// Set the controller reference so the ServiceMonitor is owned by the ExternalDNS CR.
-	ownerRef := metav1.NewControllerRef(externalDNS, operatorv1beta1.GroupVersion.WithKind("ExternalDNS"))
-	desired.SetOwnerReferences([]metav1.OwnerReference{*ownerRef})
+	if err := controllerutil.SetControllerReference(externalDNS, desired, r.scheme); err != nil {
+		return fmt.Errorf("failed to set the controller reference for service monitor: %w", err)
+	}
 
 	current := &unstructured.Unstructured{}
 	current.SetGroupVersionKind(serviceMonitorGVK)
@@ -68,30 +68,13 @@ func (r *reconciler) ensureExternalDNSServiceMonitor(ctx context.Context, namesp
 	if serviceMonitorChanged(current, desired) {
 		desiredSpec, _, _ := unstructured.NestedMap(desired.Object, "spec")
 		current.Object["spec"] = desiredSpec
+		current.SetLabels(desired.GetLabels())
 		if err := r.client.Update(ctx, current); err != nil {
 			return fmt.Errorf("failed to update service monitor %s/%s: %w", namespace, current.GetName(), err)
 		}
 		r.log.Info("updated service monitor", "namespace", namespace, "name", current.GetName())
 	}
 
-	return nil
-}
-
-// deleteExternalDNSServiceMonitor deletes the service monitor if it exists.
-func (r *reconciler) deleteExternalDNSServiceMonitor(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) error {
-	sm := &unstructured.Unstructured{}
-	sm.SetGroupVersionKind(serviceMonitorGVK)
-	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSServiceMonitorName(externalDNS)}
-	if err := r.client.Get(ctx, nsName, sm); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to get service monitor %s: %w", nsName, err)
-	}
-	if err := r.client.Delete(ctx, sm); err != nil {
-		return fmt.Errorf("failed to delete service monitor %s: %w", nsName, err)
-	}
-	r.log.Info("deleted service monitor", "namespace", namespace, "name", nsName.Name)
 	return nil
 }
 
@@ -154,6 +137,13 @@ func desiredServiceMonitor(namespace string, externalDNS *operatorv1beta1.Extern
 // serviceMonitorChanged returns true if the fields we manage have drifted
 // between the current and desired ServiceMonitor objects.
 func serviceMonitorChanged(current, desired *unstructured.Unstructured) bool {
+	desiredLabels := desired.GetLabels()
+	currentLabels := current.GetLabels()
+	for k, v := range desiredLabels {
+		if currentLabels[k] != v {
+			return true
+		}
+	}
 	for _, field := range []string{"endpoints", "selector", "namespaceSelector"} {
 		currentVal, _, _ := unstructured.NestedFieldNoCopy(current.Object, "spec", field)
 		desiredVal, _, _ := unstructured.NestedFieldNoCopy(desired.Object, "spec", field)

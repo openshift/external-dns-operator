@@ -32,9 +32,9 @@ import (
 	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 )
 
-// metricsService returns the desired metrics Service for the given ExternalDNS instance.
+// desiredMetricsService returns the desired metrics Service for the given ExternalDNS instance.
 // It creates one port per zone container to match the kube-rbac-proxy sidecars.
-func metricsService(namespace string, externalDNS *operatorv1beta1.ExternalDNS) *corev1.Service {
+func desiredMetricsService(namespace string, externalDNS *operatorv1beta1.ExternalDNS) *corev1.Service {
 	metricsSecretName := controller.ExternalDNSMetricsSecretName(externalDNS)
 	numZones := numMetricsPorts(externalDNS)
 
@@ -73,7 +73,7 @@ func metricsService(namespace string, externalDNS *operatorv1beta1.ExternalDNS) 
 
 // ensureExternalDNSMetricsService ensures that the metrics service for the operand exists.
 func (r *reconciler) ensureExternalDNSMetricsService(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) error {
-	desired := metricsService(namespace, externalDNS)
+	desired := desiredMetricsService(namespace, externalDNS)
 
 	if err := controllerutil.SetControllerReference(externalDNS, desired, r.scheme); err != nil {
 		return fmt.Errorf("failed to set the controller reference for metrics service: %w", err)
@@ -94,8 +94,10 @@ func (r *reconciler) ensureExternalDNSMetricsService(ctx context.Context, namesp
 	}
 
 	if metricsServiceChanged(current, desired) {
-		// Preserve ClusterIP to avoid immutable field errors.
 		desired.Spec.ClusterIP = current.Spec.ClusterIP
+		desired.Spec.ClusterIPs = current.Spec.ClusterIPs
+		desired.Spec.IPFamilies = current.Spec.IPFamilies
+		desired.Spec.IPFamilyPolicy = current.Spec.IPFamilyPolicy
 		desired.ResourceVersion = current.ResourceVersion
 		if err := r.client.Update(ctx, desired); err != nil {
 			return fmt.Errorf("failed to update metrics service %s/%s: %w", desired.Namespace, desired.Name, err)
@@ -106,25 +108,18 @@ func (r *reconciler) ensureExternalDNSMetricsService(ctx context.Context, namesp
 	return nil
 }
 
-// deleteExternalDNSMetricsService deletes the metrics service if it exists.
-func (r *reconciler) deleteExternalDNSMetricsService(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) error {
-	svc := &corev1.Service{}
-	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSMetricsServiceName(externalDNS)}
-	if err := r.client.Get(ctx, nsName, svc); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to get metrics service %s: %w", nsName, err)
-	}
-	if err := r.client.Delete(ctx, svc); err != nil {
-		return fmt.Errorf("failed to delete metrics service %s: %w", nsName, err)
-	}
-	r.log.Info("deleted metrics service", "namespace", namespace, "name", nsName.Name)
-	return nil
-}
-
 // metricsServiceChanged returns true if the current service needs to be updated to match the desired.
 func metricsServiceChanged(current, desired *corev1.Service) bool {
+	for k, v := range desired.Labels {
+		if current.Labels[k] != v {
+			return true
+		}
+	}
+	for k, v := range desired.Annotations {
+		if current.Annotations[k] != v {
+			return true
+		}
+	}
 	if !reflect.DeepEqual(current.Spec.Selector, desired.Spec.Selector) {
 		return true
 	}

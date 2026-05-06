@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -104,8 +105,18 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Service{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
-		return nil, err
+	// Metrics resources (Service, ServiceMonitor, kube-rbac-proxy sidecar) depend on
+	// OpenShift's serving-cert annotation for TLS certificate generation.
+	if cfg.KubeRBACProxyImage != "" && cfg.IsOpenShift {
+		if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Service{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+			return nil, err
+		}
+
+		smInformer := &unstructured.Unstructured{}
+		smInformer.SetGroupVersionKind(serviceMonitorGVK)
+		if err := c.Watch(source.Kind[client.Object](operatorCache, smInformer, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+			return nil, err
+		}
 	}
 
 	// secret replicated by the credentials controller
@@ -213,30 +224,26 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		trustCAConfigMap = configMap
 	}
 
-	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, r.config.KubeRBACProxyImage, sa, credSecret, trustCAConfigMap, externalDNS)
+	// The kube-rbac-proxy sidecar relies on OpenShift's serving-cert controller
+	// to generate TLS certificates. Only inject it on OpenShift clusters.
+	kubeRBACProxyImage := ""
+	if r.config.IsOpenShift {
+		kubeRBACProxyImage = r.config.KubeRBACProxyImage
+	}
+
+	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, kubeRBACProxyImage, sa, credSecret, trustCAConfigMap, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
 
 	// Ensure metrics service and service monitor for Prometheus scraping.
-	// If kube-rbac-proxy image is not configured, clean up any existing metrics resources.
-	if r.config.KubeRBACProxyImage != "" {
+	// Owner references on these resources ensure cascade deletion when the ExternalDNS CR is removed.
+	if kubeRBACProxyImage != "" {
 		if err := r.ensureExternalDNSMetricsService(ctx, r.config.Namespace, externalDNS); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS metrics service: %w", err)
 		}
-		if r.config.IsOpenShift {
-			if err := r.ensureExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service monitor: %w", err)
-			}
-		}
-	} else {
-		if err := r.deleteExternalDNSMetricsService(ctx, r.config.Namespace, externalDNS); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to delete externalDNS metrics service: %w", err)
-		}
-		if r.config.IsOpenShift {
-			if err := r.deleteExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to delete externalDNS service monitor: %w", err)
-			}
+		if err := r.ensureExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service monitor: %w", err)
 		}
 	}
 

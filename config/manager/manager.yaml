@@ -3,6 +3,7 @@ kind: Namespace
 metadata:
   labels:
     name: external-dns-operator
+    openshift.io/cluster-monitoring: "true"
   name: external-dns-operator
 ---
 apiVersion: apps/v1
@@ -36,6 +37,7 @@ spec:
         - --operator-namespace=$(OPERATOR_NAMESPACE)
         - --operand-namespace=$(OPERATOR_NAMESPACE)
         - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
+        - --kube-rbac-proxy-image=$(RELATED_IMAGE_KUBE_RBAC_PROXY)
         - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
         - --leader-elect
         - --webhook-disable-http2
@@ -49,6 +51,8 @@ spec:
             # Use "latest" floating tag to avoid problems with the prunning of older mirorred images.
             # Ref: https://issues.redhat.com/browse/OCPBUGS-57339.
           value: quay.io/external-dns-operator/external-dns:latest
+        - name: RELATED_IMAGE_KUBE_RBAC_PROXY
+          value: quay.io/openshift/origin-kube-rbac-proxy:latest
         - name: TRUSTED_CA_CONFIGMAP_NAME
         securityContext:
           capabilities:

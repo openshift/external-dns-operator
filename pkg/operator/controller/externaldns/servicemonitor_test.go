@@ -148,6 +148,15 @@ func TestServiceMonitorChanged(t *testing.T) {
 			changed: false,
 		},
 		{
+			name: "label changed",
+			mutate: func(sm *unstructured.Unstructured) {
+				labels := sm.GetLabels()
+				labels[appInstanceLabel] = "different"
+				sm.SetLabels(labels)
+			},
+			changed: true,
+		},
+		{
 			name: "extra defaulted field in spec does not trigger change",
 			mutate: func(sm *unstructured.Unstructured) {
 				// Simulate API server adding a defaulted field we don't manage.

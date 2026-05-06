@@ -710,6 +710,15 @@ func numMetricsPorts(externalDNS *operatorv1beta1.ExternalDNS) int {
 	return len(externalDNS.Spec.Zones)
 }
 
+// kubeRBACProxyContainerNameForSeq returns the container name for the kube-rbac-proxy sidecar
+// at the given sequence index.
+func kubeRBACProxyContainerNameForSeq(seq int) string {
+	if seq == 0 {
+		return kubeRBACProxyContainerName
+	}
+	return fmt.Sprintf("%s-%d", kubeRBACProxyContainerName, seq)
+}
+
 // kubeRBACProxyPortNameForSeq returns the port name for the kube-rbac-proxy sidecar
 // at the given sequence index.
 func kubeRBACProxyPortNameForSeq(seq int) string {
@@ -725,10 +734,7 @@ func kubeRBACProxyContainer(image string, seq int) corev1.Container {
 	securePort := kubeRBACProxySecurePort + seq
 	upstreamPort := defaultMetricsStartPort + seq
 	portName := kubeRBACProxyPortNameForSeq(seq)
-	containerName := kubeRBACProxyContainerName
-	if seq > 0 {
-		containerName = fmt.Sprintf("%s-%d", kubeRBACProxyContainerName, seq)
-	}
+	containerName := kubeRBACProxyContainerNameForSeq(seq)
 	return corev1.Container{
 		Name:  containerName,
 		Image: image,
@@ -787,4 +793,3 @@ func metricsCertVolume(secretName string) corev1.Volume {
 		},
 	}
 }
-

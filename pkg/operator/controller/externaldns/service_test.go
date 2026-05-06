@@ -60,7 +60,7 @@ func TestMetricsService(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			svc := metricsService(tc.namespace, tc.externalDNS)
+			svc := desiredMetricsService(tc.namespace, tc.externalDNS)
 
 			if svc.Name != tc.expectedName {
 				t.Errorf("expected service name %q, got %q", tc.expectedName, svc.Name)
@@ -103,7 +103,7 @@ func TestMetricsService(t *testing.T) {
 
 func TestMetricsServiceChanged(t *testing.T) {
 	extDNS := testAWSExternalDNS(operatorv1beta1.SourceTypeService)
-	base := metricsService(test.OperandNamespace, extDNS)
+	base := desiredMetricsService(test.OperandNamespace, extDNS)
 
 	testCases := []struct {
 		name    string
@@ -114,6 +114,20 @@ func TestMetricsServiceChanged(t *testing.T) {
 			name:    "no change",
 			mutate:  func(s *corev1.Service) {},
 			changed: false,
+		},
+		{
+			name: "label changed",
+			mutate: func(s *corev1.Service) {
+				s.Labels[appInstanceLabel] = "different"
+			},
+			changed: true,
+		},
+		{
+			name: "annotation changed",
+			mutate: func(s *corev1.Service) {
+				s.Annotations["service.beta.openshift.io/serving-cert-secret-name"] = "wrong-secret"
+			},
+			changed: true,
 		},
 		{
 			name: "selector changed",
@@ -159,7 +173,7 @@ func TestMetricsServiceChanged(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			current := base.DeepCopy()
 			tc.mutate(current)
-			desired := metricsService(test.OperandNamespace, extDNS)
+			desired := desiredMetricsService(test.OperandNamespace, extDNS)
 
 			got := metricsServiceChanged(current, desired)
 			if got != tc.changed {
@@ -168,4 +182,3 @@ func TestMetricsServiceChanged(t *testing.T) {
 		})
 	}
 }
-
