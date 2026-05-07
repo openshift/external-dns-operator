@@ -105,16 +105,14 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 		return nil, err
 	}
 
-	if cfg.KubeRBACProxyImage != "" {
-		if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Service{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
-			return nil, err
-		}
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Service{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+		return nil, err
+	}
 
-		smInformer := &unstructured.Unstructured{}
-		smInformer.SetGroupVersionKind(serviceMonitorGVK)
-		if err := c.Watch(source.Kind[client.Object](operatorCache, smInformer, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
-			return nil, err
-		}
+	smInformer := &unstructured.Unstructured{}
+	smInformer.SetGroupVersionKind(serviceMonitorGVK)
+	if err := c.Watch(source.Kind[client.Object](operatorCache, smInformer, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+		return nil, err
 	}
 
 	// secret replicated by the credentials controller
@@ -227,15 +225,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
 	}
 
-	// Ensure metrics service and service monitor for Prometheus scraping.
-	// Owner references on these resources ensure cascade deletion when the ExternalDNS CR is removed.
-	if r.config.KubeRBACProxyImage != "" {
-		if err := r.ensureExternalDNSMetricsService(ctx, r.config.Namespace, externalDNS); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS metrics service: %w", err)
-		}
-		if err := r.ensureExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service monitor: %w", err)
-		}
+	if err := r.ensureExternalDNSMetricsService(ctx, r.config.Namespace, externalDNS); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS metrics service: %w", err)
+	}
+	if err := r.ensureExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service monitor: %w", err)
 	}
 
 	if err := r.updateExternalDNSStatus(ctx, externalDNS, currentDeployment, true); err != nil {

@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   labels:
     name: external-dns-operator
-    openshift.io/cluster-monitoring: "true"
   name: external-dns-operator
 ---
 apiVersion: apps/v1

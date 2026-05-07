@@ -298,8 +298,6 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	}
-	// Add kube-rbac-proxy sidecar(s) and metrics cert volume for secure metrics exposure.
-	// One sidecar per zone container, each proxying the corresponding metrics port.
 	if cfg.kubeRBACProxyImage != "" {
 		for i := 0; i < cbld.counter; i++ {
 			proxyContainer := kubeRBACProxyContainer(cfg.kubeRBACProxyImage, i)
