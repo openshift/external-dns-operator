@@ -118,6 +118,10 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		return nil, fmt.Errorf("failed to fill the platform details: %w", err)
 	}
 
+	if opCfg.KubeRBACProxyImage == "" {
+		return nil, fmt.Errorf("kube-rbac-proxy image is required but not configured")
+	}
+
 	// Create and register the externaldns controller with the operator manager.
 	if _, err := externaldnsctrl.New(mgr, externaldnsctrl.Config{
 		Namespace:          opCfg.OperandNamespace,
