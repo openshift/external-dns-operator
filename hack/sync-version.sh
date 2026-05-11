@@ -48,6 +48,7 @@ for containerfile in "${containerfiles[@]}"; do
     else
         echo "[UPDATE] $(basename "$containerfile"): updating from $current_version to $version"
         sed -i "s/version=\"[^\"]*\"/version=\"$version\"/" "$containerfile"
+        sed -i "s/release=\"[^\"]*\"/release=\"$version\"/" "$containerfile"
         any_updated=true
     fi
 done
