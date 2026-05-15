@@ -51,8 +51,10 @@ type Operator struct {
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
 // local role
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=secrets;serviceaccounts;configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",namespace=external-dns-operator,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups=monitoring.coreos.com,namespace=external-dns-operator,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
@@ -116,15 +118,20 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		return nil, fmt.Errorf("failed to fill the platform details: %w", err)
 	}
 
+	if opCfg.KubeRBACProxyImage == "" {
+		return nil, fmt.Errorf("kube-rbac-proxy image is required but not configured")
+	}
+
 	// Create and register the externaldns controller with the operator manager.
 	if _, err := externaldnsctrl.New(mgr, externaldnsctrl.Config{
-		Namespace:         opCfg.OperandNamespace,
-		Image:             opCfg.ExternalDNSImage,
-		OperatorNamespace: opCfg.OperatorNamespace,
-		IsOpenShift:       opCfg.IsOpenShift,
-		PlatformStatus:    opCfg.PlatformStatus,
-		InjectTrustedCA:   opCfg.InjectTrustedCA(),
-		RequeuePeriod:     opCfg.RequeuePeriod(),
+		Namespace:          opCfg.OperandNamespace,
+		Image:              opCfg.ExternalDNSImage,
+		KubeRBACProxyImage: opCfg.KubeRBACProxyImage,
+		OperatorNamespace:  opCfg.OperatorNamespace,
+		IsOpenShift:        opCfg.IsOpenShift,
+		PlatformStatus:     opCfg.PlatformStatus,
+		InjectTrustedCA:    opCfg.InjectTrustedCA(),
+		RequeuePeriod:      opCfg.RequeuePeriod(),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create externaldns controller: %w", err)
 	}

@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -56,6 +57,16 @@ const (
 	sslCertDirEnvVar = "SSL_CERT_DIR"
 	// all capabilities in the container security context
 	allCapabilities = "ALL"
+	//
+	// kube-rbac-proxy metrics sidecar
+	//
+	kubeRBACProxyContainerName = "kube-rbac-proxy"
+	kubeRBACProxySecurePort    = 8443
+	kubeRBACProxyPortName      = "https"
+	metricsCertVolumeName      = "metrics-cert"
+	metricsCertMountPath       = "/var/run/secrets/serving-cert"
+	metricsCertTLSCertFile     = metricsCertMountPath + "/tls.crt"
+	metricsCertTLSKeyFile      = metricsCertMountPath + "/tls.key"
 	//
 	// AWS
 	//
@@ -685,4 +696,100 @@ func (b *externalDNSVolumeBuilder) bluecatVolumes() []corev1.Volume {
 // needed if CNAME records are used: https://github.com/kubernetes-sigs/external-dns#note
 func addTXTPrefixFlag(args []string) []string {
 	return append(args, fmt.Sprintf("--txt-prefix=%s", defaultTXTRecordPrefix))
+}
+
+// numMetricsPorts returns the number of metrics ports needed for the given ExternalDNS instance.
+// This mirrors the zone container creation logic in desiredExternalDNSDeployment.
+func numMetricsPorts(externalDNS *operatorv1beta1.ExternalDNS) int {
+	if len(externalDNS.Spec.Zones) == 0 {
+		if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAzure {
+			return 2
+		}
+		return 1
+	}
+	return len(externalDNS.Spec.Zones)
+}
+
+// kubeRBACProxyContainerNameForSeq returns the container name for the kube-rbac-proxy sidecar
+// at the given sequence index.
+func kubeRBACProxyContainerNameForSeq(seq int) string {
+	if seq == 0 {
+		return kubeRBACProxyContainerName
+	}
+	return fmt.Sprintf("%s-%d", kubeRBACProxyContainerName, seq)
+}
+
+// kubeRBACProxyPortNameForSeq returns the port name for the kube-rbac-proxy sidecar
+// at the given sequence index.
+func kubeRBACProxyPortNameForSeq(seq int) string {
+	if seq == 0 {
+		return kubeRBACProxyPortName
+	}
+	return fmt.Sprintf("%s-%d", kubeRBACProxyPortName, seq)
+}
+
+// kubeRBACProxyContainer returns the kube-rbac-proxy sidecar container definition
+// that proxies metrics from the ExternalDNS container's localhost metrics port at the given sequence.
+func kubeRBACProxyContainer(image string, seq int) corev1.Container {
+	securePort := kubeRBACProxySecurePort + seq
+	upstreamPort := defaultMetricsStartPort + seq
+	portName := kubeRBACProxyPortNameForSeq(seq)
+	containerName := kubeRBACProxyContainerNameForSeq(seq)
+	return corev1.Container{
+		Name:  containerName,
+		Image: image,
+		Args: []string{
+			fmt.Sprintf("--secure-listen-address=0.0.0.0:%d", securePort),
+			fmt.Sprintf("--upstream=http://127.0.0.1:%d/", upstreamPort),
+			"--logtostderr=true",
+			"--v=10",
+			fmt.Sprintf("--tls-cert-file=%s", metricsCertTLSCertFile),
+			fmt.Sprintf("--tls-private-key-file=%s", metricsCertTLSKeyFile),
+			"--http2-disable",
+		},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          portName,
+				ContainerPort: int32(securePort),
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("20Mi"),
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      metricsCertVolumeName,
+				MountPath: metricsCertMountPath,
+				ReadOnly:  true,
+			},
+		},
+		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{allCapabilities},
+			},
+			Privileged:               ptr.To[bool](false),
+			RunAsNonRoot:             ptr.To[bool](true),
+			AllowPrivilegeEscalation: ptr.To[bool](false),
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		},
+	}
+}
+
+// metricsCertVolume returns the volume for the metrics serving certificate secret.
+func metricsCertVolume(secretName string) corev1.Volume {
+	return corev1.Volume{
+		Name: metricsCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+			},
+		},
+	}
 }
