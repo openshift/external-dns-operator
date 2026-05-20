@@ -31,6 +31,12 @@ Verify that the latest images pushed by the component push pipelines are reflect
 
 All digests must match the images produced by the latest successful push pipelines before proceeding with the release.
 
+**Note on multi-arch digests:** The `external-dns` (operand) component is a multi-arch build, so its snapshot entry contains a manifest list digest. However, `bundle-hack/container_digest.sh` and the nudging PRs use the amd64-specific digest from within that manifest list. To verify that the digests match, inspect the manifest list from the snapshot and confirm the amd64 entry matches the digest in `container_digest.sh`:
+
+```bash
+podman manifest inspect <operand-image>@sha256:<manifest-list-digest> | jq '.manifests[] | select(.platform.architecture == "amd64") | .digest'
+```
+
 If nudging is configured correctly, a dedicated PR with the updated digests will be automatically created in the [external-dns-operator](https://github.com/openshift/external-dns-operator) repository. This PR needs to be merged into the target branch.
 
 ## Verify Conforma
@@ -48,11 +54,9 @@ Refer to the [Konflux documentation](https://konflux-ci.dev/docs/) and other rel
 
 ## Update ReleasePlanAdmission Tags
 
-For a new patch release, update the version tags in the ReleasePlanAdmission (RPA) configuration corresponding to the minor release in the [konflux-release-data](https://gitlab.cee.redhat.com/releng/konflux-release-data) repository. Both stage and production RPA files need to be updated with the new patch version in the `tags` list and the release notes topic text.
+The RPA now uses the `version` label from the built image as the floating tag, so manual tag updates are no longer needed for patch releases. The `version` label is set from the [`VERSION`](../VERSION) file during the build. Make sure the `VERSION` file is updated before the release build.
 
-Create a merge request with these changes (example: [MR !17920](https://gitlab.cee.redhat.com/releng/konflux-release-data/-/merge_requests/17920)) and get it merged before proceeding with the release.
-
-**Note:** A new minor release requires creating new ReleasePlanAdmission and ReleasePlan objects instead of updating existing ones.
+For a new minor release, new ReleasePlanAdmission and ReleasePlan objects need to be created in the [konflux-release-data](https://gitlab.cee.redhat.com/releng/konflux-release-data) repository.
 
 ## Release to Stage Registry
 
