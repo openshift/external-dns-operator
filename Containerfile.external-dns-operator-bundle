@@ -44,7 +44,7 @@ ARG FULL_COMMIT
 ARG GIT_URL
 
 LABEL name=external-dns-operator-bundle
-LABEL version="1.2.1"
+LABEL version="1.2.2"
 LABEL maintainer='NetworkEdge team <aos-network-edge-staff@redhat.com>'
 LABEL io.k8s.display-name='ExternalDNS Operator'
 LABEL io.k8s.description='Operator bundle for the ExternalDNS Operator'
@@ -52,7 +52,7 @@ LABEL io.openshift.tags='networking,dns'
 LABEL io.openshift.build.commit.id=${FULL_COMMIT}
 LABEL io.openshift.build.source-location=${GIT_URL}
 LABEL io.openshift.build.commit.url=${GIT_URL}/commit/${FULL_COMMIT}
-LABEL release="1.2.1"
+LABEL release="1.2.2"
 LABEL description="Operator bundle for the ExternalDNS Operator"
 LABEL distribution-scope=public
 LABEL url="https://github.com/openshift/external-dns-operator"
