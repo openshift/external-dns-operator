@@ -125,8 +125,6 @@ spec:
         workspaces:
           - name: shared-data
         results:
-          - name: serializedMirrorSetYaml
-            description: "A serialized string of an ImageDigestMirrorSet YAML, where each mirror entry is formatted with escaped newlines to preserve structure in a single-line format"
           - name: scorecardConfigImages
             description: "Images pulled from the scorecard config YAML."
         steps:
@@ -215,8 +213,7 @@ spec:
 
               serialized_mirror_set=$(serialize_image_mirrors_yaml "${mirror_set_yaml}")
               echo "Serialized image mirror set: $serialized_mirror_set"
-
-              echo -e "$serialized_mirror_set" > "$(results.serializedMirrorSetYaml.path)"
+              echo -e "$serialized_mirror_set" > "$(workspaces.shared-data.path)/serializedMirrorSetYaml"
 
               # Fetch scorecard config
               scorecard_config_url="${SOURCE_GIT_URL}/raw/${SOURCE_GIT_REVISION}/bundle/tests/scorecard/config.yaml"
@@ -438,7 +435,11 @@ spec:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
           values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
+      workspaces:
+        - name: shared-data
       taskSpec:
+        workspaces:
+          - name: shared-data
         results:
           - name: clusterName
             value: "$(steps.create-cluster.results.clusterName)"
@@ -473,8 +474,8 @@ spec:
                 value: "$(steps.get-latest-version-tag.results.version)"
               - name: instanceType
                 value: "$(tasks.pick-cluster-params.results.bundleArch)"
-              - name: imageContentSources
-                value: "$(tasks.fetch-config-files.results.serializedMirrorSetYaml)"
+              - name: imageContentSourcesFile
+                value: "$(workspaces.shared-data.path)/serializedMirrorSetYaml"
     - name: deploy-operator
       runAfter:
         - provision-cluster
