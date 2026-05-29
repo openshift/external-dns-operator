@@ -9,15 +9,17 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/route53"
+	"github.com/aws/aws-sdk-go-v2/service/route53/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/openshift/external-dns-operator/pkg/utils"
@@ -35,7 +37,7 @@ const (
 )
 
 var (
-	r53ClientAssumeRole *route53.Route53
+	r53ClientAssumeRole *route53.Client
 	roleARN             string
 	hostedZoneID        string
 	hostedZoneDomain    string
@@ -63,7 +65,7 @@ func TestMain(m *testing.M) {
 	// Only run this test if the DNS config contains the privateZoneIAMRole which indicates it's a "Shared VPC" cluster.
 	// Note: Only AWS supports privateZoneIAMRole.
 	dnsConfig := configv1.DNS{}
-	err = common.KubeClient.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, &dnsConfig)
+	err = common.KubeClient.Get(context.TODO(), k8stypes.NamespacedName{Name: "cluster"}, &dnsConfig)
 	if err != nil {
 		fmt.Printf("Failed to get dns 'cluster': %v\n", err)
 		os.Exit(1)
@@ -76,7 +78,7 @@ func TestMain(m *testing.M) {
 	hostedZoneID = dnsConfig.Spec.PrivateZone.ID
 	hostedZoneDomain = dnsConfig.Spec.BaseDomain
 
-	if r53ClientAssumeRole, err = initRoute53ClientAssumeRole(openshiftCI, roleARN); err != nil {
+	if r53ClientAssumeRole, err = initRoute53ClientAssumeRole(context.Background(), openshiftCI, roleARN); err != nil {
 		fmt.Printf("Failed to initialize Route 53 Client: %v\n", err)
 		os.Exit(1)
 	}
@@ -126,7 +128,7 @@ func TestExternalDNSAssumeRole(t *testing.T) {
 	}()
 
 	// Get the service address (hostname or IP) and the resolved service IPs of the load balancer.
-	serviceAddress, serviceIPs, err := common.GetServiceIPs(context.TODO(), t, common.DnsPollingTimeout, types.NamespacedName{Name: testServiceName, Namespace: testNamespace})
+	serviceAddress, serviceIPs, err := common.GetServiceIPs(context.TODO(), t, common.DnsPollingTimeout, k8stypes.NamespacedName{Name: testServiceName, Namespace: testNamespace})
 	if err != nil {
 		t.Fatalf("failed to get service IPs %s/%s: %v", testNamespace, testServiceName, err)
 	}
@@ -135,7 +137,7 @@ func TestExternalDNSAssumeRole(t *testing.T) {
 	// service hostname.
 	t.Logf("Querying Route 53 API to confirm DNS record exists in a different AWS account")
 	if err := wait.PollUntilContextTimeout(context.TODO(), common.DnsPollingInterval, common.DnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
-		recordValues, err := getResourceRecordValues(hostedZoneID, expectedHost, "A")
+		recordValues, err := getResourceRecordValues(ctx, hostedZoneID, expectedHost, "A")
 		if err != nil {
 			t.Logf("Failed to get DNS record for shared VPC zone: %v", err)
 			return false, nil
@@ -194,7 +196,7 @@ func TestExternalDNSAssumeRole(t *testing.T) {
 func verifyResourceRecordDeleted(t *testing.T, hostedZone, host string) {
 	t.Helper()
 	if err := wait.PollUntilContextTimeout(context.TODO(), common.DnsPollingInterval, common.DnsPollingTimeout, true, func(ctx context.Context) (done bool, err error) {
-		recordValues, err := getResourceRecordValues(hostedZone, host, "A")
+		recordValues, err := getResourceRecordValues(ctx, hostedZone, host, "A")
 		if err != nil {
 			t.Logf("Failed to get DNS record for shared VPC zone: %v", err)
 			return false, nil
@@ -243,7 +245,7 @@ func buildExternalDNSAssumeRole(name, zoneID, zoneDomain, roleArn string) *opera
 }
 
 // initRoute53ClientAssumeRole initializes a Route 53 client with an assumed role.
-func initRoute53ClientAssumeRole(isOpenShiftCI bool, roleARN string) (*route53.Route53, error) {
+func initRoute53ClientAssumeRole(ctx context.Context, isOpenShiftCI bool, roleARN string) (*route53.Client, error) {
 	var keyID, secretKey string
 	if isOpenShiftCI {
 		data, err := common.RootCredentials("aws-creds")
@@ -257,25 +259,29 @@ func initRoute53ClientAssumeRole(isOpenShiftCI bool, roleARN string) (*route53.R
 		secretKey = common.MustGetEnv("AWS_SECRET_ACCESS_KEY")
 	}
 
-	awsSession := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(keyID, secretKey, ""),
-	}))
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(keyID, secretKey, "")),
+		config.WithRegion("us-east-1"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
 
-	r53AssumeRoleClient := route53.New(awsSession)
-	r53AssumeRoleClient.Config.WithCredentials(stscreds.NewCredentials(awsSession, roleARN))
+	stsClient := sts.NewFromConfig(cfg)
+	cfg.Credentials = aws.NewCredentialsCache(stscreds.NewAssumeRoleProvider(stsClient, roleARN))
 
-	return r53AssumeRoleClient, nil
+	return route53.NewFromConfig(cfg), nil
 }
 
 // getResourceRecordValues gets the values (target address/IPs) of the DNS resource record associated with the provided
 // zoneId, recordName, and recordType. If the record is an alias resource record, it will return the target DNS name.
 // Otherwise, it will return the target IP address(es). The return type, map[string]struct{}, provides a convenient type
 // for existence checking.
-func getResourceRecordValues(zoneId, recordName, recordType string) (map[string]struct{}, error) {
-	records, err := r53ClientAssumeRole.ListResourceRecordSets(&route53.ListResourceRecordSetsInput{
+func getResourceRecordValues(ctx context.Context, zoneId, recordName, recordType string) (map[string]struct{}, error) {
+	records, err := r53ClientAssumeRole.ListResourceRecordSets(ctx, &route53.ListResourceRecordSetsInput{
 		HostedZoneId:    &zoneId,
 		StartRecordName: &recordName,
-		StartRecordType: &recordType,
+		StartRecordType: types.RRType(recordType),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list resource record sets: %w", err)

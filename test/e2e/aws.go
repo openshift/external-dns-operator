@@ -4,25 +4,27 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/openshift/external-dns-operator/test/common"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/route53"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/route53"
+	"github.com/aws/aws-sdk-go-v2/service/route53/types"
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/openshift/external-dns-operator/test/common"
 
 	operatorv1alpha1 "github.com/openshift/external-dns-operator/api/v1alpha1"
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
 )
 
 type awsTestHelper struct {
-	r53Client *route53.Route53
+	r53Client *route53.Client
 	keyID     string
 	secretKey string
 }
@@ -33,11 +35,15 @@ func newAWSHelper(isOpenShiftCI bool) (providerTestHelper, error) {
 		return nil, err
 	}
 
-	awsSession := session.Must(session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(provider.keyID, provider.secretKey, ""),
-	}))
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(provider.keyID, provider.secretKey, "")),
+		config.WithRegion("us-east-1"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
 
-	provider.r53Client = route53.New(awsSession)
+	provider.r53Client = route53.NewFromConfig(cfg)
 	return provider, nil
 }
 
@@ -88,84 +94,89 @@ func (a *awsTestHelper) platform() string {
 }
 
 func (a *awsTestHelper) ensureHostedZone(zoneDomain string) (string, []string, error) {
-	zones, err := a.r53Client.ListHostedZones(&route53.ListHostedZonesInput{})
+	zones, err := a.r53Client.ListHostedZones(context.TODO(), &route53.ListHostedZonesInput{})
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to list hosted zones: %w", err)
 	}
 
 	// if hosted zone exists then return its id and nameservers
 	for _, zone := range zones.HostedZones {
-		if aws.StringValue(zone.Name) == zoneDomain {
-			hostedZone, err := a.r53Client.GetHostedZone(&route53.GetHostedZoneInput{Id: zone.Id})
+		if aws.ToString(zone.Name) == zoneDomain {
+			hostedZone, err := a.r53Client.GetHostedZone(context.TODO(), &route53.GetHostedZoneInput{Id: zone.Id})
 			if err != nil {
-				return "", nil, fmt.Errorf("failed to get hosted zone %s: %v", aws.StringValue(zone.Id), err)
+				return "", nil, fmt.Errorf("failed to get hosted zone %s: %v", aws.ToString(zone.Id), err)
 			}
-			return aws.StringValue(zone.Id), aws.StringValueSlice(hostedZone.DelegationSet.NameServers), nil
+			if hostedZone.DelegationSet == nil {
+				return aws.ToString(zone.Id), nil, nil
+			}
+			return aws.ToString(zone.Id), hostedZone.DelegationSet.NameServers, nil
 		}
 	}
 
 	// create hosted zone and return its id and nameservers
-	zone, err := a.r53Client.CreateHostedZone(&route53.CreateHostedZoneInput{
+	zone, err := a.r53Client.CreateHostedZone(context.TODO(), &route53.CreateHostedZoneInput{
 		Name:            aws.String(zoneDomain),
 		CallerReference: aws.String(time.Now().Format(time.RFC3339)),
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get create hosted zone: %w", err)
 	}
-	return aws.StringValue(zone.HostedZone.Id), aws.StringValueSlice(zone.DelegationSet.NameServers), nil
+	if zone.DelegationSet == nil {
+		return aws.ToString(zone.HostedZone.Id), nil, nil
+	}
+	return aws.ToString(zone.HostedZone.Id), zone.DelegationSet.NameServers, nil
 }
 
 // AWS sdk expect to zone ID to delete the xone, where as Azure expect Domain Name
 func (a *awsTestHelper) deleteHostedZone(zoneID, zoneDomain string) error {
-	input := route53.ListResourceRecordSetsInput{
+	input := &route53.ListResourceRecordSetsInput{
 		HostedZoneId: &zoneID,
 	}
-	output, err := a.r53Client.ListResourceRecordSets(&input)
+	output, err := a.r53Client.ListResourceRecordSets(context.TODO(), input)
 	if err != nil {
 		return err
 	}
-	var recordChanges []*route53.Change
+	var recordChanges []types.Change
 
 	// create change set deleting all DNS records which are not of NS and SOA types in hosted zone
 	for len(output.ResourceRecordSets) != 0 {
 		for _, recordset := range output.ResourceRecordSets {
-			if *recordset.Type == "SOA" || *recordset.Type == "NS" {
+			if recordset.Type == types.RRTypeSoa || recordset.Type == types.RRTypeNs {
 				continue
-			} else {
-				recordDelete := &route53.Change{
-					Action:            aws.String("DELETE"),
-					ResourceRecordSet: recordset,
-				}
-				recordChanges = append(recordChanges, recordDelete)
 			}
+			recordChanges = append(recordChanges, types.Change{
+				Action:            types.ChangeActionDelete,
+				ResourceRecordSet: &recordset,
+			})
 		}
-		if !(*output.IsTruncated) {
+		if !output.IsTruncated {
 			break
-		} else {
-			input.StartRecordName = output.NextRecordName
-			output, err = a.r53Client.ListResourceRecordSets(&input)
-			if err != nil {
-				return err
-			}
 		}
-	}
-
-	if len(recordChanges) != 0 {
-		changeRecordsInput := route53.ChangeResourceRecordSetsInput{
-			HostedZoneId: &zoneID,
-			ChangeBatch: &route53.ChangeBatch{
-				Changes: recordChanges,
-			},
-		}
-		if _, err := a.r53Client.ChangeResourceRecordSets(&changeRecordsInput); err != nil {
+		input.StartRecordName = output.NextRecordName
+		input.StartRecordType = output.NextRecordType
+		input.StartRecordIdentifier = output.NextRecordIdentifier
+		output, err = a.r53Client.ListResourceRecordSets(context.TODO(), input)
+		if err != nil {
 			return err
 		}
 	}
 
-	zoneInput := route53.DeleteHostedZoneInput{
+	if len(recordChanges) != 0 {
+		changeRecordsInput := &route53.ChangeResourceRecordSetsInput{
+			HostedZoneId: &zoneID,
+			ChangeBatch: &types.ChangeBatch{
+				Changes: recordChanges,
+			},
+		}
+		if _, err := a.r53Client.ChangeResourceRecordSets(context.TODO(), changeRecordsInput); err != nil {
+			return err
+		}
+	}
+
+	zoneInput := &route53.DeleteHostedZoneInput{
 		Id: &zoneID,
 	}
-	if _, err := a.r53Client.DeleteHostedZone(&zoneInput); err != nil {
+	if _, err := a.r53Client.DeleteHostedZone(context.TODO(), zoneInput); err != nil {
 		return err
 	}
 	return nil

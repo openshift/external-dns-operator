@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
