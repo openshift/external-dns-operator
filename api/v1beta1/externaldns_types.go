@@ -101,6 +101,14 @@ type ExternalDNSSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	Zones []string `json:"zones,omitempty"`
+
+	// Interval specifies the interval between two consecutive synchronizations
+	// performed by ExternalDNS. When omitted, ExternalDNS uses its default
+	// interval of 1 minute.
+	//
+	// +kubebuilder:validation:Optional
+	// +optional
+	Interval *metav1.Duration `json:"interval,omitempty"`
 }
 
 // ExternalDNSDomain describes how sets of included
@@ -361,6 +369,15 @@ type ExternalDNSInfobloxProviderOptions struct {
 	// +kubebuilder:validation:Required
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
+
+	// MaxResults sets the _max_results query parameter on Infoblox WAPI GET
+	// requests. This should be set when integrating with Infoblox grids that
+	// contain a large number of DNS records.
+	//
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	MaxResults *int `json:"maxResults,omitempty"`
 }
 
 // SecretReference contains the information to let you locate the desired secret.

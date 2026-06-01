@@ -126,6 +126,12 @@ spec:
                   - matchType
                   type: object
                 type: array
+              interval:
+                description: |-
+                  Interval specifies the interval between two consecutive synchronizations
+                  performed by ExternalDNS. When omitted, ExternalDNS uses its default
+                  interval of 1 minute.
+                type: string
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -282,6 +288,13 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      maxResults:
+                        description: |-
+                          MaxResults sets the _max_results query parameter on Infoblox WAPI GET
+                          requests. This should be set when integrating with Infoblox grids that
+                          contain a large number of DNS records.
+                        minimum: 1
+                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
@@ -692,6 +705,12 @@ spec:
                   - matchType
                   type: object
                 type: array
+              interval:
+                description: |-
+                  Interval specifies the interval between two consecutive synchronizations
+                  performed by ExternalDNS. When omitted, ExternalDNS uses its default
+                  interval of 1 minute.
+                type: string
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -855,6 +874,13 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      maxResults:
+                        description: |-
+                          MaxResults sets the _max_results query parameter on Infoblox WAPI GET
+                          requests. This should be set when integrating with Infoblox grids that
+                          contain a large number of DNS records.
+                        minimum: 1
+                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
