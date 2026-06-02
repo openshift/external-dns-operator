@@ -2842,7 +2842,7 @@ relatedImages:
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
-image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:b1fed7a0188328e58b56c9681e567eb02d2de6860315478a33a1ffa24dee9ccc
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:b1fed7a0188328e58b56c9681e567eb02d2de6860315478a33a1ffa24dee9ccc
 name: external-dns-operator.v1.2.2
 package: external-dns-operator
 properties:
@@ -3225,6 +3225,8 @@ properties:
     provider:
       name: Red Hat, Inc.
 relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:b1fed7a0188328e58b56c9681e567eb02d2de6860315478a33a1ffa24dee9ccc
+  name: ""
 - image: registry.redhat.io/edo/external-dns-rhel8-operator@sha256:cb6bdce66f1c6808c841dbef4a37afa7d62768713e42dfbe6a08992626736fcc
   name: external-dns-rhel8-operator-cb6bdce66f1c6808c841dbef4a37afa7d62768713e42dfbe6a08992626736fcc-annotation
 - image: registry.redhat.io/edo/external-dns-rhel8-operator@sha256:cb6bdce66f1c6808c841dbef4a37afa7d62768713e42dfbe6a08992626736fcc
@@ -3233,8 +3235,6 @@ relatedImages:
   name: external_dns
 - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:814e0ec7d531113a01b327a1f8719e4d42ec4b6683b96728c5bcfab4a3a4ebcf
   name: kube-rbac-proxy
-- image: registry.stage.redhat.io/edo/external-dns-operator-bundle@sha256:b1fed7a0188328e58b56c9681e567eb02d2de6860315478a33a1ffa24dee9ccc
-  name: ""
 schema: olm.bundle
 ---
 image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:9b4d9b4589fa2f03b683012b803b3cf29858321fd2ace941a779d9e83277e054
