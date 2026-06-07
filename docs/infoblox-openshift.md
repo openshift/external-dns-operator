@@ -43,6 +43,9 @@ openshift-console          downloads           downloads-openshift-console.apps.
     metadata:
       name: sample-infoblox
     spec:
+      # Optional: set the polling interval for DNS record synchronization.
+      # When omitted, the upstream ExternalDNS default (1m) is used.
+      # interval: "5m"
       provider:
         type: Infoblox
         infoblox:
@@ -51,6 +54,9 @@ openshift-console          downloads           downloads-openshift-console.apps.
           gridHost: ${INFOBLOX_GRID_PUBLIC_IP}
           wapiPort: 443
           wapiVersion: "2.12.2"
+          # Optional: set maxResults when the DNS zone has more than 1000 records
+          # to avoid "Result set too large" errors from the Infoblox WAPI.
+          # maxResults: 1500
       domains:
       - filterType: Include
         matchType: Exact

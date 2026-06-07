@@ -100,6 +100,15 @@ type ExternalDNSSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	Zones []string `json:"zones,omitempty"`
+
+	// Interval sets the polling interval for DNS record synchronization.
+	// Accepts a duration string (e.g. "5m", "1h", "30s").
+	// When omitted, the upstream ExternalDNS default (1m) is used.
+	//
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(s|m|h))+$`
+	// +optional
+	Interval *string `json:"interval,omitempty"`
 }
 
 // ExternalDNSDomain describes how sets of included
@@ -363,6 +372,16 @@ type ExternalDNSInfobloxProviderOptions struct {
 	// +kubebuilder:validation:Required
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
+
+	// MaxResults adds the _max_results query parameter to Infoblox WAPI
+	// GET requests. This must be set when the target DNS zone contains
+	// more than 1000 records to avoid "Result set too large" errors.
+	// When set to 0 or omitted, the Infoblox server default is used.
+	//
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	MaxResults int `json:"maxResults,omitempty"`
 }
 
 // SecretReference contains the information to let you locate the desired secret.

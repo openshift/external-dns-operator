@@ -7,6 +7,9 @@ spec:
   - filterType: Include
     matchType: Exact
     name: myzonedomain.com
+  # interval sets the polling interval for DNS record synchronization (optional).
+  # When omitted, the upstream ExternalDNS default (1m) is used.
+  # interval: "5m"
   provider:
     type: Infoblox
     infoblox:
@@ -15,6 +18,9 @@ spec:
       gridHost: "100.100.100.100"
       wapiPort: 443
       wapiVersion: "2.12.2"
+      # maxResults sets the _max_results query parameter for Infoblox WAPI GET requests (optional).
+      # Required when the DNS zone contains more than 1000 records.
+      # maxResults: 1500
   source:
     # Source Type is route resource of OpenShift
     type: OpenShiftRoute

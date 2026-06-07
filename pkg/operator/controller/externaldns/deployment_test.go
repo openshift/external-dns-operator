@@ -3293,6 +3293,419 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 			},
 		},
 		{
+			name:            "Infoblox with maxResults",
+			inputSecretName: infobloxsecret,
+			inputExternalDNS: func() *operatorv1beta1.ExternalDNS {
+				extdns := testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute)
+				extdns.Spec.Provider.Infoblox.MaxResults = 500
+				return extdns
+			}(),
+			expectedSpec: appsv1.DeploymentSpec{
+				Replicas: &one,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name":     "external-dns",
+						"app.kubernetes.io/instance": "test",
+					},
+				},
+				Strategy: appsv1.DeploymentStrategy{
+					Type: "Recreate",
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": "test",
+						},
+						Annotations: map[string]string{
+							"externaldns.olm.openshift.io/credentials-secret-hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: test.OperandName,
+						NodeSelector: map[string]string{
+							osLabel: linuxOS,
+						},
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      masterNodeRoleLabel,
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:  ExternalDNSContainerName,
+								Image: test.OperandImage,
+								Args: []string{
+									"--metrics-address=127.0.0.1:7979",
+									"--txt-owner-id=external-dns-test",
+									"--zone-id-filter=my-dns-public-zone",
+									"--provider=infoblox",
+									"--source=openshift-route",
+									"--policy=sync",
+									"--registry=txt",
+									"--log-level=debug",
+									"--ignore-hostname-annotation",
+									`--fqdn-template={{""}}`,
+									"--infoblox-wapi-port=443",
+									"--infoblox-grid-host=gridhost.example.com",
+									"--infoblox-wapi-version=2.12.2",
+									"--infoblox-max-results=500",
+									"--txt-prefix=external-dns-",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: infobloxWAPIUsernameEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIUsernameEnvVar,
+											},
+										},
+									},
+									{
+										Name: infobloxWAPIPasswordEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIPasswordEnvVar,
+											},
+										},
+									},
+								},
+								SecurityContext: &corev1.SecurityContext{
+									Capabilities: &corev1.Capabilities{
+										Drop: []corev1.Capability{allCapabilities},
+									},
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
+									SeccompProfile: &corev1.SeccompProfile{
+										Type: corev1.SeccompProfileTypeRuntimeDefault,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "Infoblox with interval",
+			inputSecretName: infobloxsecret,
+			inputExternalDNS: func() *operatorv1beta1.ExternalDNS {
+				extdns := testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute)
+				extdns.Spec.Interval = ptr.To[string]("5m")
+				return extdns
+			}(),
+			expectedSpec: appsv1.DeploymentSpec{
+				Replicas: &one,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name":     "external-dns",
+						"app.kubernetes.io/instance": "test",
+					},
+				},
+				Strategy: appsv1.DeploymentStrategy{
+					Type: "Recreate",
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": "test",
+						},
+						Annotations: map[string]string{
+							"externaldns.olm.openshift.io/credentials-secret-hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: test.OperandName,
+						NodeSelector: map[string]string{
+							osLabel: linuxOS,
+						},
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      masterNodeRoleLabel,
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:  ExternalDNSContainerName,
+								Image: test.OperandImage,
+								Args: []string{
+									"--metrics-address=127.0.0.1:7979",
+									"--txt-owner-id=external-dns-test",
+									"--zone-id-filter=my-dns-public-zone",
+									"--provider=infoblox",
+									"--source=openshift-route",
+									"--policy=sync",
+									"--registry=txt",
+									"--log-level=debug",
+									"--ignore-hostname-annotation",
+									`--fqdn-template={{""}}`,
+									"--interval=5m",
+									"--infoblox-wapi-port=443",
+									"--infoblox-grid-host=gridhost.example.com",
+									"--infoblox-wapi-version=2.12.2",
+									"--txt-prefix=external-dns-",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: infobloxWAPIUsernameEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIUsernameEnvVar,
+											},
+										},
+									},
+									{
+										Name: infobloxWAPIPasswordEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIPasswordEnvVar,
+											},
+										},
+									},
+								},
+								SecurityContext: &corev1.SecurityContext{
+									Capabilities: &corev1.Capabilities{
+										Drop: []corev1.Capability{allCapabilities},
+									},
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
+									SeccompProfile: &corev1.SeccompProfile{
+										Type: corev1.SeccompProfileTypeRuntimeDefault,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "Infoblox with maxResults and interval",
+			inputSecretName: infobloxsecret,
+			inputExternalDNS: func() *operatorv1beta1.ExternalDNS {
+				extdns := testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute)
+				extdns.Spec.Provider.Infoblox.MaxResults = 1500
+				extdns.Spec.Interval = ptr.To[string]("10m")
+				return extdns
+			}(),
+			expectedSpec: appsv1.DeploymentSpec{
+				Replicas: &one,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name":     "external-dns",
+						"app.kubernetes.io/instance": "test",
+					},
+				},
+				Strategy: appsv1.DeploymentStrategy{
+					Type: "Recreate",
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": "test",
+						},
+						Annotations: map[string]string{
+							"externaldns.olm.openshift.io/credentials-secret-hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: test.OperandName,
+						NodeSelector: map[string]string{
+							osLabel: linuxOS,
+						},
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      masterNodeRoleLabel,
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:  ExternalDNSContainerName,
+								Image: test.OperandImage,
+								Args: []string{
+									"--metrics-address=127.0.0.1:7979",
+									"--txt-owner-id=external-dns-test",
+									"--zone-id-filter=my-dns-public-zone",
+									"--provider=infoblox",
+									"--source=openshift-route",
+									"--policy=sync",
+									"--registry=txt",
+									"--log-level=debug",
+									"--ignore-hostname-annotation",
+									`--fqdn-template={{""}}`,
+									"--interval=10m",
+									"--infoblox-wapi-port=443",
+									"--infoblox-grid-host=gridhost.example.com",
+									"--infoblox-wapi-version=2.12.2",
+									"--infoblox-max-results=1500",
+									"--txt-prefix=external-dns-",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: infobloxWAPIUsernameEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIUsernameEnvVar,
+											},
+										},
+									},
+									{
+										Name: infobloxWAPIPasswordEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIPasswordEnvVar,
+											},
+										},
+									},
+								},
+								SecurityContext: &corev1.SecurityContext{
+									Capabilities: &corev1.Capabilities{
+										Drop: []corev1.Capability{allCapabilities},
+									},
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
+									SeccompProfile: &corev1.SeccompProfile{
+										Type: corev1.SeccompProfileTypeRuntimeDefault,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "Infoblox with maxResults zero",
+			inputSecretName: infobloxsecret,
+			inputExternalDNS: func() *operatorv1beta1.ExternalDNS {
+				extdns := testInfobloxExternalDNS(operatorv1beta1.SourceTypeRoute)
+				extdns.Spec.Provider.Infoblox.MaxResults = 0
+				return extdns
+			}(),
+			expectedSpec: appsv1.DeploymentSpec{
+				Replicas: &one,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/name":     "external-dns",
+						"app.kubernetes.io/instance": "test",
+					},
+				},
+				Strategy: appsv1.DeploymentStrategy{
+					Type: "Recreate",
+				},
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{
+							"app.kubernetes.io/name":     "external-dns",
+							"app.kubernetes.io/instance": "test",
+						},
+						Annotations: map[string]string{
+							"externaldns.olm.openshift.io/credentials-secret-hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: test.OperandName,
+						NodeSelector: map[string]string{
+							osLabel: linuxOS,
+						},
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      masterNodeRoleLabel,
+								Operator: corev1.TolerationOpExists,
+								Effect:   corev1.TaintEffectNoSchedule,
+							},
+						},
+						Containers: []corev1.Container{
+							{
+								Name:  ExternalDNSContainerName,
+								Image: test.OperandImage,
+								Args: []string{
+									"--metrics-address=127.0.0.1:7979",
+									"--txt-owner-id=external-dns-test",
+									"--zone-id-filter=my-dns-public-zone",
+									"--provider=infoblox",
+									"--source=openshift-route",
+									"--policy=sync",
+									"--registry=txt",
+									"--log-level=debug",
+									"--ignore-hostname-annotation",
+									`--fqdn-template={{""}}`,
+									"--infoblox-wapi-port=443",
+									"--infoblox-grid-host=gridhost.example.com",
+									"--infoblox-wapi-version=2.12.2",
+									"--txt-prefix=external-dns-",
+								},
+								Env: []corev1.EnvVar{
+									{
+										Name: infobloxWAPIUsernameEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIUsernameEnvVar,
+											},
+										},
+									},
+									{
+										Name: infobloxWAPIPasswordEnvVar,
+										ValueFrom: &corev1.EnvVarSource{
+											SecretKeyRef: &corev1.SecretKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: infobloxsecret,
+												},
+												Key: infobloxWAPIPasswordEnvVar,
+											},
+										},
+									},
+								},
+								SecurityContext: &corev1.SecurityContext{
+									Capabilities: &corev1.Capabilities{
+										Drop: []corev1.Capability{allCapabilities},
+									},
+									Privileged:               ptr.To[bool](false),
+									RunAsNonRoot:             ptr.To[bool](true),
+									AllowPrivilegeEscalation: ptr.To[bool](false),
+									SeccompProfile: &corev1.SeccompProfile{
+										Type: corev1.SeccompProfileTypeRuntimeDefault,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:             "Hostname allowed, no clusterip type",
 			inputExternalDNS: testAWSExternalDNSHostnameAllow(operatorv1beta1.SourceTypeRoute, ""),
 			expectedSpec: appsv1.DeploymentSpec{

@@ -126,6 +126,13 @@ spec:
                   - matchType
                   type: object
                 type: array
+              interval:
+                description: |-
+                  Interval sets the polling interval for DNS record synchronization.
+                  Accepts a duration string (e.g. "5m", "1h", "30s").
+                  When omitted, the upstream ExternalDNS default (1m) is used.
+                pattern: ^([0-9]+(\.[0-9]+)?(s|m|h))+$
+                type: string
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -282,6 +289,14 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      maxResults:
+                        description: |-
+                          MaxResults adds the _max_results query parameter to Infoblox WAPI
+                          GET requests. This must be set when the target DNS zone contains
+                          more than 1000 records to avoid "Result set too large" errors.
+                          When set to 0 or omitted, the Infoblox server default is used.
+                        minimum: 0
+                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
@@ -692,6 +707,13 @@ spec:
                   - matchType
                   type: object
                 type: array
+              interval:
+                description: |-
+                  Interval sets the polling interval for DNS record synchronization.
+                  Accepts a duration string (e.g. "5m", "1h", "30s").
+                  When omitted, the upstream ExternalDNS default (1m) is used.
+                pattern: ^([0-9]+(\.[0-9]+)?(s|m|h))+$
+                type: string
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -855,6 +877,14 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      maxResults:
+                        description: |-
+                          MaxResults adds the _max_results query parameter to Infoblox WAPI
+                          GET requests. This must be set when the target DNS zone contains
+                          more than 1000 records to avoid "Result set too large" errors.
+                          When set to 0 or omitted, the Infoblox server default is used.
+                        minimum: 0
+                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
