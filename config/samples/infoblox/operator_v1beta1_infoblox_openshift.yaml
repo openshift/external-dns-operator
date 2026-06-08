@@ -15,6 +15,8 @@ spec:
       gridHost: "100.100.100.100"
       wapiPort: 443
       wapiVersion: "2.12.2"
+      maxResults: 2000
+  interval: 5m
   source:
     # Source Type is route resource of OpenShift
     type: OpenShiftRoute
