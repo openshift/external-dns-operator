@@ -73,6 +73,7 @@ rules:
   - configmaps
   - secrets
   - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -93,6 +94,18 @@ rules:
   - apps
   resources:
   - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
   verbs:
   - create
   - delete
