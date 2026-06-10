@@ -39,6 +39,41 @@
       "schedule": [
         "after 5am on tuesday"
       ]
+    },
+    {
+      "description": "Enable Docker image updates for Red Hat UBI8 images on release-1.x",
+      "matchManagers": ["dockerfile"],
+      "matchBaseBranches": ["release-1.1", "release-1.2"],
+      "matchFileNames": [
+        "Containerfile.external-dns-operator"
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi8/ubi-minimal"
+      ],
+      "enabled": true,
+      "versioning": "redhat",
+      "schedule": [
+        "after 5am on tuesday"
+      ]
+    },
+    {
+      "description": "Keep Go toolset on minor version 1.25 for release-1.x",
+      "matchManagers": ["dockerfile"],
+      "matchBaseBranches": ["release-1.1", "release-1.2"],
+      "matchFileNames": [
+        "Containerfile.external-dns-operator"
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi8/go-toolset"
+      ],
+      "enabled": true,
+      "versioning": "redhat",
+      "allowedVersions": "/^1\\.25(\\.|$)/",
+      "schedule": [
+        "after 5am on tuesday"
+      ]
     }
   ],
   "tekton": {
