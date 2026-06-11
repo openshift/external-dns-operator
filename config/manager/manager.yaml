@@ -32,7 +32,7 @@ spec:
       - name: external-dns-operator
         image: quay.io/openshift/origin-external-dns-operator:latest
         args:
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=:8443
         - --operator-namespace=$(OPERATOR_NAMESPACE)
         - --operand-namespace=$(OPERATOR_NAMESPACE)
         - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)

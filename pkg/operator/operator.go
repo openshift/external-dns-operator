@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -49,6 +50,8 @@ type Operator struct {
 // +kubebuilder:rbac:groups=cloudcredential.openshift.io,resources=credentialsrequests;credentialsrequests/status;credentialsrequests/finalizers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;watch;list
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 // local role
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=secrets;serviceaccounts;configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",namespace=external-dns-operator,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -67,11 +70,23 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 		CertDir: opCfg.CertDir,
 	})
 
+	metricsOpts := metrics.Options{
+		BindAddress: opCfg.MetricsBindAddress,
+	}
+	if opCfg.SecureMetrics {
+		metricsOpts.SecureServing = true
+		metricsOpts.CertDir = opCfg.MetricsTLSCertDir
+		metricsOpts.FilterProvider = filters.WithAuthenticationAndAuthorization
+		metricsOpts.TLSOpts = []func(*tls.Config){
+			func(c *tls.Config) {
+				c.NextProtos = []string{"http/1.1"}
+			},
+		}
+	}
+
 	mgrOpts := manager.Options{
-		Scheme: GetOperatorScheme(),
-		Metrics: metrics.Options{
-			BindAddress: opCfg.MetricsBindAddress,
-		},
+		Scheme:                 GetOperatorScheme(),
+		Metrics:                metricsOpts,
 		HealthProbeBindAddress: opCfg.HealthProbeBindAddress,
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
