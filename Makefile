@@ -214,6 +214,7 @@ generate-catalog: opm ## Generate OCP version-based catalog for the Konflux-buil
 catalog: opm
 	# TODO: make opm use the bundle image built locally
 	$(OPM) render $(BUNDLE_IMG) --migrate-level bundle-object-to-csv-metadata -o yaml > $(PACKAGE_DIR)/bundle.yaml
+	sed -i "s/external-dns-operator\.v[0-9]\+\.[0-9]\+\.[0-9]\+/$$(grep '^name:' $(PACKAGE_DIR)/bundle.yaml | cut -d' ' -f2)/g" $(PACKAGE_DIR)/channel.yaml
 	$(OPM) validate $(PACKAGE_DIR)
 
 .PHONY: catalog-image-build
