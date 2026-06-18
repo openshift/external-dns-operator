@@ -30,6 +30,7 @@ LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="external-dns-operator"
 LABEL version="1.2.2"
+LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.2::el8"
 WORKDIR /
 COPY --from=builder /workspace/bin/external-dns-operator /
 # Red Hat certified container images have licenses.
