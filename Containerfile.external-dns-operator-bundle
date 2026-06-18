@@ -45,6 +45,7 @@ ARG GIT_URL
 
 LABEL name=external-dns-operator-bundle
 LABEL version="1.2.2"
+LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.2::el8"
 LABEL maintainer='NetworkEdge team <aos-network-edge-staff@redhat.com>'
 LABEL io.k8s.display-name='ExternalDNS Operator'
 LABEL io.k8s.description='Operator bundle for the ExternalDNS Operator'
