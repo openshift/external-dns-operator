@@ -9,7 +9,7 @@ COPY Dockerfile .
 RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile | cut -d' ' -f1)"
 
 
-FROM registry.access.redhat.com/ubi8/go-toolset:1.25.8-1776905877 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.25.10 as builder
 # dummy copy to trigger the drift detection
 COPY --from=drift /app/Dockerfile.cached .
 WORKDIR /workspace
@@ -29,7 +29,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:f0ed53122215c6ccc
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="external-dns-operator"
-LABEL version="1.2.2"
+LABEL version="1.2.3"
 LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.2::el8"
 WORKDIR /
 COPY --from=builder /workspace/bin/external-dns-operator /
