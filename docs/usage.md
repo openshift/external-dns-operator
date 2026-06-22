@@ -210,6 +210,8 @@ the following information is required:
           gridHost: # the grid master host from the previous step. eg: 172.26.1.200
           wapiPort: # the WAPI port, eg: 80, 443, 8080
           wapiVersion: # the WAPI version, eg: 2.11, 2.3.1
+          maxResults: 2000 # optional, sets --infoblox-max-results for large Infoblox grids
+      interval: 5m # optional, sets --interval for sync frequency
       zones: # Replace with the desired hosted zones
         - "ZG5zLm5ldHdvcmtfdmlldyQw"
       source:
