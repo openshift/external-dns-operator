@@ -215,7 +215,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 		args = append(args, fmt.Sprintf("--openshift-router-name=%s", b.externalDNS.Spec.Source.OpenShiftRoute.RouterName))
 	}
 
-	if b.externalDNS.Spec.Interval != nil && b.externalDNS.Spec.Interval.Duration > 0 {
+	if b.externalDNS.Spec.Interval.Duration > 0 {
 		args = append(args, fmt.Sprintf("--interval=%s", b.externalDNS.Spec.Interval.Duration.String()))
 	}
 
@@ -483,8 +483,8 @@ func (b *externalDNSContainerBuilder) fillInfobloxFields(container *corev1.Conta
 		args = append(args, fmt.Sprintf("--infoblox-wapi-version=%s", b.externalDNS.Spec.Provider.Infoblox.WAPIVersion))
 	}
 
-	if b.externalDNS.Spec.Provider.Infoblox.MaxResults != nil && *b.externalDNS.Spec.Provider.Infoblox.MaxResults > 0 {
-		args = append(args, fmt.Sprintf("--infoblox-max-results=%d", *b.externalDNS.Spec.Provider.Infoblox.MaxResults))
+	if b.externalDNS.Spec.Provider.Infoblox.MaxResults > 0 {
+		args = append(args, fmt.Sprintf("--infoblox-max-results=%d", b.externalDNS.Spec.Provider.Infoblox.MaxResults))
 	}
 
 	args = addTXTPrefixFlag(args)

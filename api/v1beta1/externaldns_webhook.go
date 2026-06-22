@@ -73,8 +73,6 @@ func (r *ExternalDNS) validate(old runtime.Object) error {
 		r.validateHostnameAnnotationPolicy(),
 		r.validateProviderCredentials(),
 		r.validateAWSRoleARN(),
-		r.validateInterval(),
-		r.validateInfobloxMaxResults(),
 	})
 }
 
@@ -168,19 +166,5 @@ func (r *ExternalDNS) validateAWSRoleARN() error {
 		return fmt.Errorf("arn %q is not a valid AWS ARN", provider.AWS.AssumeRole.ARN)
 	}
 
-	return nil
-}
-
-func (r *ExternalDNS) validateInterval() error {
-	if r.Spec.Interval != nil && r.Spec.Interval.Duration <= 0 {
-		return errors.New(`"interval" must be greater than zero when specified`)
-	}
-	return nil
-}
-
-func (r *ExternalDNS) validateInfobloxMaxResults() error {
-	if r.Spec.Provider.Infoblox != nil && r.Spec.Provider.Infoblox.MaxResults != nil && *r.Spec.Provider.Infoblox.MaxResults <= 0 {
-		return errors.New(`"maxResults" must be greater than zero when specified for Infoblox provider`)
-	}
 	return nil
 }

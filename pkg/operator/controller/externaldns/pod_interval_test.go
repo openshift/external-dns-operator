@@ -6,7 +6,6 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
 	"github.com/openshift/external-dns-operator/api/v1beta1"
 )
@@ -14,18 +13,18 @@ import (
 func TestIntervalArg(t *testing.T) {
 	for _, tc := range []struct {
 		name             string
-		interval         *metav1.Duration
+		interval         metav1.Duration
 		expectInterval   bool
 		expectedInterval string
 	}{
 		{
 			name:           "interval omitted",
-			interval:       nil,
+			interval:       metav1.Duration{},
 			expectInterval: false,
 		},
 		{
 			name:             "interval set",
-			interval:         &metav1.Duration{Duration: 5 * time.Minute},
+			interval:         metav1.Duration{Duration: 5 * time.Minute},
 			expectInterval:   true,
 			expectedInterval: "--interval=5m0s",
 		},
@@ -79,17 +78,17 @@ func TestIntervalArg(t *testing.T) {
 func TestInfobloxMaxResultsArg(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
-		maxResults   *int
+		maxResults   int
 		expectedArgs []string
 	}{
 		{
 			name:         "max results omitted",
-			maxResults:   nil,
+			maxResults:   0,
 			expectedArgs: nil,
 		},
 		{
 			name:         "max results set",
-			maxResults:   ptr.To[int](2000),
+			maxResults:   2000,
 			expectedArgs: []string{"--infoblox-max-results=2000"},
 		},
 	} {

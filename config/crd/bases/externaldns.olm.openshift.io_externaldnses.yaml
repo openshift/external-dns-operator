@@ -126,12 +126,6 @@ spec:
                   - matchType
                   type: object
                 type: array
-              interval:
-                description: |-
-                  Interval specifies the interval between two consecutive synchronizations
-                  performed by ExternalDNS. When omitted, ExternalDNS uses its default
-                  interval of 1 minute.
-                type: string
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -288,13 +282,6 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
-                      maxResults:
-                        description: |-
-                          MaxResults sets the _max_results query parameter on Infoblox WAPI GET
-                          requests. This should be set when integrating with Infoblox grids that
-                          contain a large number of DNS records.
-                        minimum: 1
-                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
@@ -706,11 +693,17 @@ spec:
                   type: object
                 type: array
               interval:
+                default: 1m
                 description: |-
                   Interval specifies the interval between two consecutive synchronizations
-                  performed by ExternalDNS. When omitted, ExternalDNS uses its default
-                  interval of 1 minute.
+                  performed by ExternalDNS. The default value is 1 minute, matching the
+                  external-dns default.
                 type: string
+                x-kubernetes-validations:
+                - message: interval must be at least 10s
+                  rule: duration(self) >= duration('10s')
+                - message: interval must be at most 24h
+                  rule: duration(self) <= duration('24h')
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -875,11 +868,14 @@ spec:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
                       maxResults:
+                        default: 0
                         description: |-
                           MaxResults sets the _max_results query parameter on Infoblox WAPI GET
-                          requests. This should be set when integrating with Infoblox grids that
-                          contain a large number of DNS records.
-                        minimum: 1
+                          requests. The default value is 0, meaning the parameter is not set and
+                          the Infoblox server default is used. Set this to a positive value when
+                          integrating with Infoblox grids that contain a large number of DNS records.
+                        maximum: 10000
+                        minimum: 0
                         type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.

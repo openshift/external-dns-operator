@@ -180,6 +180,13 @@ func (h *infobloxTestHelper) buildOpenShiftExternalDNS(name, zoneID, zoneDomain,
 	return resource
 }
 
+func (h *infobloxTestHelper) buildOpenShiftExternalDNSWithSyncOptions(name, zoneID, zoneDomain, routerName string, credsSecret *corev1.Secret, interval metav1.Duration, maxResults int) operatorv1beta1.ExternalDNS {
+	resource := h.buildOpenShiftExternalDNS(name, zoneID, zoneDomain, routerName, credsSecret)
+	resource.Spec.Interval = interval
+	resource.Spec.Provider.Infoblox.MaxResults = maxResults
+	return resource
+}
+
 func (h *infobloxTestHelper) buildOpenShiftExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName string, credsSecret *corev1.Secret) operatorv1alpha1.ExternalDNS {
 	resource := routeExternalDNSV1Alpha1(name, zoneID, zoneDomain, routerName)
 	wapiPort, _ := strconv.Atoi(defaultWAPIPort)
