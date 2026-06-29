@@ -29,7 +29,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:f0ed53122215c6ccc
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="external-dns-operator"
-LABEL version="1.2.3"
+LABEL version="1.2.4"
 LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.2::el8"
 WORKDIR /
 COPY --from=builder /workspace/bin/external-dns-operator /
