@@ -470,6 +470,7 @@ spec:
                 - --operator-namespace=$(OPERATOR_NAMESPACE)
                 - --operand-namespace=$(OPERATOR_NAMESPACE)
                 - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
+                - --kube-rbac-proxy-image=$(RELATED_IMAGE_KUBE_RBAC_PROXY)
                 - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
                 - --leader-elect
                 - --webhook-disable-http2
@@ -480,6 +481,8 @@ spec:
                       fieldPath: metadata.namespace
                 - name: RELATED_IMAGE_EXTERNAL_DNS
                   value: quay.io/external-dns-operator/external-dns:latest
+                - name: RELATED_IMAGE_KUBE_RBAC_PROXY
+                  value: quay.io/openshift/origin-kube-rbac-proxy:latest
                 - name: TRUSTED_CA_CONFIGMAP_NAME
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 name: external-dns-operator
@@ -557,6 +560,7 @@ spec:
           - configmaps
           - secrets
           - serviceaccounts
+          - services
           verbs:
           - create
           - delete
@@ -577,6 +581,18 @@ spec:
           - apps
           resources:
           - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
           verbs:
           - create
           - delete
