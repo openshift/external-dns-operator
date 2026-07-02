@@ -35,7 +35,7 @@ import (
 
 const (
 	DefaultExternalDNSImage        = "quay.io/external-dns-operator/external-dns:latest"
-	DefaultMetricsAddr             = "127.0.0.1:8080"
+	DefaultMetricsAddr             = ":8443"
 	DefaultOperatorNamespace       = "external-dns-operator"
 	DefaultOperandNamespace        = "external-dns"
 	DefaultEnableWebhook           = true
@@ -44,6 +44,8 @@ const (
 	DefaultHealthProbeAddr         = ":9440"
 	DefaultRequeuePeriodSeconds    = 5
 	DefaultEnableLeaderElection    = false
+	DefaultSecureMetrics           = true
+	DefaultMetricsTLSCertDir       = "/var/run/secrets/serving-cert"
 
 	openshiftKind              = "OpenShiftAPIServer"
 	openshiftResourceGroup     = "operator.openshift.io"
@@ -99,6 +101,12 @@ type Config struct {
 
 	// WebhookDisableHTTP2 disables HTTP2 for the webhook server.
 	WebhookDisableHTTP2 bool
+
+	// SecureMetrics enables authentication and authorization on the metrics endpoint.
+	SecureMetrics bool
+
+	// MetricsTLSCertDir is the directory containing TLS certificates for the metrics endpoint.
+	MetricsTLSCertDir string
 }
 
 // DetectPlatform detects the underlying platform and fills corresponding config fields
