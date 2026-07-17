@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
+	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
@@ -90,7 +91,7 @@ func TestReconcile(t *testing.T) {
 					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      test.OperandName,
+						Name:      controller.ExternalDNSOperandServiceAccountName(),
 					},
 				},
 				{
@@ -129,7 +130,7 @@ func TestReconcile(t *testing.T) {
 					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      test.OperandName,
+						Name:      controller.ExternalDNSOperandServiceAccountName(),
 					},
 				},
 				{
@@ -161,7 +162,7 @@ func TestReconcile(t *testing.T) {
 					ObjType:   serviceAccountResource,
 					NamespacedName: types.NamespacedName{
 						Namespace: test.OperandNamespace,
-						Name:      test.OperandName,
+						Name:      controller.ExternalDNSOperandServiceAccountName(),
 					},
 				},
 				{

@@ -32,7 +32,7 @@ import (
 
 // ensureExternalDNSServiceAccount ensures that the externalDNS service account exists.
 func (r *reconciler) ensureExternalDNSServiceAccount(ctx context.Context, namespace string, externalDNS *operatorv1beta1.ExternalDNS) (bool, *corev1.ServiceAccount, error) {
-	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSResourceName(externalDNS)}
+	nsName := types.NamespacedName{Namespace: namespace, Name: controller.ExternalDNSOperandServiceAccountName()}
 
 	desired := desiredExternalDNSServiceAccount(namespace, externalDNS)
 
@@ -72,7 +72,7 @@ func desiredExternalDNSServiceAccount(namespace string, externalDNS *operatorv1b
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      controller.ExternalDNSResourceName(externalDNS),
+			Name:      controller.ExternalDNSOperandServiceAccountName(),
 		},
 	}
 }

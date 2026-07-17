@@ -57,6 +57,11 @@ func ExternalDNSResourceName(externalDNS *operatorv1beta1.ExternalDNS) string {
 	return ExternalDNSBaseName + "-" + externalDNS.Name
 }
 
+// ExternalDNSOperandServiceAccountName returns the static ServiceAccount name for all operands.
+func ExternalDNSOperandServiceAccountName() string {
+	return ExternalDNSBaseName
+}
+
 // ExternalDNSGlobalResourceName returns the name for the resources shared among ExternalDNS instances.
 func ExternalDNSGlobalResourceName() string {
 	return ExternalDNSBaseName

@@ -48,7 +48,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 			expectedExist:   true,
 			expectedSA: corev1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      controller.ExternalDNSResourceName(test.ExternalDNS),
+					Name:      controller.ExternalDNSOperandServiceAccountName(),
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
@@ -67,7 +67,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 			existingObjects: []runtime.Object{
 				&corev1.ServiceAccount{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      controller.ExternalDNSResourceName(test.ExternalDNS),
+						Name:      controller.ExternalDNSOperandServiceAccountName(),
 						Namespace: test.OperandNamespace,
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -84,7 +84,7 @@ func TestEnsureExternalDNSServiceAccount(t *testing.T) {
 			expectedExist: true,
 			expectedSA: corev1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      controller.ExternalDNSResourceName(test.ExternalDNS),
+					Name:      controller.ExternalDNSOperandServiceAccountName(),
 					Namespace: test.OperandNamespace,
 					OwnerReferences: []metav1.OwnerReference{
 						{
