@@ -38,6 +38,7 @@ LABEL com.redhat.component=external-dns-operator-bundle-container
 LABEL com.redhat.delivery.backport: false
 # this is a bundle image and should be delivered via an index image
 LABEL com.redhat.delivery.operator.bundle: true
+LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.1::el8"
 
 # Define build arguments to receive dynamic values
 ARG FULL_COMMIT
