@@ -171,4 +171,32 @@ entries:
 - image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:3d2b312b32ca3f483f4e704874da53236505911589dec9ba219a978f7430dfb1
   name: external-dns-operator.v1.3.7
   schema: olm.bundle
+- schema: olm.deprecations
+  package: external-dns-operator
+  entries:
+    - reference:
+        schema: olm.channel
+        name: stable-v1.1
+      message: |
+        The stable-v1.1 channel is no longer supported. Please switch to a supported stable channel to receive the latest updates and support.
+    - reference:
+        schema: olm.bundle
+        name: external-dns-operator.v1.1.0
+      message: |
+        external-dns-operator.v1.1.0 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+    - reference:
+        schema: olm.bundle
+        name: external-dns-operator.v1.1.1
+      message: |
+        external-dns-operator.v1.1.1 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+    - reference:
+        schema: olm.bundle
+        name: external-dns-operator.v1.1.2
+      message: |
+        external-dns-operator.v1.1.2 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+    - reference:
+        schema: olm.bundle
+        name: external-dns-operator.v1.1.3
+      message: |
+        external-dns-operator.v1.1.3 is no longer supported. Please upgrade to the latest version from a supported stable channel.
 schema: olm.template.basic

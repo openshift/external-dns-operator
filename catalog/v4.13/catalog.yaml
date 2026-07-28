@@ -1262,3 +1262,32 @@ relatedImages:
 - image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:0fc6a16b71e2719d9d01d6dfeb83077c38562c08d628d1f1ae03fabe3a5b9a91
   name: kube-rbac-proxy
 schema: olm.bundle
+---
+entries:
+- message: |
+    The stable-v1.1 channel is no longer supported. Please switch to a supported stable channel to receive the latest updates and support.
+  reference:
+    name: stable-v1.1
+    schema: olm.channel
+- message: |
+    external-dns-operator.v1.1.0 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+  reference:
+    name: external-dns-operator.v1.1.0
+    schema: olm.bundle
+- message: |
+    external-dns-operator.v1.1.1 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+  reference:
+    name: external-dns-operator.v1.1.1
+    schema: olm.bundle
+- message: |
+    external-dns-operator.v1.1.2 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+  reference:
+    name: external-dns-operator.v1.1.2
+    schema: olm.bundle
+- message: |
+    external-dns-operator.v1.1.3 is no longer supported. Please upgrade to the latest version from a supported stable channel.
+  reference:
+    name: external-dns-operator.v1.1.3
+    schema: olm.bundle
+package: external-dns-operator
+schema: olm.deprecations
