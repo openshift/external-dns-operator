@@ -4,9 +4,12 @@
 package e2e
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -25,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -537,7 +541,179 @@ func TestExternalDNSSecretCredentialUpdate(t *testing.T) {
 	}
 }
 
+func TestExternalDNSSyncInterval(t *testing.T) {
+	const (
+		extDNSName               = "test-extdns-interval"
+		intervalSeconds    int32 = 120
+		syncLogMessage           = "All records are already up to date"
+		minObservedSyncGap       = 115 * time.Second
+		maxObservedSyncGap       = 125 * time.Second
+		deploymentTimeout        = 3 * time.Minute
+		logCheckTimeout          = 6 * time.Minute
+	)
+	logTimestampPattern := regexp.MustCompile(`time="([^"]+)"`)
+
+	t.Log("Creating credentials secret")
+	credSecret := helper.makeCredentialsSecret(common.OperatorNamespace)
+	if err := common.KubeClient.Create(context.TODO(), credSecret); err != nil {
+		t.Fatalf("Failed to create credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+	}
+	defer func() {
+		if err := common.KubeClient.Delete(context.TODO(), credSecret); err != nil && !errors.IsNotFound(err) {
+			t.Errorf("Failed to delete credentials secret %s/%s: %v", credSecret.Namespace, credSecret.Name, err)
+		}
+	}()
+
+	t.Log("Creating external dns instance with intervalSeconds")
+	extDNS := helper.buildOpenShiftExternalDNS(extDNSName, hostedZoneID, hostedZoneDomain, "", credSecret)
+	extDNS.Spec.IntervalSeconds = intervalSeconds
+	if err := common.KubeClient.Create(context.TODO(), &extDNS); err != nil {
+		t.Fatalf("Failed to create external DNS %q: %v", extDNSName, err)
+	}
+	defer func() {
+		if err := common.KubeClient.Delete(context.TODO(), &extDNS); err != nil && !errors.IsNotFound(err) {
+			t.Errorf("Failed to delete external DNS %q: %v", extDNSName, err)
+		}
+	}()
+
+	deploymentKey := types.NamespacedName{
+		Namespace: common.OperatorNamespace,
+		Name:      fmt.Sprintf("external-dns-%s", extDNSName),
+	}
+	intervalArg := fmt.Sprintf("--interval=%ds", intervalSeconds)
+
+	t.Logf("Waiting for operand deployment %s with %s", deploymentKey, intervalArg)
+	var containerName string
+	if err := wait.PollUntilContextTimeout(context.TODO(), common.DnsPollingInterval, deploymentTimeout, true, func(ctx context.Context) (bool, error) {
+		deployment := &appsv1.Deployment{}
+		if err := common.KubeClient.Get(ctx, deploymentKey, deployment); err != nil {
+			t.Logf("Operand deployment not created yet: %v", err)
+			return false, nil
+		}
+		if deployment.Status.AvailableReplicas < 1 {
+			t.Log("Operand deployment is not available yet")
+			return false, nil
+		}
+
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			if !strings.HasPrefix(container.Name, "external-dns") {
+				continue
+			}
+			if containsContainerArg(container.Args, intervalArg) {
+				containerName = container.Name
+				return true, nil
+			}
+		}
+		return false, fmt.Errorf("%q was not found", intervalArg)
+	}); err != nil {
+		t.Fatalf("Operand deployment did not get expected interval arg: %v", err)
+	}
+
+	t.Logf("Verifying sync interval from operand logs in %s", deploymentKey.Namespace)
+	if err := wait.PollUntilContextTimeout(context.TODO(), common.DnsPollingInterval, logCheckTimeout, true, func(ctx context.Context) (bool, error) {
+		list := &corev1.PodList{}
+		if err := common.KubeClient.List(ctx, list,
+			client.InNamespace(deploymentKey.Namespace),
+			client.MatchingLabels{
+				"app.kubernetes.io/name":     "external-dns",
+				"app.kubernetes.io/instance": extDNSName,
+			},
+		); err != nil {
+			t.Logf("Failed to list pods: %v", err)
+			return false, nil
+		}
+		var podName string
+		for i := range list.Items {
+			if list.Items[i].Status.Phase == corev1.PodRunning {
+				podName = list.Items[i].Name
+				break
+			}
+		}
+		if podName == "" {
+			t.Log("Operand pod is not running yet")
+			return false, nil
+		}
+
+		timestamps, err := collectSyncTimestamps(ctx, deploymentKey.Namespace, podName, containerName, syncLogMessage, logTimestampPattern)
+		if err != nil {
+			t.Logf("Failed to read pod logs: %v", err)
+			return false, nil
+		}
+		if len(timestamps) < 2 {
+			t.Logf("Waiting for at least 2 sync log entries, got %d", len(timestamps))
+			return false, nil
+		}
+
+		prev := timestamps[len(timestamps)-2]
+		curr := timestamps[len(timestamps)-1]
+		gap := curr.Sub(prev)
+		t.Logf("Observed sync gap between %s and %s: %s", prev.Format(time.RFC3339), curr.Format(time.RFC3339), gap)
+		if gap < minObservedSyncGap || gap > maxObservedSyncGap {
+			t.Logf("Sync gap %s outside expected range [%s, %s]; waiting for another cycle", gap, minObservedSyncGap, maxObservedSyncGap)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		t.Fatalf("Failed to verify sync interval from operand logs: %v", err)
+	}
+}
+
 // HELPER FUNCTIONS
+
+func containsContainerArg(args []string, expected string) bool {
+	for _, arg := range args {
+		if arg == expected {
+			return true
+		}
+	}
+	return false
+}
+
+func collectSyncTimestamps(ctx context.Context, namespace, podName, containerName, syncLogMessage string, logTimestampPattern *regexp.Regexp) ([]time.Time, error) {
+	opts := &corev1.PodLogOptions{
+		Container: containerName,
+		Follow:    false,
+	}
+	readCloser, err := common.KubeClientSet.CoreV1().Pods(namespace).GetLogs(podName, opts).Stream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = readCloser.Close()
+	}()
+
+	return parseSyncTimestamps(readCloser, syncLogMessage, logTimestampPattern)
+}
+
+func parseSyncTimestamps(r io.Reader, syncLogMessage string, logTimestampPattern *regexp.Regexp) ([]time.Time, error) {
+	var timestamps []time.Time
+	scanner := bufio.NewScanner(r)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, syncLogMessage) {
+			continue
+		}
+		matches := logTimestampPattern.FindStringSubmatch(line)
+		if len(matches) != 2 {
+			continue
+		}
+		ts, err := time.Parse(time.RFC3339Nano, matches[1])
+		if err != nil {
+			ts, err = time.Parse(time.RFC3339, matches[1])
+			if err != nil {
+				continue
+			}
+		}
+		timestamps = append(timestamps, ts)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return timestamps, nil
+}
 
 func verifyCNAMERecordForOpenshiftRoute(ctx context.Context, t *testing.T, canonicalName, host string) {
 	// try all nameservers and fail only if all failed

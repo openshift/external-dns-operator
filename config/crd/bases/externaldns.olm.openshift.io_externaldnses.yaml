@@ -692,6 +692,16 @@ spec:
                   - matchType
                   type: object
                 type: array
+              intervalSeconds:
+                description: |-
+                  intervalSeconds specifies the interval in seconds between two consecutive
+                  synchronizations performed by ExternalDNS. When unset, the default is determined by
+                  ExternalDNS, which is currently 60 seconds, but is subject to change over time.
+                  The minimum of 60 seconds is a safe lower bound to avoid hitting provider rate limits.
+                format: int32
+                maximum: 3600
+                minimum: 60
+                type: integer
               provider:
                 description: |-
                   Provider refers to the DNS provider that ExternalDNS
@@ -855,6 +865,14 @@ spec:
                       gridHost:
                         description: GridHost is the IP of the Infoblox Grid host.
                         type: string
+                      maxResults:
+                        description: |-
+                          maxResults sets the maximum number of DNS records that Infoblox returns per request.
+                          The Infoblox default is currently 1000 and requests exceeding it will fail. Increase this when
+                          managing zones with more than 1000 DNS records.
+                        maximum: 10000
+                        minimum: 0
+                        type: integer
                       wapiPort:
                         description: WAPIPort is the port for the Infoblox WAPI.
                         type: integer
