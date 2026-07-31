@@ -24,7 +24,7 @@
       ]
     },
     {
-      "description": "Keep Go toolset on minor version 1.25",
+      "description": "Keep Go toolset on minor version 1.26",
       "matchManagers": ["dockerfile"],
       "matchFileNames": [
         "Containerfile.external-dns-operator"
@@ -35,7 +35,7 @@
       ],
       "enabled": true,
       "versioning": "redhat",
-      "allowedVersions": "/^1\\.25(\\.|$)/",
+      "allowedVersions": "/^1\\.26(\\.|$)/",
       "schedule": [
         "after 5am on tuesday"
       ]
