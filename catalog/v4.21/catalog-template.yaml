@@ -57,6 +57,9 @@ entries:
   - name: external-dns-operator.v1.3.7
     replaces: external-dns-operator.v1.3.6
     skipRange: <1.3.7
+  - name: external-dns-operator.v1.3.8
+    replaces: external-dns-operator.v1.3.7
+    skipRange: <1.3.8
   name: stable-v1
   package: external-dns-operator
   schema: olm.channel
@@ -117,6 +120,9 @@ entries:
   - name: external-dns-operator.v1.3.7
     replaces: external-dns-operator.v1.3.6
     skipRange: <1.3.7
+  - name: external-dns-operator.v1.3.8
+    replaces: external-dns-operator.v1.3.7
+    skipRange: <1.3.8
   name: stable-v1.3
   package: external-dns-operator
   schema: olm.channel
@@ -170,6 +176,9 @@ entries:
   schema: olm.bundle
 - image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:3d2b312b32ca3f483f4e704874da53236505911589dec9ba219a978f7430dfb1
   name: external-dns-operator.v1.3.7
+  schema: olm.bundle
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:c22a0bcf154fbca0b659f83b0b87222d05a395e7a4815da899acb98857546740
+  name: external-dns-operator.v1.3.8
   schema: olm.bundle
 - schema: olm.deprecations
   package: external-dns-operator
