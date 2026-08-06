@@ -307,12 +307,14 @@ metadata:
                 "name": "myzonedomain.com"
               }
             ],
+            "intervalSeconds": 300,
             "provider": {
               "infoblox": {
                 "credentials": {
                   "name": "infoblox-credentials"
                 },
                 "gridHost": "100.100.100.100",
+                "maxResults": 2000,
                 "wapiPort": 443,
                 "wapiVersion": "2.12.2"
               },
