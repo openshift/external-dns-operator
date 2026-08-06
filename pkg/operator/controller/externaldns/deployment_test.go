@@ -3845,15 +3845,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				}
 			}()
 			depl, err := desiredExternalDNSDeployment(&deploymentConfig{
-				test.OperandNamespace,
-				test.OperandImage,
-				serviceAccount,
-				tc.inputExternalDNS,
-				tc.inputIsOpenShift,
-				tc.inputPlatformStatus,
-				tc.inputSecretName,
-				testSecretHash,
-				tc.inputTrustedCAConfigMapName, "",
+				namespace:              test.OperandNamespace,
+				image:                  test.OperandImage,
+				serviceAccount:         serviceAccount,
+				externalDNS:            tc.inputExternalDNS,
+				isOpenShift:            tc.inputIsOpenShift,
+				platformStatus:         tc.inputPlatformStatus,
+				secret:                 tc.inputSecretName,
+				secretHash:             testSecretHash,
+				trustedCAConfigMapName: tc.inputTrustedCAConfigMapName,
 			})
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
@@ -5999,7 +5999,7 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 				log:    zap.New(zap.UseDevMode(true)),
 			}
 
-			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, serviceAccount, tc.credSecret, tc.trustCAConfigMap, &tc.extDNS)
+			gotExist, gotDepl, err := r.ensureExternalDNSDeployment(context.TODO(), test.OperandNamespace, test.OperandImage, "", serviceAccount, tc.credSecret, tc.trustCAConfigMap, &tc.extDNS)
 			if err != nil {
 				if !tc.errExpected {
 					t.Fatalf("unexpected error received: %v", err)
