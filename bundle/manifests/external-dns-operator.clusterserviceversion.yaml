@@ -541,6 +541,7 @@ spec:
           - configmaps
           - secrets
           - serviceaccounts
+          - services
           verbs:
           - create
           - delete
@@ -561,6 +562,18 @@ spec:
           - apps
           resources:
           - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
           verbs:
           - create
           - delete
