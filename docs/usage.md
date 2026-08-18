@@ -210,6 +210,9 @@ the following information is required:
           gridHost: # the grid master host from the previous step. eg: 172.26.1.200
           wapiPort: # the WAPI port, eg: 80, 443, 8080
           wapiVersion: # the WAPI version, eg: 2.11, 2.3.1
+          maxResults: 2000 # optional; Infoblox default is currently 1000
+      # intervalSeconds applies to all providers (optional; ExternalDNS default is currently 60 when unset and may change)
+      intervalSeconds: 300
       zones: # Replace with the desired hosted zones
         - "ZG5zLm5ldHdvcmtfdmlldyQw"
       source:

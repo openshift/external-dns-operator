@@ -101,6 +101,16 @@ type ExternalDNSSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	Zones []string `json:"zones,omitempty"`
+
+	// intervalSeconds specifies the interval in seconds between two consecutive
+	// synchronizations performed by ExternalDNS. When unset, the default is determined by
+	// ExternalDNS, which is currently 60 seconds, but is subject to change over time.
+	// The minimum of 60 seconds is a safe lower bound to avoid hitting provider rate limits.
+	//
+	// +kubebuilder:validation:Minimum=60
+	// +kubebuilder:validation:Maximum=3600
+	// +optional
+	IntervalSeconds int32 `json:"intervalSeconds,omitempty"`
 }
 
 // ExternalDNSDomain describes how sets of included
@@ -361,6 +371,15 @@ type ExternalDNSInfobloxProviderOptions struct {
 	// +kubebuilder:validation:Required
 	// +required
 	WAPIVersion string `json:"wapiVersion"`
+
+	// maxResults sets the maximum number of DNS records that Infoblox returns per request.
+	// The Infoblox default is currently 1000 and requests exceeding it will fail. Increase this when
+	// managing zones with more than 1000 DNS records.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=10000
+	// +optional
+	MaxResults int `json:"maxResults,omitempty"`
 }
 
 // SecretReference contains the information to let you locate the desired secret.
