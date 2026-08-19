@@ -32,13 +32,17 @@ spec:
       - name: external-dns-operator
         image: quay.io/openshift/origin-external-dns-operator:latest
         args:
-        - --metrics-bind-address=127.0.0.1:8080
+        - --metrics-bind-address=:8443
+        - --metrics-tls-cert-dir=/var/run/secrets/serving-cert
         - --operator-namespace=$(OPERATOR_NAMESPACE)
         - --operand-namespace=$(OPERATOR_NAMESPACE)
         - --externaldns-image=$(RELATED_IMAGE_EXTERNAL_DNS)
         - --trusted-ca-configmap=$(TRUSTED_CA_CONFIGMAP_NAME)
         - --leader-elect
         - --webhook-disable-http2
+        ports:
+        - containerPort: 8443
+          name: https
         terminationMessagePolicy: FallbackToLogsOnError
         env:
         - name: OPERATOR_NAMESPACE
@@ -63,4 +67,13 @@ spec:
           requests:
             cpu: 100m
             memory: 30Mi
+        volumeMounts:
+        - mountPath: /var/run/secrets/serving-cert
+          name: metrics-cert
+          readOnly: true
+      volumes:
+      - name: metrics-cert
+        secret:
+          defaultMode: 420
+          secretName: external-dns-operator-metrics
       serviceAccountName: external-dns-operator
