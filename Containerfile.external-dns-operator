@@ -28,7 +28,7 @@ RUN make build-operator
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:f0ed53122215c6cccdc992166caa9f6b56c08b202e8b1144dd1c2ad04579415d
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
-LABEL name="external-dns-operator"
+LABEL name="edo/external-dns-rhel8-operator"
 LABEL version="1.2.4"
 LABEL cpe="cpe:/a:redhat:ext_dns_optr:1.2::el8"
 WORKDIR /
