@@ -13,7 +13,6 @@ source ./bundle_vars.sh
 # Check for environment variables pertaining to the bundle
 if  [ -z "${OPERATOR_IMAGE_PULLSPEC}" ] ||
     [ -z "${OPERAND_IMAGE_PULLSPEC}" ] ||
-    [ -z "${KUBE_RBAC_PROXY_IMAGE_PULLSPEC}" ] ||
     [ -z "${MANIFESTS_DIR}" ] ||
     [ -z "${METADATA_DIR}" ] ||
     [ -z "${SUPPORTED_OCP_VERSIONS}" ] ||
@@ -21,7 +20,6 @@ if  [ -z "${OPERATOR_IMAGE_PULLSPEC}" ] ||
   echo "ERROR: Not all required environment variables are set"
   echo "    OPERATOR_IMAGE_PULLSPEC"
   echo "    OPERAND_IMAGE_PULLSPEC"
-  echo "    KUBE_RBAC_PROXY_IMAGE_PULLSPEC"
   echo "    MANIFESTS_DIR"
   echo "    METADATA_DIR"
   echo "    SUPPORTED_OCP_VERSIONS"
@@ -37,8 +35,7 @@ sed -i -e "s|quay.io/openshift/origin-external-dns-operator:latest|${OPERATOR_IM
        -e "s|quay.io/openshift/origin-external-dns:.*$|${OPERAND_IMAGE_PULLSPEC}|g" \
        -e "s|quay.io/openshift/origin-external-dns@.*$|${OPERAND_IMAGE_PULLSPEC}|g" \
        -e "s|quay.io/external-dns-operator/external-dns:.*$|${OPERAND_IMAGE_PULLSPEC}|g" \
-       -e "s|quay.io/external-dns-operator/external-dns@.*$|${OPERAND_IMAGE_PULLSPEC}|g" \
-       -e "s|quay.io/openshift/origin-kube-rbac-proxy:latest|${KUBE_RBAC_PROXY_IMAGE_PULLSPEC}|g" "${CSV_FILE}"
+       -e "s|quay.io/external-dns-operator/external-dns@.*$|${OPERAND_IMAGE_PULLSPEC}|g" "${CSV_FILE}"
 
 export EPOC_TIMESTAMP=$(date +%s)
 export TARGET_CSV_FILE="${CSV_FILE}"
@@ -73,7 +70,6 @@ version = os.getenv('VERSION')
 replaces = os.getenv('REPLACES_VERSION')
 operator_pullspec = os.getenv('OPERATOR_IMAGE_PULLSPEC', '')
 operand_pullspec = os.getenv('OPERAND_IMAGE_PULLSPEC', '')
-kube_rbac_proxy_pullspec = os.getenv('KUBE_RBAC_PROXY_IMAGE_PULLSPEC', '')
 csv = load_manifest(os.getenv('TARGET_CSV_FILE'))
 
 # Update CSV metadata and spec
@@ -96,7 +92,6 @@ annotation_image_name = f'external-dns-rhel9-operator-{operator_sha}-annotation'
 csv['spec']['relatedImages'] = [
     {'name': annotation_image_name, 'image': operator_pullspec},
     {'name': 'external-dns-operator', 'image': operator_pullspec},
-    {'name': 'kube-rbac-proxy', 'image': kube_rbac_proxy_pullspec},
     {'name': 'external_dns', 'image': operand_pullspec}
 ]
 
