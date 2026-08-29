@@ -156,13 +156,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -186,6 +195,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
@@ -250,12 +264,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -271,6 +296,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -343,13 +375,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -373,6 +414,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      "trusted-ca",
 										ReadOnly:  true,
@@ -465,13 +511,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -500,6 +555,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
@@ -580,13 +640,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=azure",
@@ -606,6 +675,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--azure-config-file=/etc/kubernetes/azure.json",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -681,13 +755,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  "external-dns-n64ch5cch658h64bq",
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=/subscriptions/xxxx/resourceGroups/test-az-2f9kj-rg/providers/Microsoft.Network/privateDnsZones/test-az.example.com",
 									"--provider=azure-private-dns",
@@ -707,6 +790,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--txt-wildcard-replacement=any",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -766,12 +854,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=azure",
@@ -788,6 +887,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
 									"--txt-wildcard-replacement=any",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -858,13 +964,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=azure",
 									"--source=service",
@@ -883,6 +998,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--azure-config-file=/etc/kubernetes/azure.json",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -905,7 +1025,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7980",
+									"--metrics-address=0.0.0.0:7980",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=azure-private-dns",
 									"--source=service",
@@ -924,6 +1045,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--azure-config-file=/etc/kubernetes/azure.json",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -999,13 +1125,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=google",
@@ -1030,6 +1165,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      gcpCredentialsVolumeName,
 										ReadOnly:  true,
@@ -1089,12 +1229,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=google",
@@ -1110,6 +1261,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1166,12 +1324,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=google",
@@ -1188,6 +1357,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
 									"--google-project=external-dns-gcp-project",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1258,13 +1434,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=bluecat",
@@ -1283,6 +1468,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--bluecat-config-file=/etc/kubernetes/bluecat.json",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      "bluecat-config-file",
 										ReadOnly:  true,
@@ -1342,12 +1532,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=bluecat",
@@ -1363,6 +1564,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--txt-prefix=external-dns-",
 									"--fqdn-template={{.Name}}.test.com",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1418,12 +1626,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=infoblox",
@@ -1465,6 +1684,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 												Key: infobloxWAPIPasswordEnvVar,
 											},
 										},
+									},
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
 									},
 								},
 								SecurityContext: &corev1.SecurityContext{
@@ -1521,12 +1747,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=infoblox",
@@ -1570,6 +1807,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 												Key: infobloxWAPIPasswordEnvVar,
 											},
 										},
+									},
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
 									},
 								},
 								SecurityContext: &corev1.SecurityContext{
@@ -1625,12 +1869,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=infoblox",
@@ -1645,6 +1900,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--publish-internal-services",
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1699,12 +1961,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -1714,6 +1987,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--log-level=debug",
 									"--service-type-filter=LoadBalancer",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1768,12 +2048,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -1785,6 +2076,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com,{{.Name}}.{{.Namespace}}.example.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1839,12 +2137,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -1860,6 +2169,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1877,7 +2193,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:  "external-dns-n656hcdh5d9hf6q",
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7980",
+									"--metrics-address=0.0.0.0:7980",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-private-zone",
 									"--provider=aws",
@@ -1893,6 +2210,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -1947,12 +2271,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -1969,6 +2304,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2023,12 +2365,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=service",
@@ -2043,6 +2396,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2097,13 +2457,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
 									"--domain-filter=abc.com",
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=service",
@@ -2118,6 +2489,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2172,6 +2550,16 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
@@ -2179,7 +2567,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Args: []string{
 									"--domain-filter=abc.com",
 									"--zone-id-filter=my-dns-public-zone",
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=service",
@@ -2194,6 +2583,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									"--fqdn-template={{.Name}}.test.com",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2281,13 +2677,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -2306,6 +2711,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
@@ -2370,12 +2780,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -2386,6 +2807,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2472,13 +2900,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -2497,6 +2934,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      awsCredentialsVolumeName,
 										MountPath: awsCredentialsMountPath,
@@ -2561,13 +3003,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
 									"--aws-assume-role=arn:aws:iam:123456789012:role/foo",
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -2578,6 +3031,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2648,13 +3108,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=azure",
@@ -2669,6 +3138,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--txt-wildcard-replacement=any",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -2728,12 +3202,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=azure",
@@ -2745,6 +3230,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
 									"--txt-wildcard-replacement=any",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -2815,13 +3307,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=azure",
 									"--source=openshift-route",
@@ -2835,6 +3336,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--txt-wildcard-replacement=any",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -2857,7 +3363,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7980",
+									"--metrics-address=0.0.0.0:7980",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=azure-private-dns",
 									"--source=openshift-route",
@@ -2871,6 +3378,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--txt-wildcard-replacement=any",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      azureConfigVolumeName,
 										ReadOnly:  true,
@@ -2946,13 +3458,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=google",
@@ -2972,6 +3493,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      gcpCredentialsVolumeName,
 										ReadOnly:  true,
@@ -3031,12 +3557,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=google",
@@ -3047,6 +3584,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3117,13 +3661,22 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
 						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=bluecat",
@@ -3137,6 +3690,11 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--txt-prefix=external-dns-",
 								},
 								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 									{
 										Name:      "bluecat-config-file",
 										ReadOnly:  true,
@@ -3196,12 +3754,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=bluecat",
@@ -3212,6 +3781,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3267,12 +3843,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=infoblox",
@@ -3309,6 +3896,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 												Key: "EXTERNAL_DNS_INFOBLOX_WAPI_PASSWORD",
 											},
 										},
+									},
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
 									},
 								},
 								SecurityContext: &corev1.SecurityContext{
@@ -3364,12 +3958,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=infoblox",
@@ -3379,6 +3984,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--log-level=debug",
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3433,12 +4045,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -3447,6 +4070,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--registry=txt",
 									"--log-level=debug",
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3501,12 +4131,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -3517,6 +4158,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3534,7 +4182,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Name:  "external-dns-n656hcdh5d9hf6q",
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7980",
+									"--metrics-address=0.0.0.0:7980",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-private-zone",
 									"--provider=aws",
@@ -3545,6 +4194,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3599,12 +4255,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -3616,6 +4283,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3670,12 +4344,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=openshift-route",
@@ -3685,6 +4370,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3739,13 +4431,24 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerNoZones,
 								Image: test.OperandImage,
 								Args: []string{
 									"--domain-filter=abc.com",
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=openshift-route",
@@ -3755,6 +4458,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3809,6 +4519,16 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
@@ -3816,7 +4536,8 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Args: []string{
 									"--domain-filter=abc.com",
 									"--zone-id-filter=my-dns-public-zone",
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--provider=aws",
 									"--source=openshift-route",
@@ -3826,6 +4547,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									"--ignore-hostname-annotation",
 									`--fqdn-template={{""}}`,
 									"--txt-prefix=external-dns-",
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									Capabilities: &corev1.Capabilities{
@@ -3885,12 +4613,23 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 								Effect:   corev1.TaintEffectNoSchedule,
 							},
 						},
+						Volumes: []corev1.Volume{
+							{
+								Name: metricsCertVolumeName,
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "external-dns-test-metrics-cert",
+									},
+								},
+							},
+						},
 						Containers: []corev1.Container{
 							{
 								Name:  ExternalDNSContainerName,
 								Image: test.OperandImage,
 								Args: []string{
-									"--metrics-address=127.0.0.1:7979",
+									"--metrics-address=0.0.0.0:7979",
+									"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 									"--txt-owner-id=external-dns-test",
 									"--zone-id-filter=my-dns-public-zone",
 									"--provider=aws",
@@ -3914,6 +4653,13 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 									{
 										Name:  "NO_PROXY",
 										Value: noProxy,
+									},
+								},
+								VolumeMounts: []corev1.VolumeMount{
+									{
+										Name:      metricsCertVolumeName,
+										MountPath: metricsCertMountPath,
+										ReadOnly:  true,
 									},
 								},
 								SecurityContext: &corev1.SecurityContext{
@@ -3950,15 +4696,15 @@ func TestDesiredExternalDNSDeployment(t *testing.T) {
 				}
 			}()
 			depl, err := desiredExternalDNSDeployment(&deploymentConfig{
-				test.OperandNamespace,
-				test.OperandImage,
-				serviceAccount,
-				tc.inputExternalDNS,
-				tc.inputIsOpenShift,
-				tc.inputPlatformStatus,
-				tc.inputSecretName,
-				testSecretHash,
-				tc.inputTrustedCAConfigMapName, "",
+				namespace:              test.OperandNamespace,
+				image:                  test.OperandImage,
+				serviceAccount:         serviceAccount,
+				externalDNS:            tc.inputExternalDNS,
+				isOpenShift:            tc.inputIsOpenShift,
+				platformStatus:         tc.inputPlatformStatus,
+				secret:                 tc.inputSecretName,
+				secretHash:             testSecretHash,
+				trustedCAConfigMapName: tc.inputTrustedCAConfigMapName,
 			})
 			if err != nil {
 				t.Errorf("expected no error from calling desiredExternalDNSDeployment, but received %v", err)
@@ -4324,13 +5070,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -4347,6 +5102,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -4453,13 +5213,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 									},
+									{
+										Name: metricsCertVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-test-metrics-cert",
+											},
+										},
+									},
 								},
 								Containers: []corev1.Container{
 									{
 										Name:  ExternalDNSContainerName,
 										Image: test.OperandImage,
 										Args: []string{
-											"--metrics-address=127.0.0.1:7979",
+											"--metrics-address=0.0.0.0:7979",
+											"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 											"--txt-owner-id=external-dns-test",
 											"--zone-id-filter=my-dns-public-zone",
 											"--provider=aws",
@@ -4476,6 +5245,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      metricsCertVolumeName,
+												MountPath: metricsCertMountPath,
+												ReadOnly:  true,
+											},
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
@@ -4583,13 +5357,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -4606,6 +5389,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -4712,13 +5500,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 									},
+									{
+										Name: metricsCertVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-test-metrics-cert",
+											},
+										},
+									},
 								},
 								Containers: []corev1.Container{
 									{
 										Name:  ExternalDNSContainerName,
 										Image: test.OperandImage,
 										Args: []string{
-											"--metrics-address=127.0.0.1:7979",
+											"--metrics-address=0.0.0.0:7979",
+											"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 											"--txt-owner-id=external-dns-test",
 											"--zone-id-filter=my-dns-public-zone",
 											"--provider=aws",
@@ -4734,6 +5531,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      metricsCertVolumeName,
+												MountPath: metricsCertMountPath,
+												ReadOnly:  true,
+											},
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
@@ -4842,13 +5644,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -4866,6 +5677,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -5030,13 +5846,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -5053,6 +5878,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -5184,13 +6014,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -5211,6 +6050,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      "trusted-ca",
 											MountPath: "/etc/pki/ca-trust/extracted/pem",
@@ -5327,13 +6171,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -5351,6 +6204,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -5457,13 +6315,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 									},
+									{
+										Name: metricsCertVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-test-metrics-cert",
+											},
+										},
+									},
 								},
 								Containers: []corev1.Container{
 									{
 										Name:  ExternalDNSContainerName,
 										Image: test.OperandImage,
 										Args: []string{
-											"--metrics-address=127.0.0.1:7979",
+											"--metrics-address=0.0.0.0:7979",
+											"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 											"--txt-owner-id=external-dns-test",
 											"--zone-id-filter=my-dns-public-zone",
 											"--provider=aws",
@@ -5481,6 +6348,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      metricsCertVolumeName,
+												MountPath: metricsCertMountPath,
+												ReadOnly:  true,
+											},
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: awsCredentialsMountPath,
@@ -5577,13 +6449,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -5601,6 +6482,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -5768,13 +6654,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 								},
+								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
 							},
 							Containers: []corev1.Container{
 								{
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -5792,6 +6687,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
@@ -5897,13 +6797,22 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 									},
+									{
+										Name: metricsCertVolumeName,
+										VolumeSource: corev1.VolumeSource{
+											Secret: &corev1.SecretVolumeSource{
+												SecretName: "external-dns-test-metrics-cert",
+											},
+										},
+									},
 								},
 								Containers: []corev1.Container{
 									{
 										Name:  ExternalDNSContainerName,
 										Image: test.OperandImage,
 										Args: []string{
-											"--metrics-address=127.0.0.1:7979",
+											"--metrics-address=0.0.0.0:7979",
+											"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 											"--txt-owner-id=external-dns-test",
 											"--zone-id-filter=my-dns-public-zone",
 											"--provider=aws",
@@ -5925,6 +6834,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      metricsCertVolumeName,
+												MountPath: metricsCertMountPath,
+												ReadOnly:  true,
+											},
 											{
 												Name:      awsCredentialsVolumeName,
 												MountPath: "wrongpath",
@@ -6020,6 +6934,14 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									},
 								},
 								{
+									Name: metricsCertVolumeName,
+									VolumeSource: corev1.VolumeSource{
+										Secret: &corev1.SecretVolumeSource{
+											SecretName: "external-dns-test-metrics-cert",
+										},
+									},
+								},
+								{
 									Name: "bound-sa-token",
 									VolumeSource: corev1.VolumeSource{
 										Projected: &corev1.ProjectedVolumeSource{
@@ -6041,7 +6963,8 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 									Name:  ExternalDNSContainerName,
 									Image: test.OperandImage,
 									Args: []string{
-										"--metrics-address=127.0.0.1:7979",
+										"--metrics-address=0.0.0.0:7979",
+										"--metrics-tls-cert-dir=/var/run/secrets/serving-cert",
 										"--txt-owner-id=external-dns-test",
 										"--zone-id-filter=my-dns-public-zone",
 										"--provider=aws",
@@ -6059,6 +6982,11 @@ func TestEnsureExternalDNSDeployment(t *testing.T) {
 										},
 									},
 									VolumeMounts: []corev1.VolumeMount{
+										{
+											Name:      metricsCertVolumeName,
+											MountPath: metricsCertMountPath,
+											ReadOnly:  true,
+										},
 										{
 											Name:      awsCredentialsVolumeName,
 											MountPath: awsCredentialsMountPath,
