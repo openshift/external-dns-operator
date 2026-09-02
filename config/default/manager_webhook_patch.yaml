@@ -15,6 +15,12 @@ spec:
         - containerPort: 9440
           name: health-check
           protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health-check
+          initialDelaySeconds: 15
+          periodSeconds: 20
         readinessProbe:
           httpGet:
             path: /readyz

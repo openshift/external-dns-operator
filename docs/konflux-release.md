@@ -27,7 +27,6 @@ The nudging order is as follows:
 Verify that the latest images pushed by the component push pipelines are reflected in [`bundle-hack/container_digest.sh`](../bundle-hack/container_digest.sh). This file contains the image pullspecs with digests for:
 - **Operator image** (`OPERATOR_IMAGE_PULLSPEC`)
 - **Operand image** (`OPERAND_IMAGE_PULLSPEC`)
-- **kube-rbac-proxy image** (`KUBE_RBAC_PROXY_IMAGE_PULLSPEC`)
 
 All digests must match the images produced by the latest successful push pipelines before proceeding with the release.
 

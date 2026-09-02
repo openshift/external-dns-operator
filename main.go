@@ -50,6 +50,7 @@ func main() {
 	flag.IntVar(&opCfg.RequeuePeriodSeconds, "requeue-period", operatorconfig.DefaultRequeuePeriodSeconds, "Requeue period for a failed reconciliation (in seconds).")
 	flag.BoolVar(&opCfg.EnableLeaderElection, "leader-elect", operatorconfig.DefaultEnableLeaderElection, "Enable leader election for controller manager to ensure there is only one active controller manager.")
 	flag.BoolVar(&opCfg.WebhookDisableHTTP2, "webhook-disable-http2", false, "Disable HTTP/2 for the webhook server.")
+	flag.StringVar(&opCfg.MetricsTLSCertDir, "metrics-tls-cert-dir", operatorconfig.DefaultMetricsTLSCertDir, "The directory containing TLS certificates for the metrics endpoint.")
 	opts := zap.Options{
 		Development: true,
 	}
