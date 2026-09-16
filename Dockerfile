@@ -8,8 +8,8 @@ RUN git config --global --add safe.directory /opt/app-root/src
 # Build
 RUN make build-operator
 
-# Use minimal base image to package the manager binary
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+# Use micro base image to package the manager binary
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 WORKDIR /
 COPY --from=builder /opt/app-root/src/bin/external-dns-operator .
 

@@ -8,14 +8,14 @@
       "enabled": false
     },
     {
-      "description": "Enable Docker image updates for Red Hat UBI images on major version 9",
+      "description": "Enable Docker image updates for Red Hat UBI micro images on major version 9",
       "matchManagers": ["dockerfile"],
       "matchFileNames": [
         "Containerfile.external-dns-operator"
       ],
       "matchDatasources": ["docker"],
       "matchPackageNames": [
-        "registry.access.redhat.com/ubi9/ubi-minimal"
+        "registry.access.redhat.com/ubi9/ubi-micro"
       ],
       "enabled": true,
       "versioning": "redhat",
