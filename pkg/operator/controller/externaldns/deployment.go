@@ -109,16 +109,16 @@ func (r *reconciler) ensureExternalDNSDeployment(ctx context.Context, namespace,
 	}
 
 	desired, err := desiredExternalDNSDeployment(&deploymentConfig{
-		namespace,
-		image,
-		serviceAccount,
-		externalDNS,
-		r.config.IsOpenShift,
-		r.config.PlatformStatus,
-		credSecret.Name,
-		credSecretHash,
-		trustCAConfigMapName,
-		trustCAConfigMapHash,
+		namespace:              namespace,
+		image:                  image,
+		serviceAccount:         serviceAccount,
+		externalDNS:            externalDNS,
+		isOpenShift:            r.config.IsOpenShift,
+		platformStatus:         r.config.PlatformStatus,
+		secret:                 credSecret.Name,
+		secretHash:             credSecretHash,
+		trustedCAConfigMapName: trustCAConfigMapName,
+		trustedCAConfigMapHash: trustCAConfigMapHash,
 	})
 	if err != nil {
 		return false, nil, fmt.Errorf("failed to build externalDNS deployment: %w", err)
@@ -296,6 +296,9 @@ func desiredExternalDNSDeployment(cfg *deploymentConfig) (*appsv1.Deployment, er
 			depl.Spec.Template.Spec.Containers = append(depl.Spec.Template.Spec.Containers, *container)
 		}
 	}
+	certVolume := metricsCertVolume(controller.ExternalDNSMetricsSecretName(cfg.externalDNS))
+	depl.Spec.Template.Spec.Volumes = append(depl.Spec.Template.Spec.Volumes, certVolume)
+
 	return depl, nil
 }
 
@@ -416,6 +419,10 @@ func externalDNSContainersChanged(current, expected, updated *appsv1.Deployment)
 			}
 			if scChanged, updatedContext := securityContextChanged(currCont.SecurityContext, updated.Spec.Template.Spec.Containers[currCont.Index].SecurityContext, expCont.SecurityContext); scChanged {
 				updated.Spec.Template.Spec.Containers[currCont.Index].SecurityContext = updatedContext
+				changed = true
+			}
+			if !equalContainerPorts(currCont.Ports, expCont.Ports) {
+				updated.Spec.Template.Spec.Containers[currCont.Index].Ports = expCont.Ports
 				changed = true
 			}
 		} else {
@@ -699,6 +706,27 @@ func securityContextChanged(current, updated, desired *corev1.SecurityContext) (
 	}
 
 	return changed, updated
+}
+
+// equalContainerPorts returns true if 2 container port slices have the same content.
+func equalContainerPorts(current, expected []corev1.ContainerPort) bool {
+	if len(current) != len(expected) {
+		return false
+	}
+	currentMap := map[string]corev1.ContainerPort{}
+	for _, p := range current {
+		currentMap[p.Name] = p
+	}
+	for _, ep := range expected {
+		cp, found := currentMap[ep.Name]
+		if !found {
+			return false
+		}
+		if cp.ContainerPort != ep.ContainerPort || cp.Protocol != ep.Protocol {
+			return false
+		}
+	}
+	return true
 }
 
 func equalBoolPtr(current, desired *bool) bool {
