@@ -14,6 +14,9 @@ spec:
     - source: registry.redhat.io/ubi9/ubi-minimal
       mirrors:
         - brew.registry.redhat.io/ubi9/ubi-minimal
+    - source: registry.redhat.io/ubi9/ubi-micro
+      mirrors:
+        - brew.registry.redhat.io/ubi9/ubi-micro
     - source: registry.redhat.io/edo/external-dns-operator-bundle
       mirrors:
         - quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-1-rhel-8/external-dns-operator-bundle-container-ext-dns-optr-1-1-rhel-8
