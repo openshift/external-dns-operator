@@ -153,6 +153,10 @@ image-push: ## Push container image with the operator.
 image-fips-scan:
 	$(CONTAINER_ENGINE) run --privileged $(CHECK_PAYLOAD_IMG) scan operator --spec $(IMG)
 
+.PHONY: konflux-rpm-lock
+konflux-rpm-lock: ## Regenerate .konflux/rpms.lock.yaml from rpms.in.yaml.
+	cd .konflux && rpm-lockfile-prototype rpms.in.yaml
+
 ##@ Deployment
 
 install: manifests ## Install CRDs into the K8s cluster specified in ~/.kube/config.
