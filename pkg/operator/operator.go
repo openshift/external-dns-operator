@@ -54,6 +54,7 @@ type Operator struct {
 // +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 // local role
+// +kubebuilder:rbac:groups=networking.k8s.io,namespace=external-dns-operator,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=secrets;serviceaccounts;configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="apps",namespace=external-dns-operator,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=pods,verbs=get;list;watch
