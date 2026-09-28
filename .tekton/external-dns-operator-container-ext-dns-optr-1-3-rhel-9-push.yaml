@@ -26,6 +26,8 @@ spec:
     value: quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-3-rhel-9/external-dns-operator-container-ext-dns-optr-1-3-rhel-9:{{revision}}
   - name: dockerfile
     value: Containerfile.external-dns-operator
+  - name: prefetch-input
+    value: '[{"type": "rpm", "path": ".konflux"}]'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
