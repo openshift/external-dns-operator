@@ -1,0 +1,4635 @@
+---
+defaultChannel: stable-v1
+icon:
+  base64data: iVBORw0KGgoAAAANSUhEUgAAAG4AAAB1CAMAAACYlCSRAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAMAUExURQAAAChbgRdOdyhbgStdgx5TeyhbgShbgShbgShbgSJXfiBVfCVZgChbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgShbgf/////+/itdg/z9/vz9/Shbgf3+/ilcghpQeSpdgrrh5P7+/+pwb7ng4xhPeFV9nJavwulxcP7///v8/Nbb3RxSevb5+vr7++Xo6urs7cbN0bnBxqeyt63T17a/w6Ots56qsPL09exycOPm6Jmoruzu8PP29+jq7F+Jlv38/IOlrkVxkjtqjbO7wLLY3GR3gcHIzPb3+Iqkq9DV2NLX2rzEyMrZ4LXc36jO0/W7uu/x8vfKyl+NnZyssyRYf/Dz9XeYsNne4I+jqrvj5q23vdrl6vOtrI+utZKzucXLz1mFlLXH1OyFhPGkpPbCwuvx9O+Tk6qzuaXLz2CGok13l22Omex/fp3DyJGqsMnP0/719YWTmnSEjaHGy+Do7ZW5vzVliVyJmNzg4pm+xHaVn+t6ef75+ulvbsXU26S6v+Dk5svR1Pvg4ISgqV+Gk2aLl25xfIqgqKK+xFppc3uep9pra6/FzZu7wm6Rq6m9zYipsYSht5ajqvCene6KieJtbYmutn+apJ6yuF1we3+hqneZo6SwtnB+h2+TnarAxLxoaubs8WaLpo6pve2OjoqDiWl7hZGfpolob9NpatXh54CdpXWquzpMWfr+/mCAjJG2vFh+jJStwSpdgi5fhYmlurrL177O2e+ZmKG3yH2cs46aodHe5IKPl7HO0mmaqndveUxxf0JcaLBna+Xw8vS0tNzq7ImXnnFpc5NxdlmAnnqJkVJ7ms7T1qu1urXU2H1qc3iRmsdnaWiFj6hlaTFih520xr3f4pNfZXRhafjPz4N3fvzp6JCOlIqzv1BeabzY32RZYaWLj5hla0tqd/vm5b3R1093hfra2dR2d6mts7iOktWGiNyLi0pBwGYAAAAodFJOUwBZ/vz9/akBAwT9/v0OiJcgFsQHKtlho/dK0PHhueg0dH1B7Tuxa1LrZH0hAAAOuElEQVRo3u1bd1xT2baOk2QIBAULOPaOe0LKSQQcTEICJCEhoQw1AemggLSAFFFAmiigICJIERSxoqCOdWxXnZ+99zKKfeZO7+XOve+9fU6CE5QUkvj+uuufnNTvrLW+tc7Ze33B4f5r/cyCZIkZycLi3WNZamJYkt4pGAnFsh3jMMzGZtjkmaMs34Q3r2fwl0dNGTGOwaSgxsDb2Uy1hLF9RymzwE2fgWdQaGQu4vIewiXPo1BoY+0tVT6bP46279OYTDLCCNyXuOnspQ2Pl3OJeAg4BjsT84KRcEOHfcAgELlLvkylApXlZu1jIBBwxijzAsL0WAwZzyBYIZ+fZ0McOpXNpjoCMAekJs7jEhgfDBtqvhSiZz5pBI1i7RLYRoVQdLVz6OEccGUx14rAGG9vYaYUwl8ZboNnEpAz+32BY18g1YY+zwp0sSbQRkw3R0RhjEZOnsYgkMkblkF3wFvm6AjcPjuD4Jn40bamRhQ93zF2NII1sqQWzPo7jP0MvrxsA5lIYIybPBLllClgo2bQKHhk+UY2cBwYTJVDEPkYsSLQ7GbijE4h/B5Gfq71ptwB46gB6AioG4PQophgZFGg5LefiJJ/8VEINgfoNpjC+Wet0aKwGT74FGIdawRMmkvgOSw7em0O/FDqPi6ZwJjoMNi+hnas0TQmHjnzkRt64gYZjCg4jxXF2KmDiShk18gp42DHIicu05O0tyKq+HI5msL3DS4K9GMzIfmtkNmRmj3EIIMf/yRxHloUU4YaUhQY+Seg5A/aSAeDBFMXxZXPYV+jjR+ivyiga8NtUPLTNs03OGlvpZDehhXFiEl6IgrJ74CSn7sv1QDy60ih734ml8DEw6LQ4aAlbpSK/OeBEXF8o6/tI6JFMUQrHnTcHsYR+eJLNyPjqJlCAGqXoEVhA+9mtERyCnSNmPjJoMivI6K8i2eIBNqEoQPikXDDaATy8vMQbBYwh8Hr/bLPXeCVcCA8Es6BRuAGLgNsOjCTzaKCVYkIgTbD4q37bRJuKp5CXCIBWuNIZ2vPlI6IboJ4w3Bv1AO81tgxrYJ8tKMBnsj39bHCU5D09ztzk3QV4QaIN/UNPDRxeFok0MURTyW9D1Du2f5cos4QTyF210FRsGoJmTl2ZL/0wQvAOAqyH7B1pSJWLEmJVR0m/HC8Uao69OD0BuskDIi0xtMc+rkHnWNYBfoCXZT0cRet8fBUw10/fpKPHUnE7mK+H1Un3iWEMpak4R7M3HgKclFnKIFU4Cf2EavcC/7tZqgCO1JGzA2uS9H1RXjVpVjTxmi4R8KNYVgvzwU6S4AqSBLNrVTBrbl14pEq8L0+Av4Tju6CB/u4FJt+cDYUJBHo6SWVwZI+Tiz6z4sHfDVhK/kCtu5yB+eITLt+ZBnL5Gbpg6OqPHPvFQlKDx48JEuRV2IBlfjo6Z8gd/k8/KjXcPCufByNsQwY0E4UvYKE1flPo9rThSHRzekyEd+Qfg1mE5lD4PWmD24SY17QfG1wsXKO2m9eccLqpyyWs3N0cnA6y5nFCmlemuLXdyaVPlqTt4FLmfIaDmUKeYkjGPhyqvDa2ZiARU3avaM5xBm1kLDkUyzsqDwjTI6lrq4pxUuqLXlnEcgVy9dX1ZkM8mMtaMBd8NPx053Q817ZtXRxWBSLFRVdnhFQlR8C3auQNeWnd8MGIy24Ht3hOfAvsMFn71FGa8ANYRJna4slb9Gu4/EnOjnKHT85h4m2C8sDCvwzV6xY4d+461RIxpOmfFa7jD+358/j1xuTtMF99B7lfQPhgKT75K0TX7Xs+KezszA9YHdm5snQG8+e3Vh3csWKxoD0qihnVlHZLy0nbr70oJsDDoCk0l/2Xv4nmrOAhsx1v+5dv7WmZuv6F69uNKwoKIcvs9of7v1RrJWkg4UD7t8fRNGEuzNDf13v7e2Kmbf31tvr4htOoXhLf/639m8PGo4quBYF0QoyH7xwcnWqccIMPngf+dS/IcPZOUq4K8mMcJwd6U1FUbszn/21pXBl4ZaFqBVuWVm4sND1K/+GqpCwpowEtulwPu48FTmvNSl3dmQ+OJIWszkuO+duXFpcTkzO3Zy4mANbP41vrBAHb+tQ9Wm6gm4cHN2XDTjdXsHzYXNezco41tEQ+sLpbkxe/YE0CPlNXEx2Ttw3OZu916+Lb00/Fl2+gw7olSIvERu8WcEGwfFEXsG9Ur862FBE12B6WjN/dXXKS8vOzjuwMDs7e/OFAxcubM5OW+l9u8E/H76/1h2we8OlfE5EirsxwWT7cCIEXrCYFAJIy+iG0CPeTtn139XHrCyMq/+9Ps21MO73378pdNr6LD4ANtBtHjD4Ii+v4DV8tnG546+p8/OZBepWw19Lz/zUybUm5sOcuI/vLiypv/uvVXlpIC4mptDJ+5V/AWyl5d0QLsmP72c0VXzki7ph2+1tg+141+nb3hBu1ZaV3/1rS0lOzYWP09I+zCmsgfV35BAaTWEyD/AivLzW0E0oBAWkZsQ1eKlphLFE4Q5419cfgHB5H6etjFv1XTas9603VlQsYEWtjQVsaSzV5LoTPS0vF/qvW++Keeddj3kH4WpcN39XcqDG1enT+G3CCuFaP/OUuai5U5bhv24rBrc5uyRnodq7vC1xH+ZhcDvDnoTtlJoLTtbZoYK7u6qkpH7LwpIYFO5CSUnJNyudVHCCVnPBeT4tqojGgulaeGHzhUIn1//968VfBwpX5m3Og2goXIewInqtuzng6L33r7EWRDV27d3q5O1UU1Ozfu/D7w8fvvrtq/XwCSRmzZEHmRULFkRVc0yFk0QkXy37+us9LGHFyZdXDz7cu97Je+/BsvxTFae2RT8/eNsJYt1+ePD5yV1VIcKe72UCTw7PeDi2LP76zVtff/Vo57EdtXfcciN3fP/w1TNlclF19cuT0WHFB1+9eli6+kqu250/Mo7t/vrbW7/d3J6iMBpOkvxT4q57kW17Iu+4YS/84w58In7enl9eVFRVcHjPnrZUtznqd2r3tF2517H6idRoOKpoUcGxf2DkFKiue5exG8AnyWFNTQnhaO/n+Pb7xurTTRLjc8erky/FkiG7XDzXw89D3tJdpxCJJMpOpUDAVwQH+4Qe5hcL+FJBsRruMN8kZkpVcOKWsvBQ5aHgltJHXl1d3T33PVvKSru7urxCL0d0Hbp6uUuuhlMCs8CdKJOGikKDe5ShV1uuBvf0cno8y0rh0aHwiFul4uKeUhUjm80DlyK7H3w4tEzZFbqo99Cj8PucylLlZY9DjzidoRGPyjyD++D2mAyHUYXn5pt6pdaH6gPXxbF+vNx7R1MVChDL5/Hgk9rI1Dp1ue3xMA2Ovz0V1oDbvay1uwt2B7TdY6NP2rb33Ojp+OMO/Ibv0ebW3QWN6X/cgafle2VnsWlwCkH19ub2gO0JXk0hwordf+5qb68+/edvDx603Dx9OqA5o+B0a5VwW6nn0u3pzRnH1vZtTRjdMyWdKQldclhM8qUhCzpSyloDqhv8/dElSUNBQMBL8eF8521NcGVXd79bdt/d5BYt4VeKOVJ0pbhmbXm61/YQdMFVlNFRlS90Zi2okh2r2pkAT0YR2yuWcvxMhqN7iKXFMuy065JbT0Wrl5Od7arlZFFrdQRKE58ETqUs3OQLkCJ4UaxcoM7Iop+/DciH60mWMFkUAB+chT+U3Xiies9PrHT38nQzCG4mk/h44C0jvgebLlWznH75q//5tmntNhjHUzuLoou2tVb/uPcX2etdAp6bJ8eA1atqba5/B0F560RLBM+vOEUWFhbWlLzDM0ny759P/Njbbxk+4Np8v4vG2pyEm86wClQAPZu0Pi/jMw+pHGXzFDws9rzQm9efx+rbtkV3xYZpbHTYfmB95hN9+yoR8cevJ7z54uH447vkevdVFhOZ9hpwI+0Y5FqgZ3ddEPBUfTvC5rF5PNVCINz/h9oUPXvEQBFkxZj+96YYCfc+BTmrb5MqqXORSIWRVMwJ71UtV3kJ1eK5evbcQeQ8xkSN/W9LnD1MHg/oGYvEStVLm17PYqVcXWS8JL7e1G1CKDP67WfajmMSzwFDxwe9nh5yebihEwwwH8bSXnO7FkaTSVwMDN3Sr+z1kM+tNHScAL5EKBOHa+4vknBTaUxilqHuUalKOZVqqHO50Lk3tvYtcDMYVkESg/1TyoHBziUilGm2/QclFrhR4yhcGE4D8ZI4BqKxwUUugTb5zbkFCTeZRnC5pGMY/9ZY1wCbwwZZZDxjwttDIAvcaBoBSfwQmGG6pSHAyJpnzRhvOxDcyBHQv8USdDJlFkPHcp9x8Yxxk3ADjEQtcEMn0AjcoCwTJ5OaY/vFCJ4xbTpuwAEs9A/G04q72JS5q8ZsS3KWRiTQ7EbhSFqFWQ6qqXKuoVzQziTHjUEueApt9FAcSccY21Y9M6caylFtgpLZmKBkDE6nMk8th7FCHtcOWhEwgDJgpL5BfZ/Yh6hN7GPI0PyjLxA8k2aYGAiVMo1GpUyUz3wHPdBGU35ucFIntVCLgHcJzBqc7AEl/1FMyDXRnmS4ZkUlQ0NT+PnRQcy1IbnmbzJKpvZaZDfvUq6BKYRxZG9cbqzeCBXkqFRUF3kGpBCNQe0SxBojvzFqKkwjNhbTiJ3XqhHT1FRsIJPVWjHjpFsw/JYOqAKOqKcoUNHP/jMIgYkfPdwUJVyfvo9L2a9dLQNPhK7W+U0yUefXp17EuwS10Qfsa2iYryxGUBXjEDOoGNHYqItiIKUTfCH3EtqxUPKTzKHRRItCreNCpSyO/Xsx7yJG/hm25hOEqnW1eOQL2NfmzKJSqY6OVCqqNHE8F4gMWodmUAqnYkURdDb173jmblyCquymOZhdPQwjRXKYyKBYI7TZmy6ei4w8v3H/vi8QMpOBtxn+LrTRmH5yGiqLRhAiNK4L0ZrCwJtbNtwvosMdRnzAoFCYDFT5zWTYDXtXYH1FgbO1t5kw1m683YjRkyeNxJmH/PoE+33Jsnzn/xGwsFRhwEfSu/9DQt894v8Xkkn2f1t20PFmJc7vAAAAAElFTkSuQmCC
+  mediatype: image/png
+name: external-dns-operator
+schema: olm.package
+---
+entries:
+- name: external-dns-operator.v1.3.0
+  skipRange: <1.3.0
+- name: external-dns-operator.v1.3.1
+  replaces: external-dns-operator.v1.3.0
+  skipRange: <1.3.1
+- name: external-dns-operator.v1.3.2
+  replaces: external-dns-operator.v1.3.1
+  skipRange: <1.3.2
+- name: external-dns-operator.v1.3.3
+  replaces: external-dns-operator.v1.3.2
+  skipRange: <1.3.3
+- name: external-dns-operator.v1.3.4
+  replaces: external-dns-operator.v1.3.3
+  skipRange: <1.3.4
+- name: external-dns-operator.v1.3.5
+  replaces: external-dns-operator.v1.3.4
+  skipRange: <1.3.5
+- name: external-dns-operator.v1.3.6
+  replaces: external-dns-operator.v1.3.5
+  skipRange: <1.3.6
+- name: external-dns-operator.v1.3.7
+  replaces: external-dns-operator.v1.3.6
+  skipRange: <1.3.7
+- name: external-dns-operator.v1.3.8
+  replaces: external-dns-operator.v1.3.7
+  skipRange: <1.3.8
+- name: external-dns-operator.v1.3.9
+  replaces: external-dns-operator.v1.3.8
+  skipRange: <1.3.9
+- name: external-dns-operator.v1.3.10
+  replaces: external-dns-operator.v1.3.9
+  skipRange: <1.3.10
+name: stable-v1
+package: external-dns-operator
+schema: olm.channel
+---
+entries:
+- name: external-dns-operator.v1.3.0
+  skipRange: <1.3.0
+- name: external-dns-operator.v1.3.1
+  replaces: external-dns-operator.v1.3.0
+  skipRange: <1.3.1
+- name: external-dns-operator.v1.3.2
+  replaces: external-dns-operator.v1.3.1
+  skipRange: <1.3.2
+- name: external-dns-operator.v1.3.3
+  replaces: external-dns-operator.v1.3.2
+  skipRange: <1.3.3
+- name: external-dns-operator.v1.3.4
+  replaces: external-dns-operator.v1.3.3
+  skipRange: <1.3.4
+- name: external-dns-operator.v1.3.5
+  replaces: external-dns-operator.v1.3.4
+  skipRange: <1.3.5
+- name: external-dns-operator.v1.3.6
+  replaces: external-dns-operator.v1.3.5
+  skipRange: <1.3.6
+- name: external-dns-operator.v1.3.7
+  replaces: external-dns-operator.v1.3.6
+  skipRange: <1.3.7
+- name: external-dns-operator.v1.3.8
+  replaces: external-dns-operator.v1.3.7
+  skipRange: <1.3.8
+- name: external-dns-operator.v1.3.9
+  replaces: external-dns-operator.v1.3.8
+  skipRange: <1.3.9
+- name: external-dns-operator.v1.3.10
+  replaces: external-dns-operator.v1.3.9
+  skipRange: <1.3.10
+name: stable-v1.3
+package: external-dns-operator
+schema: olm.channel
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:9b4d9b4589fa2f03b683012b803b3cf29858321fd2ace941a779d9e83277e054
+name: external-dns-operator.v1.3.0
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.0
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:37fe6a3138613f6edc1130152d127aa3b6d9cdaa16380b4380fb654cc5e9e6d6
+      createdAt: 2024-10-23T10:03:16
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "false"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.0
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:9b4d9b4589fa2f03b683012b803b3cf29858321fd2ace941a779d9e83277e054
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:37fe6a3138613f6edc1130152d127aa3b6d9cdaa16380b4380fb654cc5e9e6d6
+  name: external-dns-rhel9-operator-37fe6a3138613f6edc1130152d127aa3b6d9cdaa16380b4380fb654cc5e9e6d6-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:37fe6a3138613f6edc1130152d127aa3b6d9cdaa16380b4380fb654cc5e9e6d6
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:917d99b4c82924d1ee39d3dc8565d6937686624e7681932591b5ab702b35ce2d
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:9e0fee30842a16d7b8a39d336123c80c5271cb2ceb50759fc7ee51a4ed09ceb3
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:7299850b4a8257303836c8a28d6e4f3cdc29493148e01ad57d7775e4bb32d56c
+name: external-dns-operator.v1.3.1
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.1
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:1cb36d6418297d9b5fc32ef2157f80697cf0a84008088f1f8860e2a63d5cb723
+      createdAt: 2025-09-08T22:55:39
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "false"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.1
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:7299850b4a8257303836c8a28d6e4f3cdc29493148e01ad57d7775e4bb32d56c
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:1cb36d6418297d9b5fc32ef2157f80697cf0a84008088f1f8860e2a63d5cb723
+  name: external-dns-rhel9-operator-1cb36d6418297d9b5fc32ef2157f80697cf0a84008088f1f8860e2a63d5cb723-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:1cb36d6418297d9b5fc32ef2157f80697cf0a84008088f1f8860e2a63d5cb723
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:591de53fdaae236c8d384deb6c927f4f397bf44ce4580bbc70b57c112cf22315
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:471549d9cc07fcec0f285a05745b3d39a48e9a503b01b4047156a86ec1a30c00
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:87c7ae6952b94e8db875a013e971d2a23f206c4eb89a3f44d6ec3ae3c8b44aba
+name: external-dns-operator.v1.3.10
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.10
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "intervalSeconds": 300,
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "maxResults": 2000,
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
+      createdAt: 2026-09-23T21:52:08
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.10
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:87c7ae6952b94e8db875a013e971d2a23f206c4eb89a3f44d6ec3ae3c8b44aba
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
+  name: external-dns-rhel9-operator-7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:65b8579795bc0cdaf3f92604f37a995273d1fc2194352251c0b1984290b1494c
+  name: external_dns
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:de5eb0f13e34a0aa9c16e2f57be6ddb2d159c638151ff9a4874cf671909f5223
+name: external-dns-operator.v1.3.2
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.2
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.3.1"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:5f0bef1e98f994893e456ab283fd545871008b0eb106095774b3eabecf57a679
+      createdAt: 2025-11-28T17:53:02
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "false"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.2
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:de5eb0f13e34a0aa9c16e2f57be6ddb2d159c638151ff9a4874cf671909f5223
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:5f0bef1e98f994893e456ab283fd545871008b0eb106095774b3eabecf57a679
+  name: external-dns-rhel9-operator-5f0bef1e98f994893e456ab283fd545871008b0eb106095774b3eabecf57a679-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:5f0bef1e98f994893e456ab283fd545871008b0eb106095774b3eabecf57a679
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:38828aedc54f9d9bfa22699b470c26633bba1dc565d00b05670fd5829aae3d73
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:c06dd49191fc8c48cb46d3e2a3f65092f23c8b4b27fb6aa0d59d1b4c866360dd
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:07520162925e260338ac84df2beaa6c9a26775663f27305e6f66bbc68f3493bc
+name: external-dns-operator.v1.3.3
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.3
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:f3e05eb1c1280a92a2c451a061b61d99828574a48cfef91369372065133b4464
+      createdAt: 2025-12-10T16:08:35
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.3
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:07520162925e260338ac84df2beaa6c9a26775663f27305e6f66bbc68f3493bc
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:f3e05eb1c1280a92a2c451a061b61d99828574a48cfef91369372065133b4464
+  name: external-dns-rhel9-operator-f3e05eb1c1280a92a2c451a061b61d99828574a48cfef91369372065133b4464-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:f3e05eb1c1280a92a2c451a061b61d99828574a48cfef91369372065133b4464
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:36a24459014086c2df189ba457f01fb41d566a46e1986a6701ef113e14ac34af
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ba9ff4c933739f1774bc8277d636053c5306863221a8c7b7b9ddc4470eb7feff
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:5435af846c5203af30847d7f05bcb172dacf3e92b4138b83c963bae0e20e5b4b
+name: external-dns-operator.v1.3.4
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.4
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:35ed62702739decfeb8cc0039476d8e5b2c5547460559c93a337ca4c679b34ab
+      createdAt: 2026-05-12T14:37:32
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.4
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:5435af846c5203af30847d7f05bcb172dacf3e92b4138b83c963bae0e20e5b4b
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:35ed62702739decfeb8cc0039476d8e5b2c5547460559c93a337ca4c679b34ab
+  name: external-dns-rhel9-operator-35ed62702739decfeb8cc0039476d8e5b2c5547460559c93a337ca4c679b34ab-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:35ed62702739decfeb8cc0039476d8e5b2c5547460559c93a337ca4c679b34ab
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:d0e09840bad1051d91c204655ab445a377235db78e7d9a45fa0bc3c69e86e188
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy@sha256:ba9ff4c933739f1774bc8277d636053c5306863221a8c7b7b9ddc4470eb7feff
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:d57066b50638e4cc6df110d1d10d864e1c19d11acc708f898ec248e87bc82a8c
+name: external-dns-operator.v1.3.5
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.5
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b6ba8a87c9541fd5b4e18417bfb5478d1cb1a3e7986d8fb2fb9d5199ba8dcdc2
+      createdAt: 2026-05-27T10:14:30
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.5
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:d57066b50638e4cc6df110d1d10d864e1c19d11acc708f898ec248e87bc82a8c
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b6ba8a87c9541fd5b4e18417bfb5478d1cb1a3e7986d8fb2fb9d5199ba8dcdc2
+  name: external-dns-rhel9-operator-b6ba8a87c9541fd5b4e18417bfb5478d1cb1a3e7986d8fb2fb9d5199ba8dcdc2-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b6ba8a87c9541fd5b4e18417bfb5478d1cb1a3e7986d8fb2fb9d5199ba8dcdc2
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:9890936faaada0886ce0782315f0a4da6d34a0783cdce5f6dab185e4117168d6
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:0185c66b6ff250fddb837d5bcafcd87f089012e9157254d356f72a2620327eab
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:50364b1cff4b17bd97b594124c5e14f62cfc640227d48ec3699f49a98a811add
+name: external-dns-operator.v1.3.6
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.6
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:e13a2bad5a6c5cea6f85ca638bfc6de99c301e5dfaa1648738e3272cf95ed177
+      createdAt: 2026-06-16T16:36:21
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.6
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:50364b1cff4b17bd97b594124c5e14f62cfc640227d48ec3699f49a98a811add
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:e13a2bad5a6c5cea6f85ca638bfc6de99c301e5dfaa1648738e3272cf95ed177
+  name: external-dns-rhel9-operator-e13a2bad5a6c5cea6f85ca638bfc6de99c301e5dfaa1648738e3272cf95ed177-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:e13a2bad5a6c5cea6f85ca638bfc6de99c301e5dfaa1648738e3272cf95ed177
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:0ef6dd5185013064c391eacd0f508d65829ffa512a7806660d353c113a7a069b
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:0fc6a16b71e2719d9d01d6dfeb83077c38562c08d628d1f1ae03fabe3a5b9a91
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:3d2b312b32ca3f483f4e704874da53236505911589dec9ba219a978f7430dfb1
+name: external-dns-operator.v1.3.7
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.7
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:891792412de9c2d684bc49459b87a1b6bcd509df9da27b00a1321b39f4a9c977
+      createdAt: 2026-06-29T13:49:42
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.7
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:3d2b312b32ca3f483f4e704874da53236505911589dec9ba219a978f7430dfb1
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:891792412de9c2d684bc49459b87a1b6bcd509df9da27b00a1321b39f4a9c977
+  name: external-dns-rhel9-operator-891792412de9c2d684bc49459b87a1b6bcd509df9da27b00a1321b39f4a9c977-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:891792412de9c2d684bc49459b87a1b6bcd509df9da27b00a1321b39f4a9c977
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:d2924893dfdae6ae72376511ac5be192611539637276712dbe182b60953616d5
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:0fc6a16b71e2719d9d01d6dfeb83077c38562c08d628d1f1ae03fabe3a5b9a91
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:c22a0bcf154fbca0b659f83b0b87222d05a395e7a4815da899acb98857546740
+name: external-dns-operator.v1.3.8
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.8
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:c3ed5e5a53d1e05c365352ef00170d652a0e79bcf5c1effaa5ede6dd3e03f791
+      createdAt: 2026-08-05T18:23:46
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.8
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:c22a0bcf154fbca0b659f83b0b87222d05a395e7a4815da899acb98857546740
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:c3ed5e5a53d1e05c365352ef00170d652a0e79bcf5c1effaa5ede6dd3e03f791
+  name: external-dns-rhel9-operator-c3ed5e5a53d1e05c365352ef00170d652a0e79bcf5c1effaa5ede6dd3e03f791-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:c3ed5e5a53d1e05c365352ef00170d652a0e79bcf5c1effaa5ede6dd3e03f791
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:bff2bf48be1d62005dda3b939066fb9d3ba2877799373ec0d1b02feac7728bc9
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:98f9ae97d479f92cabc782534c6dfad56588f434797f1e3d866a97810db2d323
+  name: kube-rbac-proxy
+schema: olm.bundle
+---
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:2a04a59b04febdb4c1305632ea8abd0f66d0132bc10526f2dceb1798a78b48e5
+name: external-dns-operator.v1.3.9
+package: external-dns-operator
+properties:
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: externaldns.olm.openshift.io
+    kind: ExternalDNS
+    version: v1beta1
+- type: olm.package
+  value:
+    packageName: external-dns-operator
+    version: 1.3.9
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1alpha1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-aws"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "testextdnsoperator.apacshift.support"
+                }
+              ],
+              "provider": {
+                "type": "AWS"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "Z04015592QJX3EK1YYYYY"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/dnszones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-azure-private"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-azure1.qe.azure.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "Azure"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "/subscriptions/53b4f551-f0fc-4bea-8cba-11111111111/resourceGroups/test-azure1-nxkxm-rg/providers/Microsoft.Network/privateDnsZones/test-azure1.qe.azure.devcluster.openshift.com"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-bluecat"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "provider": {
+                "blueCat": {
+                  "configFile": {
+                    "name": "bluecat-config"
+                  }
+                },
+                "type": "BlueCat"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-gcp"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "test-gcp1.qe.gcp.devcluster.openshift.com"
+                }
+              ],
+              "provider": {
+                "type": "GCP"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              },
+              "zones": [
+                "test-gcp1-q6m5v-private-zone"
+              ]
+            }
+          },
+          {
+            "apiVersion": "externaldns.olm.openshift.io/v1beta1",
+            "kind": "ExternalDNS",
+            "metadata": {
+              "name": "sample-infoblox"
+            },
+            "spec": {
+              "domains": [
+                {
+                  "filterType": "Include",
+                  "matchType": "Exact",
+                  "name": "myzonedomain.com"
+                }
+              ],
+              "intervalSeconds": 300,
+              "provider": {
+                "infoblox": {
+                  "credentials": {
+                    "name": "infoblox-credentials"
+                  },
+                  "gridHost": "100.100.100.100",
+                  "maxResults": 2000,
+                  "wapiPort": 443,
+                  "wapiVersion": "2.12.2"
+                },
+                "type": "Infoblox"
+              },
+              "source": {
+                "openshiftRouteOptions": {
+                  "routerName": "default"
+                },
+                "type": "OpenShiftRoute"
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      certified: "false"
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:bfb278a17acde1c4c2fa0d60d0f97432a5650ad5011d97bce468ca8481431923
+      createdAt: 2026-08-25T19:16:35
+      features.operators.openshift.io/disconnected: "true"
+      features.operators.openshift.io/fips-compliant: "true"
+      features.operators.openshift.io/proxy-aware: "true"
+      features.operators.openshift.io/tls-profiles: "false"
+      features.operators.openshift.io/token-auth-aws: "false"
+      features.operators.openshift.io/token-auth-azure: "false"
+      features.operators.openshift.io/token-auth-gcp: "false"
+      olm.skipRange: <1.3.9
+      operatorframework.io/suggested-namespace: external-dns-operator
+      operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine",
+        "OpenShift Container Platform", "OpenShift Platform Plus"]'
+      operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
+      operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+      repository: https://github.com/openshift/external-dns-operator
+      support: Red Hat, Inc.
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1alpha1
+      - description: ExternalDNS describes a managed ExternalDNS controller instance
+          for a cluster. The controller is responsible for creating external DNS records
+          in supported DNS providers based off of instances of select Kubernetes resources.
+        displayName: External DNS
+        kind: ExternalDNS
+        name: externaldnses.externaldns.olm.openshift.io
+        version: v1beta1
+    description: |-
+      The ExternalDNS Operator deploys and manages ExternalDNS, which dynamically manages DNS records in external DNS Providers for specific Kubernetes resources.
+
+      ## How it works
+       Follow this link to get an idea of how ExternalDNS Operator works: [flow diagram](https://raw.githubusercontent.com/openshift/external-dns-operator/main/docs/images/external-dns-flow-openshift.png).
+    displayName: ExternalDNS Operator
+    installModes:
+    - supported: true
+      type: OwnNamespace
+    - supported: true
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: false
+      type: AllNamespaces
+    keywords:
+    - openshift
+    - dns
+    - externaldns
+    - operator
+    links:
+    - name: Source code
+      url: https://github.com/openshift/external-dns-operator
+    maturity: beta
+    minKubeVersion: 1.22.0
+    provider:
+      name: Red Hat, Inc.
+relatedImages:
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:2a04a59b04febdb4c1305632ea8abd0f66d0132bc10526f2dceb1798a78b48e5
+  name: ""
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:bfb278a17acde1c4c2fa0d60d0f97432a5650ad5011d97bce468ca8481431923
+  name: external-dns-rhel9-operator-bfb278a17acde1c4c2fa0d60d0f97432a5650ad5011d97bce468ca8481431923-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:bfb278a17acde1c4c2fa0d60d0f97432a5650ad5011d97bce468ca8481431923
+  name: external-dns-operator
+- image: registry.redhat.io/edo/external-dns-rhel9@sha256:4450e6eac021e7f88f756f62e1043d6f8d6baddf99080ec4ad367c68ef5191f5
+  name: external_dns
+- image: registry.redhat.io/openshift4/ose-kube-rbac-proxy-rhel9@sha256:463b54511bf50ee29f2e14f1fd00e7a4a148386d5571268277f7b945cf702451
+  name: kube-rbac-proxy
+schema: olm.bundle

@@ -200,8 +200,9 @@ bundle-image-build: bundle
 bundle-image-push:
 	$(CONTAINER_ENGINE) push $(BUNDLE_IMG)
 
+OCP_VERSION_MAJOR := $(shell echo $(OCP_VERSION) | cut -d. -f1)
 OCP_VERSION_MINOR := $(shell echo $(OCP_VERSION) | cut -d. -f2)
-MIGRATE_LEVEL_FLAG := $(shell [ $(OCP_VERSION_MINOR) -ge 17 ] && echo --migrate-level bundle-object-to-csv-metadata)
+MIGRATE_LEVEL_FLAG := $(shell [ $(OCP_VERSION_MAJOR) -ge 5 ] || ([ $(OCP_VERSION_MAJOR) -eq 4 ] && [ $(OCP_VERSION_MINOR) -ge 17 ]) && echo --migrate-level bundle-object-to-csv-metadata)
 
 generate-catalog: opm ## Generate OCP version-based catalog for the Konflux-built operator
 	mkdir -p $(OCP_CATALOG_DIR)
