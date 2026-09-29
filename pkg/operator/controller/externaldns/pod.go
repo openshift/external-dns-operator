@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	defaultMetricsAddress         = "127.0.0.1"
+	defaultMetricsAddress         = "0.0.0.0"
 	defaultOwnerPrefix            = "external-dns"
 	defaultMetricsStartPort       = 7979
 	defaultConfigMountPath        = "/etc/kubernetes"
@@ -56,6 +56,12 @@ const (
 	sslCertDirEnvVar = "SSL_CERT_DIR"
 	// all capabilities in the container security context
 	allCapabilities = "ALL"
+	//
+	// metrics TLS serving cert (provisioned by service-ca)
+	//
+	metricsCertVolumeName = "metrics-cert"
+	metricsCertMountPath  = "/var/run/secrets/serving-cert"
+	metricsPortName       = "metrics"
 	//
 	// AWS
 	//
@@ -163,6 +169,7 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	//
 	args := []string{
 		fmt.Sprintf("--metrics-address=%s:%d", defaultMetricsAddress, defaultMetricsStartPort+seq),
+		fmt.Sprintf("--metrics-tls-cert-dir=%s", metricsCertMountPath),
 		fmt.Sprintf("--txt-owner-id=%s-%s", defaultOwnerPrefix, b.externalDNS.Name),
 		fmt.Sprintf("--provider=%s", b.provider),
 		fmt.Sprintf("--source=%s", b.source),
@@ -245,6 +252,12 @@ func (b *externalDNSContainerBuilder) fillProviderAgnosticFields(seq int, zone s
 	//
 	// VOLUME MOUNTS
 	//
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      metricsCertVolumeName,
+		MountPath: metricsCertMountPath,
+		ReadOnly:  true,
+	})
+
 	for _, v := range b.volumes {
 		// if trustedCA volume was added
 		if v.Name == trustedCAVolumeName {
@@ -693,4 +706,37 @@ func (b *externalDNSVolumeBuilder) bluecatVolumes() []corev1.Volume {
 // needed if CNAME records are used: https://github.com/kubernetes-sigs/external-dns#note
 func addTXTPrefixFlag(args []string) []string {
 	return append(args, fmt.Sprintf("--txt-prefix=%s", defaultTXTRecordPrefix))
+}
+
+// numMetricsPorts returns the number of metrics ports needed for the given ExternalDNS instance.
+// This mirrors the zone container creation logic in desiredExternalDNSDeployment.
+func numMetricsPorts(externalDNS *operatorv1beta1.ExternalDNS) int {
+	if len(externalDNS.Spec.Zones) == 0 {
+		if externalDNS.Spec.Provider.Type == operatorv1beta1.ProviderTypeAzure {
+			return 2
+		}
+		return 1
+	}
+	return len(externalDNS.Spec.Zones)
+}
+
+// metricsPortNameForSeq returns the port name for the ExternalDNS container metrics port
+// at the given sequence index.
+func metricsPortNameForSeq(seq int) string {
+	if seq == 0 {
+		return metricsPortName
+	}
+	return fmt.Sprintf("%s-%d", metricsPortName, seq)
+}
+
+// metricsCertVolume returns the volume for the metrics serving certificate secret.
+func metricsCertVolume(secretName string) corev1.Volume {
+	return corev1.Volume{
+		Name: metricsCertVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+			},
+		},
+	}
 }
