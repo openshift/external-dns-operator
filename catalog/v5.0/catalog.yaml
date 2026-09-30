@@ -864,7 +864,7 @@ relatedImages:
   name: kube-rbac-proxy
 schema: olm.bundle
 ---
-image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:87c7ae6952b94e8db875a013e971d2a23f206c4eb89a3f44d6ec3ae3c8b44aba
+image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:78dcc467b8cff0993abab852cec0008e31dbabc6623faaadf31a347ba7f217bb
 name: external-dns-operator.v1.3.10
 package: external-dns-operator
 properties:
@@ -1214,8 +1214,8 @@ properties:
         ]
       capabilities: Basic Install
       certified: "false"
-      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
-      createdAt: 2026-09-23T21:52:08
+      containerImage: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b3b3375d60ce20e5235cbc77134a68fbe990f775444fc620c6e43673d8ce8ede
+      createdAt: 2026-09-29T21:13:57
       features.operators.openshift.io/disconnected: "true"
       features.operators.openshift.io/fips-compliant: "true"
       features.operators.openshift.io/proxy-aware: "true"
@@ -1276,11 +1276,11 @@ properties:
     provider:
       name: Red Hat, Inc.
 relatedImages:
-- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:87c7ae6952b94e8db875a013e971d2a23f206c4eb89a3f44d6ec3ae3c8b44aba
+- image: registry.redhat.io/edo/external-dns-operator-bundle@sha256:78dcc467b8cff0993abab852cec0008e31dbabc6623faaadf31a347ba7f217bb
   name: ""
-- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
-  name: external-dns-rhel9-operator-7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0-annotation
-- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:7188c592d812aa524043a0e1c83cf6a2648c0b25d29db202fdb66b9962890bc0
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b3b3375d60ce20e5235cbc77134a68fbe990f775444fc620c6e43673d8ce8ede
+  name: external-dns-rhel9-operator-b3b3375d60ce20e5235cbc77134a68fbe990f775444fc620c6e43673d8ce8ede-annotation
+- image: registry.redhat.io/edo/external-dns-rhel9-operator@sha256:b3b3375d60ce20e5235cbc77134a68fbe990f775444fc620c6e43673d8ce8ede
   name: external-dns-operator
 - image: registry.redhat.io/edo/external-dns-rhel9@sha256:65b8579795bc0cdaf3f92604f37a995273d1fc2194352251c0b1984290b1494c
   name: external_dns
