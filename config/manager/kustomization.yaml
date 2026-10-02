@@ -6,6 +6,14 @@ resources:
 
 generatorOptions:
   disableNameSuffixHash: true
+# Empty configmap labeled for the Cluster Network Operator to inject the
+# merged trusted CA bundle (system CAs + the cluster-wide proxy's trustedCA).
+# Shipped in the bundle so proxy CA trust works out of the box on OpenShift.
+configMapGenerator:
+- name: external-dns-operator-trusted-ca
+  options:
+    labels:
+      config.openshift.io/inject-trusted-cabundle: "true"
 images:
 - name: quay.io/openshift/origin-external-dns-operator
   newName: quay.io/openshift/origin-external-dns-operator
