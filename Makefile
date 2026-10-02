@@ -153,6 +153,13 @@ image-push: ## Push container image with the operator.
 image-fips-scan:
 	$(CONTAINER_ENGINE) run --privileged $(CHECK_PAYLOAD_IMG) scan operator --spec $(IMG)
 
+$(BIN_DIR)/fips_enabled:
+	echo -n "1" > $(BIN_DIR)/fips_enabled
+
+.PHONY: image-fips-runtime-smoke-test
+image-fips-runtime-smoke-test: image-build $(BIN_DIR)/fips_enabled ## Test that the operator starts in FIPS mode.
+	$(CONTAINER_ENGINE) run --rm -v $(BIN_DIR)/fips_enabled:/proc/sys/crypto/fips_enabled:ro $(IMG) --help > /dev/null 2>&1
+
 .PHONY: konflux-rpm-lock
 konflux-rpm-lock: ## Regenerate .konflux/rpms.lock.yaml from rpms.in.yaml.
 	cd .konflux && rpm-lockfile-prototype rpms.in.yaml
