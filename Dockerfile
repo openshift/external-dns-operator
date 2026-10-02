@@ -21,7 +21,9 @@ RUN dnf install -y \
       --setopt=install_weak_deps=False \
       --nodocs \
       openssl-fips-provider \
+      openssl-libs \
     && test -f /mnt/rootfs/usr/lib64/ossl-modules/fips.so \
+    && test -f /mnt/rootfs/usr/lib64/libcrypto.so.3 \
     && dnf clean all --installroot=/mnt/rootfs \
     && rm -rf /mnt/rootfs/var/cache/dnf \
               /mnt/rootfs/var/cache/yum \
