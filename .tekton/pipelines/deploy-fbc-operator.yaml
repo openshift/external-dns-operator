@@ -6,7 +6,7 @@ metadata:
     upstream-usable: "true"
 spec:
   description: |
-    The deploy-fbc-operator pipeline automates the provisioning of a EaaS Hypershift cluster and the deployment of an operator from a given FBC (File-Based Catalog) fragment.
+    The deploy-fbc-operator pipeline automates the provisioning of an ephemeral HyperShift cluster via OpenShift CI and the deployment of an operator from a given FBC (File-Based Catalog) fragment.
     It automates the process of retrieving an unreleased bundle from the FBC, selecting an appropriate OpenShift version and architecture for cluster provisioning,
     installing the operator, and gathering cluster artifacts.
   workspaces:
@@ -71,6 +71,18 @@ spec:
       name: PATH_TO_MIRROR_SET
       default: ".tekton/images-mirror-set.yaml"
       type: string
+    - description: The OpenShift CI cluster profile that holds the cloud provider account used to provision the ephemeral cluster.
+      name: CLUSTER_PROFILE
+      default: "aws-konflux-prod"
+      type: string
+    - description: The OpenShift CI hosted management cluster used to provision the ephemeral cluster.
+      name: HOSTED_MANAGEMENT_CLUSTER
+      default: "hosted-mgmt2"
+      type: string
+    - description: Number of worker nodes to provision in the ephemeral HyperShift cluster.
+      name: HYPERSHIFT_NODE_COUNT
+      default: "3"
+      type: string
     - description: |
         The directory inside the FBC fragment image that contains the catalog configuration.
         This value is used in the CatalogSource's extractContent.catalogDir field.
@@ -91,30 +103,9 @@ spec:
       params:
         - name: SNAPSHOT
           value: $(params.SNAPSHOT)
-    - name: provision-eaas-space
-      runAfter:
-        - parse-metadata
-      when:
-        - input: $(tasks.parse-metadata.results.test-event-type)
-          operator: in
-          values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/konflux-ci/build-definitions.git
-          - name: revision
-            value: main
-          - name: pathInRepo
-            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
-      params:
-        - name: ownerName
-          value: $(context.pipelineRun.name)
-        - name: ownerUid
-          value: $(context.pipelineRun.uid)
     - name: fetch-config-files
       runAfter:
-        - provision-eaas-space
+        - parse-metadata
       when:
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
@@ -213,7 +204,8 @@ spec:
 
               serialized_mirror_set=$(serialize_image_mirrors_yaml "${mirror_set_yaml}")
               echo "Serialized image mirror set: $serialized_mirror_set"
-              echo -e "$serialized_mirror_set" > "$(workspaces.shared-data.path)/serializedMirrorSetYaml"
+              mkdir -p "$(workspaces.shared-data.path)/env-files"
+              echo -e "$serialized_mirror_set" > "$(workspaces.shared-data.path)/env-files/IMAGE_CONTENT_SOURCES"
 
               # Fetch scorecard config
               scorecard_config_url="${SOURCE_GIT_URL}/raw/${SOURCE_GIT_REVISION}/bundle/tests/scorecard/config.yaml"
@@ -375,22 +367,11 @@ spec:
         results:
           - name: ocpVersion
             value: "$(steps.pick-cluster-version.results.ocpVersion)"
-          - name: bundleArch
-            value: "$(steps.pick-cluster-arch.results.bundleArch)"
+          - name: arch
+            value: "$(steps.pick-cluster-arch.results.arch)"
+          - name: awsInstanceType
+            value: "$(steps.pick-cluster-arch.results.awsInstanceType)"
         steps:
-          - name: get-supported-versions
-            ref:
-              resolver: git
-              params:
-                - name: url
-                  value: https://github.com/konflux-ci/build-definitions.git
-                - name: revision
-                  value: main
-                - name: pathInRepo
-                  value: stepactions/eaas-get-supported-ephemeral-cluster-versions/0.1/eaas-get-supported-ephemeral-cluster-versions.yaml
-            params:
-              - name: eaasSpaceSecretRef
-                value: "$(tasks.provision-eaas-space.results.secretRef)"
           - name: pick-cluster-version
             ref:
               resolver: git
@@ -400,12 +381,10 @@ spec:
                 - name: revision
                   value: main
                 - name: pathInRepo
-                  value: stepactions/bundles/pick-cluster-version/0.1/pick-cluster-version.yaml
+                  value: stepactions/bundles/pick-cluster-version/0.2/pick-cluster-version.yaml
             params:
               - name: fbcFragment
                 value: "$(tasks.parse-metadata.results.component-container-image)"
-              - name: clusterVersions
-                value: ["$(steps.get-supported-versions.results.versions[*])"]
           - name: pick-cluster-arch
             ref:
               resolver: git
@@ -415,7 +394,7 @@ spec:
                 - name: revision
                   value: main
                 - name: pathInRepo
-                  value: stepactions/bundles/pick-cluster-arch/0.1/pick-cluster-arch.yaml
+                  value: stepactions/bundles/pick-cluster-arch/0.2/pick-cluster-arch.yaml
             params:
               - name: bundleImage
                 value: "$(tasks.get-unreleased-bundle.results.unreleasedBundle)"
@@ -429,53 +408,45 @@ spec:
         - input: "$(tasks.pick-cluster-params.results.ocpVersion)"
           operator: notin
           values: [""]
-        - input: "$(tasks.pick-cluster-params.results.bundleArch)"
+        - input: "$(tasks.pick-cluster-params.results.arch)"
           operator: notin
           values: [""]
         - input: $(tasks.parse-metadata.results.test-event-type)
           operator: in
           values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
       workspaces:
-        - name: shared-data
-      taskSpec:
-        workspaces:
-          - name: shared-data
-        results:
-          - name: clusterName
-            value: "$(steps.create-cluster.results.clusterName)"
-        steps:
-          - name: get-latest-version-tag
-            ref:
-              resolver: git
-              params:
-                - name: url
-                  value: https://github.com/konflux-ci/build-definitions.git
-                - name: revision
-                  value: main
-                - name: pathInRepo
-                  value: stepactions/eaas-get-latest-openshift-version-by-prefix/0.1/eaas-get-latest-openshift-version-by-prefix.yaml
-            params:
-              - name: prefix
-                value: "$(tasks.pick-cluster-params.results.ocpVersion)"
-          - name: create-cluster
-            ref:
-              resolver: git
-              params:
-                - name: url
-                  value: https://github.com/konflux-ci/build-definitions.git
-                - name: revision
-                  value: main
-                - name: pathInRepo
-                  value: stepactions/eaas-create-ephemeral-cluster-hypershift-aws/0.1/eaas-create-ephemeral-cluster-hypershift-aws.yaml
-            params:
-              - name: eaasSpaceSecretRef
-                value: $(tasks.provision-eaas-space.results.secretRef)
-              - name: version
-                value: "$(steps.get-latest-version-tag.results.version)"
-              - name: instanceType
-                value: "$(tasks.pick-cluster-params.results.bundleArch)"
-              - name: imageContentSourcesFile
-                value: "$(workspaces.shared-data.path)/serializedMirrorSetYaml"
+        - name: env-files
+          workspace: shared-data
+          subPath: env-files
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/openshift/konflux-tasks
+          - name: revision
+            value: main
+          - name: pathInRepo
+            value: tasks/provision-ephemeral-cluster/0.1/provision-ephemeral-cluster.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+        - name: workflow
+          value: hypershift-hostedcluster-workflow
+        - name: clusterProfile
+          value: $(params.CLUSTER_PROFILE)
+        - name: env
+          value: |
+            {
+              "COMPUTE_NODE_TYPE": "$(tasks.pick-cluster-params.results.awsInstanceType)",
+              "HYPERSHIFT_NODE_ARCH": "$(tasks.pick-cluster-params.results.arch)",
+              "HYPERSHIFT_NODE_COUNT": "$(params.HYPERSHIFT_NODE_COUNT)",
+              "HOSTED_MANAGEMENT_CLUSTER": "$(params.HOSTED_MANAGEMENT_CLUSTER)"
+            }
+        - name: releases
+          value: |
+            {"latest":{"release":{"channel":"stable","version":"$(tasks.pick-cluster-params.results.ocpVersion)","architecture":"multi"}}}
     - name: deploy-operator
       runAfter:
         - provision-cluster
@@ -487,10 +458,8 @@ spec:
           operator: in
           values: ["pull_request", "ok-to-test-comment", "retest-all-comment"]
       params:
-        - name: eaasSpaceSecretRef
-          value: $(tasks.provision-eaas-space.results.secretRef)
-        - name: clusterName
-          value: "$(tasks.provision-cluster.results.clusterName)"
+        - name: clusterCredentialsSecretRef
+          value: "$(tasks.provision-cluster.results.secretRef)"
         - name: fbcFragment
           value: "$(tasks.parse-metadata.results.component-container-image)"
         - name: bundleImage
@@ -504,9 +473,7 @@ spec:
           - name: imagesPulledAfterDeploymentStart
             description: "Images pulled to the cluster after the deployment start time"
         params:
-          - name: eaasSpaceSecretRef
-            type: string
-          - name: clusterName
+          - name: clusterCredentialsSecretRef
             type: string
           - name: fbcFragment
             type: string
@@ -517,29 +484,13 @@ spec:
           - name: channelName
             type: string
         volumes:
-          - name: credentials
-            emptyDir: {}
+          - name: cluster-credentials
+            secret:
+              secretName: $(params.clusterCredentialsSecretRef)
           - name: oci-auth
             secret:
               secretName: $(params.CREDENTIALS_SECRET_NAME)
         steps:
-          - name: get-kubeconfig
-            ref:
-              resolver: git
-              params:
-                - name: url
-                  value: https://github.com/konflux-ci/build-definitions.git
-                - name: revision
-                  value: main
-                - name: pathInRepo
-                  value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
-            params:
-              - name: eaasSpaceSecretRef
-                value: $(params.eaasSpaceSecretRef)
-              - name: clusterName
-                value: $(params.clusterName)
-              - name: credentials
-                value: credentials
           - name: install-operator
             # In case the test fails, we don't want to fail the TaskRun immediately,
             # because we want to proceed with archiving the artifacts in a following step.
@@ -561,10 +512,11 @@ spec:
               - name: CHANNEL_NAME
                 value: "$(params.channelName)"
               - name: KUBECONFIG
-                value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+                value: "/credentials/kubeconfig"
             volumeMounts:
-              - name: credentials
+              - name: cluster-credentials
                 mountPath: /credentials
+                readOnly: true
             script: |
               #!/usr/bin/env bash
               set -euo pipefail
@@ -875,9 +827,9 @@ spec:
                   value: stepactions/gather-cluster-resources/0.1/gather-cluster-resources.yaml
             params:
               - name: credentials
-                value: "credentials"
+                value: "cluster-credentials"
               - name: kubeconfig
-                value: "$(steps.get-kubeconfig.results.kubeconfig)"
+                value: "kubeconfig"
               - name: artifact-dir
                 value: "/workspace/konflux-artifacts"
           # validate that the cluster resources are available in another tekton step
