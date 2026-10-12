@@ -1,6 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["dockerfile", "tekton"],
+  "enabledManagers": ["dockerfile", "tekton", "regex"],
+  "regexManagers": [
+    {
+      "fileMatch": ["^\\.konflux/rpms\\.in\\.yaml$"],
+      "matchStrings": [
+        "image:\\s+(?<depName>registry\\.access\\.redhat\\.com/ubi9/ubi-micro)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker",
+      "currentValueTemplate": "latest"
+    }
+  ],
   "packageRules": [
     {
       "description": "Disable all Dockerfile updates by default. Only specific files will get targeted.",
@@ -22,6 +33,31 @@
       "schedule": [
         "after 5am on tuesday"
       ]
+    },
+    {
+      "description": "Enable Docker image updates for Red Hat UBI micro images in Konflux RPM lockfile config",
+      "matchManagers": ["regex"],
+      "matchFileNames": [
+        ".konflux/rpms.in.yaml"
+      ],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "registry.access.redhat.com/ubi9/ubi-micro"
+      ],
+      "enabled": true,
+      "versioning": "docker",
+      "schedule": [
+        "after 5am on tuesday"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "make konflux-rpm-lock"
+        ],
+        "fileFilters": [
+          ".konflux/rpms.lock.yaml"
+        ],
+        "executionMode": "branch"
+      }
     },
     {
       "description": "Keep Go toolset on minor version 1.26",
