@@ -2,7 +2,7 @@
 # Operator
 export OPERATOR_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8-operator@sha256:7a7e89aa00c104d438c03c9b4d279c53c76b2e23e228087bce7f82f8b9865cd4'
 # Controller
-export OPERAND_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8@sha256:27a4cd83ed008d13a20bb6b306e36805715f6af1390ee4aa338b3c0ffa1f5500'
+export OPERAND_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8@sha256:1acebdf220498dcce7ef8ee2c4ba0af6f1c3009a9dc24df0bc923a5b227e804f'
 # kube-rbac-proxy
 # Latest version of v4.15 tag is used.
 # Catalog link (health grade B): https://catalog.redhat.com/en/software/containers/openshift4/ose-kube-rbac-proxy/5cdb2634dd19c778293b4d98?image=6a047feb2defcf172d2f13ab
