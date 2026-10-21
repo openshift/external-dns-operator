@@ -74,6 +74,11 @@
       "schedule": [
         "after 5am on tuesday"
       ]
+    },
+    {
+      "description": "Disable dependency updates for the EOL release-1.1 branch",
+      "matchBaseBranches": ["release-1.1"],
+      "enabled": false
     }
   ],
   "tekton": {
@@ -111,6 +116,11 @@
         "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}",
         "recreateWhen": "always",
         "rebaseWhen": "behind-base-branch"
+      },
+      {
+        "description": "Disable dependency updates for the EOL release-1.1 branch",
+        "matchJsonata": ["baseBranch = 'release-1.1'"],
+        "enabled": false
       }
     ],
     "schedule": [
