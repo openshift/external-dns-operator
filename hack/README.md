@@ -9,9 +9,13 @@ For example, install Renovate outside the checkout and run:
 
 ```sh
 validation_dir=$(mktemp -d)
-npm install --prefix "$validation_dir" --no-audit --no-fund renovate
+npm install --prefix "$validation_dir" --no-audit --no-fund renovate@42.99.0
 NODE_PATH="$validation_dir/node_modules" node hack/verify-renovate.cjs
 ```
+
+The test-only Renovate version is pinned because these checks use its internal
+APIs. Update the pin together with the test when upgrading those APIs; it does
+not select the version of Renovate deployed by MintMaker.
 
 Only digest updates extracted by the Tekton manager from `.tekton/**` on `main`
 receive `allow-automatic-merge`. Their dedicated `konflux/tekton-digests/main`
