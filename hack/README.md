@@ -1,4 +1,34 @@
-# Version Synchronization Script
+# Development scripts
+
+## Renovate policy regression checks
+
+Run `hack/verify-renovate.cjs` with Node.js 22 or newer and Renovate available
+on `NODE_PATH`. The checks use Renovate's actual update flattening and grouping
+implementation, in addition to asserting the repository's policy selectors.
+For example, install Renovate outside the checkout and run:
+
+```sh
+validation_dir=$(mktemp -d)
+npm install --prefix "$validation_dir" --no-audit --no-fund renovate
+NODE_PATH="$validation_dir/node_modules" node hack/verify-renovate.cjs
+```
+
+Only digest updates extracted by the Tekton manager from `.tekton/**` on `main`
+receive `allow-automatic-merge`. Their dedicated `konflux/tekton-digests/main`
+branch cannot be reused by semantic, Dockerfile, or release-branch updates,
+even if a label persists after a PR update or a rebase. Other updates retain
+their existing configuration, including the Konflux migration commands.
+This label opts into a separate Tide approval policy; it does not enable
+Renovate or GitHub native automerge and does not bypass required checks.
+
+Before rollout, confirm the active MintMaker inherited configuration and bot
+identity. GitHub labels manually changed by another account are not guaranteed
+to be resynchronized by Renovate; do not manually apply this opt-in label to
+mixed or noneligible PRs. Enable labeling first, inspect an isolated digest PR,
+then enable the Tide query. Existing Konflux reference PRs are not retroactively
+eligible and continue through the manual approval paths.
+
+## Version synchronization
 
 This script automates the synchronization of version numbers between the project's source of truth and its Containerfiles.
 

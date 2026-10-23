@@ -111,6 +111,22 @@
         "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}",
         "recreateWhen": "always",
         "rebaseWhen": "behind-base-branch"
+      },
+      {
+        "description": ["Allow Tide to merge only main Tekton digest updates in an isolated group"],
+        "matchManagers": ["tekton"],
+        "matchJsonata": ["baseBranch = 'main'"],
+        "matchFileNames": [".tekton/**"],
+        "matchUpdateTypes": ["digest"],
+        "addLabels": ["allow-automatic-merge"],
+        "groupName": "Tekton digest updates",
+        "branchPrefix": "konflux/tekton-digests/",
+        "additionalBranchPrefix": "",
+        "group": {
+          "branchTopic": "{{{baseBranch}}}",
+          "commitMessageTopic": "{{{groupName}}}"
+        },
+        "commitMessageTopic": "Tekton digest updates"
       }
     ],
     "schedule": [
