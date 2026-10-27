@@ -8,7 +8,16 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" && target_branch == "main" && (
+              "catalog/v4.19/***".pathChanged() ||
+              "Containerfile.external-dns-operator-catalog-v4-19".pathChanged() ||
+              "LICENSE".pathChanged() ||
+              "Dockerfile.catalog".pathChanged() ||
+              "drift-cache/Dockerfile.catalog".pathChanged() ||
+              ".tekton/images-mirror-set.yaml".pathChanged() ||
+              ".tekton/external-dns-fbc-container-ext-dns-optr-fbc-v4-19-pull-request.yaml".pathChanged()
+            )
   creationTimestamp:
   labels:
     appstudio.openshift.io/application: ext-dns-optr-fbc-v4-19
