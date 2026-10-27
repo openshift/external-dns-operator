@@ -25,7 +25,7 @@ RUN git config --global --add safe.directory /workspace
 # Build
 RUN make build-operator
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:c851eaf99ddf32811fdf8a216c2609cd0e55317ab8c46ecbaa3ea8298532f055
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:cee9d1e3abf52281e183c23d6a2fce99ba174cc11be2d17380cd9286dee4e543
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="edo/external-dns-rhel8-operator"
