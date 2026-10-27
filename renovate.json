@@ -111,6 +111,16 @@
         "prBodyTemplate": "{{{header}}}{{{table}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}",
         "recreateWhen": "always",
         "rebaseWhen": "behind-base-branch"
+      },
+      {
+        "matchManagers": ["tekton"],
+        "matchJsonata": ["baseBranch = 'main'"],
+        "matchPackageNames": [
+          "/^quay.io/redhat-appstudio-tekton-catalog//",
+          "/^quay.io/konflux-ci/tekton-catalog//",
+          "/^quay.io/konflux-ci/konflux-vanguard//"
+        ],
+        "addLabels": ["allow-automatic-merge"]
       }
     ],
     "schedule": [
