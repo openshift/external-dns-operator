@@ -2,6 +2,9 @@
 
 This document provides information about how to use the `ExternalDNS Operator` in OpenShift Container Platform.
 
+For metrics and webhook TLS policy selection and restart behavior, see
+[Operator serving TLS security profiles](tls-security-profiles.md).
+
 ## How it works
 ![image](./images/external-dns-flow-openshift.png)
 
