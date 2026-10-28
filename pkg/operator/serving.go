@@ -10,10 +10,11 @@ import (
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 )
 
-func servingOptions(config *operatorconfig.Config) (webhook.Options, metrics.Options) {
+func servingOptions(config *operatorconfig.Config, policy *tls.Config) (webhook.Options, metrics.Options) {
 	webhookOptions := webhook.Options{
 		CertDir: config.CertDir,
 		TLSOpts: []func(*tls.Config){
+			applyTLSPolicy(policy),
 			func(tlsConfig *tls.Config) {
 				if config.WebhookDisableHTTP2 {
 					tlsConfig.NextProtos = []string{"http/1.1"}
@@ -27,6 +28,7 @@ func servingOptions(config *operatorconfig.Config) (webhook.Options, metrics.Opt
 		CertDir:        config.MetricsTLSCertDir,
 		FilterProvider: filters.WithAuthenticationAndAuthorization,
 		TLSOpts: []func(*tls.Config){
+			applyTLSPolicy(policy),
 			func(tlsConfig *tls.Config) {
 				tlsConfig.NextProtos = []string{"http/1.1"}
 			},
