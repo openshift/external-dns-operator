@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
@@ -70,14 +71,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	op, err := operator.New(kubeConfig, &opCfg)
+	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
+	defer cancel()
+	op, err := operator.New(ctx, kubeConfig, &opCfg, cancel)
 	if err != nil {
 		setupLog.Error(err, "failed to create externaldns operator")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting externalDNS operator")
-	if err := op.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := op.Start(ctx); err != nil {
 		setupLog.Error(err, "failed to start externaldns operator")
 		os.Exit(1)
 	}
