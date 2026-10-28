@@ -3,7 +3,9 @@ package operator
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"net/url"
 	"reflect"
 	"time"
 
@@ -77,7 +79,7 @@ func resolveTLSProfile(ctx context.Context, discoveryClient discovery.ServerReso
 	defer cancel()
 	var apiServer configv1.APIServer
 	if err := reader.Get(getCtx, types.NamespacedName{Name: "cluster"}, &apiServer); err != nil {
-		ctrl.Log.WithName("tls").Error(err, "unable to fetch APIServer config, using default TLS profile")
+		ctrl.Log.WithName("tls").Error(nil, "unable to fetch APIServer config, using default TLS profile", "reason", tlsProfileReadErrorReason(err))
 		return profile, nil
 	}
 	profile.adherence = apiServer.Spec.TLSAdherence
@@ -85,6 +87,26 @@ func resolveTLSProfile(ctx context.Context, discoveryClient discovery.ServerReso
 		profile.spec = apiServer.Spec.TLSSecurityProfile.DeepCopy()
 	}
 	return profile, nil
+}
+
+func tlsProfileReadErrorReason(err error) string {
+	switch {
+	case errors.Is(err, context.DeadlineExceeded), apierrors.IsTimeout(err), apierrors.IsServerTimeout(err):
+		return "timeout"
+	case errors.Is(err, context.Canceled):
+		return "cancelled"
+	case apierrors.IsForbidden(err):
+		return "forbidden"
+	case apierrors.IsUnauthorized(err):
+		return "unauthorized"
+	case apierrors.IsNotFound(err):
+		return "not-found"
+	}
+	var transportError *url.Error
+	if errors.As(err, &transportError) {
+		return "transport"
+	}
+	return "other"
 }
 
 func loadTLSProfile(ctx context.Context, config *rest.Config) (*tlsProfile, error) {
