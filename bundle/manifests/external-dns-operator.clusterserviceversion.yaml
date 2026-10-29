@@ -484,6 +484,7 @@ spec:
                 - name: RELATED_IMAGE_EXTERNAL_DNS
                   value: quay.io/external-dns-operator/external-dns:latest
                 - name: TRUSTED_CA_CONFIGMAP_NAME
+                  value: external-dns-operator-trusted-ca
                 image: quay.io/openshift/origin-external-dns-operator:latest
                 livenessProbe:
                   httpGet:
