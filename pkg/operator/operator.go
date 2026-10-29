@@ -18,17 +18,15 @@ package operator
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
-	metrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -51,6 +49,7 @@ type Operator struct {
 // +kubebuilder:rbac:groups=cloudcredential.openshift.io,resources=credentialsrequests;credentialsrequests/status;credentialsrequests/finalizers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;watch;list
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures,verbs=get;list;watch
+// +kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 // local role
@@ -60,35 +59,24 @@ type Operator struct {
 // +kubebuilder:rbac:groups="",namespace=external-dns-operator,resources=pods,verbs=get;list;watch
 
 // New creates a new operator from cliCfg and opCfg.
-func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
-	webhookSrv := webhook.NewServer(webhook.Options{
-		TLSOpts: []func(config *tls.Config){
-			func(config *tls.Config) {
-				if opCfg.WebhookDisableHTTP2 {
-					config.NextProtos = []string{"http/1.1"}
-				}
-			},
-		},
-		CertDir: opCfg.CertDir,
-	})
-
-	metricsOpts := metrics.Options{
-		BindAddress:    opCfg.MetricsBindAddress,
-		SecureServing:  true,
-		CertDir:        opCfg.MetricsTLSCertDir,
-		FilterProvider: filters.WithAuthenticationAndAuthorization,
-		TLSOpts: []func(*tls.Config){
-			func(c *tls.Config) {
-				c.NextProtos = []string{"http/1.1"}
-			},
-		},
+func New(ctx context.Context, cliCfg *rest.Config, opCfg *operatorconfig.Config, cancel context.CancelFunc) (*Operator, error) {
+	profile, err := loadTLSProfile(ctx, cliCfg)
+	if err != nil {
+		return nil, fmt.Errorf("resolve TLS profile: %w", err)
 	}
+	policy, err := tlsConfigFromProfile(profile.spec)
+	if err != nil {
+		return nil, fmt.Errorf("convert TLS profile: %w", err)
+	}
+	webhookOpts, metricsOpts := servingOptions(opCfg, policy)
+	webhookSrv := webhook.NewServer(webhookOpts)
 
 	mgrOpts := manager.Options{
 		Scheme:                 GetOperatorScheme(),
 		Metrics:                metricsOpts,
 		HealthProbeBindAddress: opCfg.HealthProbeBindAddress,
 		Cache: cache.Options{
+			DefaultEnableWatchBookmarks: ptr.To(true),
 			DefaultNamespaces: map[string]cache.Config{
 				opCfg.OperatorNamespace: {},
 				opCfg.OperandNamespace:  {},
@@ -114,6 +102,9 @@ func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
 	mgr, err := ctrl.NewManager(cliCfg, mgrOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
+	}
+	if err := setupTLSProfileWatch(mgr, cancel, profile); err != nil {
+		return nil, fmt.Errorf("setup TLS profile watch: %w", err)
 	}
 
 	if opCfg.EnableWebhook {
