@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -100,6 +101,18 @@ func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
 
 	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.ServiceAccount{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
 		return nil, err
+	}
+
+	if err := c.Watch(source.Kind[client.Object](operatorCache, &corev1.Service{}, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+		return nil, err
+	}
+
+	if cfg.IsOpenShift {
+		smInformer := &unstructured.Unstructured{}
+		smInformer.SetGroupVersionKind(serviceMonitorGVK)
+		if err := c.Watch(source.Kind[client.Object](operatorCache, smInformer, handler.EnqueueRequestForOwner(operatorScheme, operatorRESTMapper, &operatorv1beta1.ExternalDNS{}, handler.OnlyControllerOwner()))); err != nil {
+			return nil, err
+		}
 	}
 
 	// secret replicated by the credentials controller
@@ -207,9 +220,23 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		trustCAConfigMap = configMap
 	}
 
+	if r.config.IsOpenShift {
+		// Create the metrics service before the deployment so that service-ca
+		// can provision the serving certificate secret mounted by the operand.
+		if err := r.ensureExternalDNSMetricsService(ctx, r.config.Namespace, externalDNS); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS metrics service: %w", err)
+		}
+	}
+
 	_, currentDeployment, err := r.ensureExternalDNSDeployment(ctx, r.config.Namespace, r.config.Image, sa, credSecret, trustCAConfigMap, externalDNS)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS deployment: %w", err)
+	}
+
+	if r.config.IsOpenShift {
+		if err := r.ensureExternalDNSServiceMonitor(ctx, r.config.Namespace, externalDNS); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to ensure externalDNS service monitor: %w", err)
+		}
 	}
 
 	if err := r.updateExternalDNSStatus(ctx, externalDNS, currentDeployment, true); err != nil {
