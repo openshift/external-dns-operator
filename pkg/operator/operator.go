@@ -18,7 +18,6 @@ package operator
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	"k8s.io/client-go/rest"
@@ -27,8 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
-	metrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
@@ -61,28 +58,8 @@ type Operator struct {
 
 // New creates a new operator from cliCfg and opCfg.
 func New(cliCfg *rest.Config, opCfg *operatorconfig.Config) (*Operator, error) {
-	webhookSrv := webhook.NewServer(webhook.Options{
-		TLSOpts: []func(config *tls.Config){
-			func(config *tls.Config) {
-				if opCfg.WebhookDisableHTTP2 {
-					config.NextProtos = []string{"http/1.1"}
-				}
-			},
-		},
-		CertDir: opCfg.CertDir,
-	})
-
-	metricsOpts := metrics.Options{
-		BindAddress:    opCfg.MetricsBindAddress,
-		SecureServing:  true,
-		CertDir:        opCfg.MetricsTLSCertDir,
-		FilterProvider: filters.WithAuthenticationAndAuthorization,
-		TLSOpts: []func(*tls.Config){
-			func(c *tls.Config) {
-				c.NextProtos = []string{"http/1.1"}
-			},
-		},
-	}
+	webhookOpts, metricsOpts := servingOptions(opCfg)
+	webhookSrv := webhook.NewServer(webhookOpts)
 
 	mgrOpts := manager.Options{
 		Scheme:                 GetOperatorScheme(),
