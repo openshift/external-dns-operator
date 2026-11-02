@@ -67,8 +67,17 @@ func TestServingOptionsPreserveEndpointConfiguration(test *testing.T) {
 
 func TestProductionServingEndpoints(test *testing.T) {
 	for _, endpoint := range []string{"metrics", "webhook"} {
-		for _, version := range []uint16{tls.VersionTLS12, tls.VersionTLS13} {
-			test.Run(fmt.Sprintf("%s/TLS%d", endpoint, version), func(test *testing.T) {
+		for _, testCase := range []struct {
+			name    string
+			version uint16
+			profile *configv1.TLSSecurityProfile
+		}{
+			{name: "custom TLS12", version: tls.VersionTLS12, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
+			{name: "custom TLS13", version: tls.VersionTLS13, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
+			{name: "Modern default", version: tls.VersionTLS13},
+		} {
+			test.Run(endpoint+"/"+testCase.name, func(test *testing.T) {
+				version := testCase.version
 				key, err := rsa.GenerateKey(rand.Reader, 2048)
 				if err != nil {
 					test.Fatal(err)
@@ -80,8 +89,8 @@ func TestProductionServingEndpoints(test *testing.T) {
 				if err := os.WriteFile(filepath.Join(certDir, "tls.key"), pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}), 0600); err != nil {
 					test.Fatal(err)
 				}
-				profile := customTLSProfile(configv1.TLSGroupSecP256r1)
-				if version == tls.VersionTLS13 {
+				profile := testCase.profile
+				if profile != nil && version == tls.VersionTLS13 {
 					profile.Custom.MinTLSVersion = configv1.VersionTLS13
 				}
 				policy, err := tlsConfigFromProfile(profile)
@@ -164,6 +173,9 @@ func TestProductionServingEndpoints(test *testing.T) {
 					}
 				}
 				for _, denied := range []string{"version", "group", "cipher"} {
+					if denied == "group" && profile == nil {
+						continue
+					}
 					if denied == "cipher" && version == tls.VersionTLS13 {
 						continue
 					}

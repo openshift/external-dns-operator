@@ -44,8 +44,8 @@ func TestTLSFallbackDiagnostics(test *testing.T) {
 				if reason := tlsProfileReadErrorReason(testCase.err); reason != testCase.reason {
 					test.Fatalf("reason = %q, want %q", reason, testCase.reason)
 				}
-				profile, err := resolveTLSProfile(context.Background(), stubDiscovery{resources: []metav1.APIResource{{Kind: "APIServer"}}}, errorReader{err: testCase.err})
-				if err != nil || profile == nil || !profile.watch || profile.spec != nil || profile.adherence != configv1.TLSAdherencePolicyStrictAllComponents {
+				profile := resolveTLSProfile(context.Background(), errorReader{err: testCase.err})
+				if profile == nil || !profile.watch || profile.spec != nil || profile.adherence != configv1.TLSAdherencePolicyStrictAllComponents {
 					test.Fatal("GET fallback did not preserve default/log/watch state")
 				}
 			})

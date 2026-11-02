@@ -1,11 +1,16 @@
 # Operator serving TLS security profiles
 
 The operator retains controller-runtime for its metrics, webhook and controller
-servers. Both secure metrics and admission webhook listeners use the cluster
+servers. When platform detection sets `Config.IsOpenShift` to true, both secure
+metrics and admission webhook listeners use the cluster
 `APIServer` configuration (`apiservers.config.openshift.io/cluster`) when
 `spec.tlsAdherence` is `StrictAllComponents`. Unknown adherence values also honor
 the profile for forward compatibility and produce a warning log. Unset adherence
-and `LegacyAdheringComponentsOnly` use the component's Intermediate default.
+and `LegacyAdheringComponentsOnly` use the shared Modern default (TLS 1.3 minimum).
+The same default applies on non-OpenShift clusters and when platform detection
+is disabled; these cases skip the centralized TLS singleton read and observer.
+Explicitly honored Intermediate, Old, Modern and Custom profiles retain their
+configured settings; there is no additional weak-profile filtering.
 
 Named profiles and Custom minimum TLS version, TLS 1.2 ciphers, and groups are
 converted using library-go crypto helpers and a bounded Go group mapping:
@@ -17,9 +22,9 @@ Conversion follows the AWS Load Balancer Operator's fallback behavior:
 unsupported entries are skipped; if no groups map, Go's default group selection
 applies, and if no ciphers map, library-go supplies default ciphers. There is no
 additional rejection of an all-unmapped list. Nil/unknown profiles and a Custom
-profile without a Custom body use Intermediate. An invalid minimum TLS version
-is a startup error. API schema validation may reject malformed profiles before
-the operator sees them.
+profile without a Custom body use the shared Modern default. An invalid minimum
+TLS version is a startup error. API schema validation may reject malformed
+profiles before the operator sees them.
 
 ## Changes restart the operator container
 
@@ -27,7 +32,7 @@ Every serving replica watches the singleton independently of leader election.
 A change restarts that replica if adherence changes whether the cluster profile
 is honored, or if the raw profile changes while honored. Group-only changes
 count. Unset-to-Legacy changes, status changes, and profile-only changes while
-ignored do not restart it. Raw nil versus explicit Intermediate and list-order
+ignored do not restart it. Raw nil versus explicit Modern and list-order
 changes may restart even when negotiated settings would be equivalent.
 
 The observer cancels the manager context. Controllers and listeners stop,
@@ -43,13 +48,18 @@ serialize self-exits. Admission, metrics, and reconciliation can be unavailable
 during restart, especially with a single replica. Existing ExternalDNS operand
 processes do not need a policy-triggered restart.
 
-## Discovery and read failures
+## Platform gating and read failures
 
-Uncertain API discovery is fatal. Authoritative absence of the APIServer config
-API uses defaults without registering the observer. If the API is served but the
-initial singleton GET fails (including NotFound, Forbidden or timeout), the
-operator logs the error, selects defaults, and still registers the observer.
-Discovery requests and the initial GET are bounded by ten seconds.
+The existing platform detection result gates centralized TLS handling; no
+additional API-availability discovery is performed. With `Config.IsOpenShift`
+false, no TLS config client or observer is created. With it true, an initial
+singleton GET failure (including NotFound, Forbidden or timeout) selects Modern
+and still registers the observer. The diagnostic contains only a fixed message
+and a bounded reason classification, not the raw error. TLS client construction
+errors still abort startup. The TLS config client's requests and initial GET
+are bounded by ten seconds. Controller-runtime may perform its normal REST
+mapping discovery as part of reading the singleton; mapping errors follow the
+same default/log/watch path, not a separate availability gate.
 
 The failed-GET comparison baseline is nil profile plus Strict adherence. A later
 successful observer read can detect a difference and restart the container to
