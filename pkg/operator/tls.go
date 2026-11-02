@@ -12,9 +12,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -23,6 +21,8 @@ import (
 )
 
 const apiServerGetTimeout = 10 * time.Second
+
+const defaultTLSProfileType = configv1.TLSProfileModernType
 
 var tlsGroupToCurveID = map[configv1.TLSGroup]tls.CurveID{
 	configv1.TLSGroupX25519:         tls.X25519,
@@ -50,43 +50,20 @@ func honorClusterTLSProfile(adherence configv1.TLSAdherencePolicy) bool {
 	}
 }
 
-func discoverAPIServer(discoveryClient discovery.ServerResourcesInterface) (bool, error) {
-	resources, err := discoveryClient.ServerResourcesForGroupVersion(configv1.GroupVersion.String())
-	if err != nil {
-		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("discover APIServer config API: %w", err)
-	}
-	for _, resource := range resources.APIResources {
-		if resource.Kind == "APIServer" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func resolveTLSProfile(ctx context.Context, discoveryClient discovery.ServerResourcesInterface, reader client.Reader) (*tlsProfile, error) {
-	served, err := discoverAPIServer(discoveryClient)
-	if err != nil {
-		return nil, err
-	}
-	if !served {
-		return &tlsProfile{}, nil
-	}
+func resolveTLSProfile(ctx context.Context, reader client.Reader) *tlsProfile {
 	profile := &tlsProfile{adherence: configv1.TLSAdherencePolicyStrictAllComponents, watch: true}
 	getCtx, cancel := context.WithTimeout(ctx, apiServerGetTimeout)
 	defer cancel()
 	var apiServer configv1.APIServer
 	if err := reader.Get(getCtx, types.NamespacedName{Name: "cluster"}, &apiServer); err != nil {
 		ctrl.Log.WithName("tls").Error(nil, "unable to fetch APIServer config, using default TLS profile", "reason", tlsProfileReadErrorReason(err))
-		return profile, nil
+		return profile
 	}
 	profile.adherence = apiServer.Spec.TLSAdherence
 	if honorClusterTLSProfile(profile.adherence) {
 		profile.spec = apiServer.Spec.TLSSecurityProfile.DeepCopy()
 	}
-	return profile, nil
+	return profile
 }
 
 func tlsProfileReadErrorReason(err error) string {
@@ -109,22 +86,21 @@ func tlsProfileReadErrorReason(err error) string {
 	return "other"
 }
 
-func loadTLSProfile(ctx context.Context, config *rest.Config) (*tlsProfile, error) {
+func loadTLSProfile(ctx context.Context, config *rest.Config, isOpenShift bool) (*tlsProfile, error) {
+	if !isOpenShift {
+		return &tlsProfile{}, nil
+	}
 	boundedConfig := rest.CopyConfig(config)
 	boundedConfig.Timeout = apiServerGetTimeout
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(boundedConfig)
-	if err != nil {
-		return nil, fmt.Errorf("create TLS discovery client: %w", err)
-	}
 	reader, err := client.New(boundedConfig, client.Options{Scheme: GetOperatorScheme()})
 	if err != nil {
 		return nil, fmt.Errorf("create TLS config client: %w", err)
 	}
-	return resolveTLSProfile(ctx, discoveryClient, reader)
+	return resolveTLSProfile(ctx, reader), nil
 }
 
 func tlsConfigFromProfile(profile *configv1.TLSSecurityProfile) (*tls.Config, error) {
-	profileSpec := configv1.TLSProfiles[configv1.TLSProfileIntermediateType]
+	profileSpec := configv1.TLSProfiles[defaultTLSProfileType]
 	if profile != nil {
 		if profile.Type == configv1.TLSProfileCustomType && profile.Custom != nil {
 			profileSpec = &profile.Custom.TLSProfileSpec
