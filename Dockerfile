@@ -3,10 +3,13 @@ FROM registry.access.redhat.com/ubi9/go-toolset:1.26 as builder
 
 WORKDIR /opt/app-root/src
 COPY . .
+ARG COMMIT
+ARG SHORTCOMMIT
+RUN if [ -f .git ]; then test -n "$COMMIT" && test -n "$SHORTCOMMIT" && rm .git; fi
 RUN git config --global --add safe.directory /opt/app-root/src
 
 # Build
-RUN make build-operator
+RUN make build-operator COMMIT="${COMMIT:-$(git rev-parse HEAD)}" SHORTCOMMIT="${SHORTCOMMIT:-$(git rev-parse --short HEAD)}"
 
 # Install the OpenSSL FIPS provider (ubi-micro has no package manager)
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS micro-base

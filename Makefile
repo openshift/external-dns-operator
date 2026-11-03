@@ -144,7 +144,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run $(PACKAGE)
 
 image-build: test ## Build container image with the operator.
-	$(CONTAINER_ENGINE) build -t ${IMG} .
+	$(CONTAINER_ENGINE) build --build-arg COMMIT=$(COMMIT) --build-arg SHORTCOMMIT=$(SHORTCOMMIT) -t ${IMG} .
 
 image-push: ## Push container image with the operator.
 	$(CONTAINER_ENGINE) push ${IMG} ${CONTAINER_PUSH_ARGS}

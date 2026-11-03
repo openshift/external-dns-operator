@@ -21,9 +21,12 @@ WORKDIR /workspace
 # when trying to write output.
 RUN ls .
 COPY . /workspace
+ARG COMMIT
+ARG SHORTCOMMIT
+RUN if [ -f .git ]; then test -n "$COMMIT" && test -n "$SHORTCOMMIT" && rm .git; fi
 RUN git config --global --add safe.directory /workspace
 # Build
-RUN make build-operator
+RUN make build-operator COMMIT="${COMMIT:-$(git rev-parse HEAD)}" SHORTCOMMIT="${SHORTCOMMIT:-$(git rev-parse --short HEAD)}"
 
 # Install the OpenSSL FIPS provider (ubi-micro has no package manager)
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:5be877a2a280ae36eb9ab80ca4efb28bbf77c57abbba38137cdc37a03b8465e6 AS micro-base
