@@ -20,6 +20,10 @@ metadata:
       Container Platform", "OpenShift Platform Plus"]'
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
   name: external-dns-operator.v1.3.0
   namespace: external-dns-operator
 spec:

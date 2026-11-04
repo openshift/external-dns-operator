@@ -348,6 +348,10 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/openshift/external-dns-operator
     support: Red Hat, Inc.
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/os.linux: supported
   name: external-dns-operator.v1.3.12
   namespace: external-dns-operator
 spec:
