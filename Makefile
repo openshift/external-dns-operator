@@ -70,7 +70,17 @@ OPERATOR_SDK_BIN=$(BIN_DIR)/operator-sdk
 
 COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
-GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)" -tags strictfipsruntime
+GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
+# Native Go FIPS 140-3 build settings (replaces the OpenSSL-backed FIPS backend).
+# CGO_ENABLED=0 produces a static binary with no cgo/OpenSSL dependency;
+# GOFIPS140=certified embeds the CMVP-certified Go Cryptographic Module. Both
+# settings are accepted by upstream Go, so standard `make build` keeps working for
+# contributors. On the Red Hat go-toolset (1.26) the toolchain bakes
+# DefaultGODEBUG=fips140=auto, so the shipped binary enforces FIPS when the host
+# kernel is in FIPS mode and runs normally otherwise. GOEXPERIMENT=strictfipsruntime
+# is added only in the container builds (see the Containerfile/Dockerfile) so the
+# shipped binary aborts if it cannot operate in FIPS mode on a FIPS-enabled host.
+FIPS_BUILD_ENV = CGO_ENABLED=0 GOFIPS140=certified
 CHECK_PAYLOAD_IMG ?= registry.ci.openshift.org/ci/check-payload:latest
 
 E2E_TIMEOUT ?= 1h
@@ -114,6 +124,11 @@ test: manifests generate fmt vet ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" CGO_ENABLED=1 go test ./... -race -covermode=atomic -coverprofile coverage.out
 
 .PHONY: test-e2e
+# The e2e harness is a test client, not the shipped artifact, so it is NOT built
+# with FIPS_BUILD_ENV: a FIPS-mode Go binary requires TLS Extended Master Secret
+# (RFC 7627), which some provider endpoints (e.g. the Infoblox Grid Master) do not
+# support, breaking the harness's own TLS connections. The operator's FIPS
+# compliance is covered by e2e-aws-fips-operator instead.
 test-e2e:
 	go test \
 	$(GOBUILD_VERSION_ARGS) \
@@ -139,7 +154,7 @@ verify: lint
 GO=GO111MODULE=on GOFLAGS=-mod=vendor go
 
 build-operator: ## Build operator binary, no additional checks or code generation
-	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
+	$(FIPS_BUILD_ENV) $(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
 
 build: generate build-operator fmt vet ## Build operator binary.
 
