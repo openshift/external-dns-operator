@@ -8,15 +8,12 @@ spec:
     - source: registry.redhat.io/openshift4/ose-cli
       mirrors:
         - brew.registry.redhat.io/openshift4/ose-cli
-    - source: registry.redhat.io/ubi9/ubi
-      mirrors:
-        - brew.registry.redhat.io/ubi9/ubi
     - source: registry.redhat.io/ubi9/ubi-minimal
       mirrors:
         - brew.registry.redhat.io/ubi9/ubi-minimal
-    - source: registry.redhat.io/ubi9/ubi-micro
+    - source: registry.redhat.io/hi/static
       mirrors:
-        - brew.registry.redhat.io/ubi9/ubi-micro
+        - brew.registry.redhat.io/hi/static
     - source: registry.redhat.io/edo/external-dns-operator-bundle
       mirrors:
         - quay.io/redhat-user-workloads/external-dns-operator-tenant/ext-dns-optr-1-1-rhel-8/external-dns-operator-bundle-container-ext-dns-optr-1-1-rhel-8
