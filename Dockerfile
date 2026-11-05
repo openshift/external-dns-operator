@@ -3,7 +3,10 @@ FROM registry.access.redhat.com/ubi9/go-toolset:1.26 as builder
 
 WORKDIR /opt/app-root/src
 COPY . .
-RUN git config --global --add safe.directory /opt/app-root/src
+# Mark the source dir safe so the commit can be stamped via git in full-clone
+# builds (CI, Konflux). Tolerate failure for builds from a git worktree, where
+# .git is a gitlink pointing outside the build context and git cannot resolve it.
+RUN git config --global --add safe.directory /opt/app-root/src || true
 
 # Build
 RUN make build-operator

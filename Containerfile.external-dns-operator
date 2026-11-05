@@ -21,7 +21,10 @@ WORKDIR /workspace
 # when trying to write output.
 RUN ls .
 COPY . /workspace
-RUN git config --global --add safe.directory /workspace
+# Mark the source dir safe so the commit can be stamped via git in full-clone
+# builds (CI, Konflux). Tolerate failure for builds from a git worktree, where
+# .git is a gitlink pointing outside the build context and git cannot resolve it.
+RUN git config --global --add safe.directory /workspace || true
 # Build
 RUN make build-operator
 
