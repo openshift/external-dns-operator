@@ -8,17 +8,16 @@
       "enabled": false
     },
     {
-      "description": "Enable Docker image updates for Red Hat UBI micro images on major version 9",
+      "description": "Enable digest updates for the Red Hat Hardened Image static base",
       "matchManagers": ["dockerfile"],
       "matchFileNames": [
         "Containerfile.external-dns-operator"
       ],
       "matchDatasources": ["docker"],
       "matchPackageNames": [
-        "registry.access.redhat.com/ubi9/ubi-micro"
+        "registry.access.redhat.com/hi/static"
       ],
       "enabled": true,
-      "versioning": "redhat",
       "schedule": [
         "after 5am on tuesday"
       ]
