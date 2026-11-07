@@ -1,6 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["dockerfile", "tekton"],
+  "enabledManagers": ["dockerfile", "tekton", "rpm-lockfile"],
+  "extends": [
+    "github>konflux-ci/mintmaker-presets:refresh-rpm-lockfiles"
+  ],
   "packageRules": [
     {
       "description": "Disable all Dockerfile updates by default. Only specific files will get targeted.",

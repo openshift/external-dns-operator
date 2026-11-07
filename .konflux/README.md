@@ -8,7 +8,7 @@ hermetic (network-isolated) Konflux builds that install RPM packages.
 
 | File | Purpose |
 |------|---------|
-| `rpms.in.yaml` | Declares RPM packages to prefetch and the base image context |
+| `rpms.in.yaml` | Declares RPM packages to prefetch and references the Containerfile for base image |
 | `rpms.lock.yaml` | Generated lockfile with exact RPM URLs and checksums (per arch) |
 | `redhat.repo` | Repository definitions used for RPM resolution |
 
@@ -37,16 +37,22 @@ tool is required to generate `rpms.lock.yaml`.
 
 ## Updating
 
-When the `ubi-micro` base image digest changes (e.g. via Renovate), the
-lockfile must be regenerated:
+### Automatic updates via Renovate
 
-1. Update `context.image` in `rpms.in.yaml` to match the new digest in
-   `Containerfile.external-dns-operator`
-2. Run `make konflux-rpm-lock`
-3. Commit the updated `rpms.in.yaml` and `rpms.lock.yaml`
+The `rpms.in.yaml` file uses `context.containerfile` to reference
+`Containerfile.external-dns-operator` as the single source of truth for
+the base image. When Renovate updates the `ubi-micro` digest in the
+Containerfile, the MintMaker `refresh-rpm-lockfiles` preset automatically:
+
+1. Detects the Dockerfile update
+2. Finds the associated `rpms.in.yaml` via the `containerfile.file` path
+3. Regenerates `rpms.lock.yaml` with the new base image digest
+4. Commits both the Containerfile and lockfile updates in a single PR
+
+### Manual package changes
 
 To add or remove packages, edit the `packages` list in `rpms.in.yaml`
-and run `make konflux-rpm-lock`.
+and run `make konflux-rpm-lock` to regenerate the lockfile.
 
 ## Extracting repo definitions
 
