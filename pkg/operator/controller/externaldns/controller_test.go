@@ -28,7 +28,9 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1beta1 "github.com/openshift/external-dns-operator/api/v1beta1"
+	controller "github.com/openshift/external-dns-operator/pkg/operator/controller"
 	"github.com/openshift/external-dns-operator/pkg/operator/controller/utils/test"
 )
 
@@ -174,6 +177,38 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
+			name:            "Bootstrap outside OCP does not create metrics resources",
+			existingObjects: []runtime.Object{testExtDNSInstance(), testSecret()},
+			inputConfig:     testConfig(),
+			inputRequest:    testRequest(),
+			expectedResult:  reconcile.Result{},
+			expectedEvents: []test.Event{
+				{
+					EventType: watch.Added,
+					ObjType:   deploymentResource,
+					NamespacedName: types.NamespacedName{
+						Namespace: test.OperandNamespace,
+						Name:      test.OperandName,
+					},
+				},
+				{
+					EventType: watch.Added,
+					ObjType:   serviceAccountResource,
+					NamespacedName: types.NamespacedName{
+						Namespace: test.OperandNamespace,
+						Name:      test.OperandName,
+					},
+				},
+				{
+					EventType: watch.Modified,
+					ObjType:   externalDNSResource,
+					NamespacedName: types.NamespacedName{
+						Name: test.Name,
+					},
+				},
+			},
+		},
+		{
 			name:            "Deleted ExternalDNS",
 			existingObjects: []runtime.Object{},
 			inputConfig:     testConfig(),
@@ -214,6 +249,33 @@ func TestReconcile(t *testing.T) {
 			// result check
 			if !reflect.DeepEqual(gotResult, tc.expectedResult) {
 				t.Fatalf("expected result %v, got %v", tc.expectedResult, gotResult)
+			}
+
+			metricsService := &corev1.Service{}
+			metricsServiceName := types.NamespacedName{
+				Namespace: test.OperandNamespace,
+				Name:      controller.ExternalDNSMetricsServiceName(testExtDNSInstance()),
+			}
+			serviceMonitor := &unstructured.Unstructured{}
+			serviceMonitor.SetGroupVersionKind(serviceMonitorGVK)
+			serviceMonitorName := types.NamespacedName{
+				Namespace: test.OperandNamespace,
+				Name:      controller.ExternalDNSServiceMonitorName(testExtDNSInstance()),
+			}
+			if tc.inputConfig.IsOpenShift && len(tc.existingObjects) != 0 {
+				if err := cl.Get(context.TODO(), metricsServiceName, metricsService); err != nil {
+					t.Errorf("expected metrics service to be created: %v", err)
+				}
+				if err := cl.Get(context.TODO(), serviceMonitorName, serviceMonitor); err != nil {
+					t.Errorf("expected service monitor to be created: %v", err)
+				}
+			} else {
+				if err := cl.Get(context.TODO(), metricsServiceName, metricsService); !errors.IsNotFound(err) {
+					t.Errorf("expected metrics service to be absent, got: %v", err)
+				}
+				if err := cl.Get(context.TODO(), serviceMonitorName, serviceMonitor); !errors.IsNotFound(err) {
+					t.Errorf("expected service monitor to be absent, got: %v", err)
+				}
 			}
 
 			// collect the events received from Reconcile()
