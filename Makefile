@@ -67,7 +67,15 @@ OPERATOR_SDK_BIN=$(BIN_DIR)/operator-sdk
 
 COMMIT ?= $(shell git rev-parse HEAD)
 SHORTCOMMIT ?= $(shell git rev-parse --short HEAD)
-GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)" -tags strictfipsruntime
+GOBUILD_VERSION_ARGS = -ldflags "-X $(PACKAGE)/pkg/version.SHORTCOMMIT=$(SHORTCOMMIT) -X $(PACKAGE)/pkg/version.COMMIT=$(COMMIT)"
+# Native Go FIPS 140-3 build settings (replaces the OpenSSL-backed FIPS backend).
+# CGO_ENABLED=0 produces a static binary with no cgo/OpenSSL dependency;
+# GOFIPS140=certified embeds the CMVP-certified Go Cryptographic Module and bakes
+# DefaultGODEBUG=fips140=on. Both settings are accepted by upstream Go, so standard
+# `make build` keeps working for contributors. fips140=on uses the self-contained
+# Go module and restricts crypto to FIPS-approved algorithms; it is not kernel-gated,
+# so the binary behaves identically on FIPS and non-FIPS clusters.
+FIPS_BUILD_ENV = CGO_ENABLED=0 GOFIPS140=certified
 CHECK_PAYLOAD_IMG ?= registry.ci.openshift.org/ci/check-payload:latest
 
 E2E_TIMEOUT ?= 1h
@@ -112,7 +120,7 @@ test: manifests generate fmt vet ## Run tests.
 
 .PHONY: test-e2e
 test-e2e:
-	go test \
+	$(FIPS_BUILD_ENV) go test \
 	$(GOBUILD_VERSION_ARGS) \
 	-timeout $(E2E_TIMEOUT) \
 	-count 1 \
@@ -136,7 +144,7 @@ verify: lint
 GO=GO111MODULE=on GOFLAGS=-mod=vendor go
 
 build-operator: ## Build operator binary, no additional checks or code generation
-	$(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
+	$(FIPS_BUILD_ENV) $(GO) build $(GOBUILD_VERSION_ARGS) -o $(BIN) $(PACKAGE)
 
 build: generate build-operator fmt vet ## Build operator binary.
 
@@ -159,10 +167,6 @@ $(BIN_DIR)/fips_enabled:
 .PHONY: image-fips-runtime-smoke-test
 image-fips-runtime-smoke-test: image-build $(BIN_DIR)/fips_enabled ## Test that the operator starts in FIPS mode.
 	$(CONTAINER_ENGINE) run --rm -v $(BIN_DIR)/fips_enabled:/proc/sys/crypto/fips_enabled:ro $(IMG) --help > /dev/null 2>&1
-
-.PHONY: konflux-rpm-lock
-konflux-rpm-lock: ## Regenerate .konflux/rpms.lock.yaml from rpms.in.yaml.
-	cd .konflux && rpm-lockfile-prototype rpms.in.yaml
 
 ##@ Deployment
 
