@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"crypto/fips140"
 	"flag"
 	"os"
 
@@ -59,6 +60,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	setupLog := ctrl.Log.WithName("setup")
 	ctrl.Log.Info("build info", "commit", version.COMMIT)
+	ctrl.Log.Info("FIPS 140-3 mode", "enabled", fips140.Enabled())
 	ctrl.Log.Info("using operator namespace", "namespace", opCfg.OperatorNamespace)
 	ctrl.Log.Info("using operand namespace", "namespace", opCfg.OperandNamespace)
 	ctrl.Log.Info("using ExternalDNS image", "image", opCfg.ExternalDNSImage)

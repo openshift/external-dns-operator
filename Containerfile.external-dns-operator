@@ -9,7 +9,7 @@ COPY Dockerfile .
 RUN test "$(sha1sum Dockerfile.cached | cut -d' ' -f1)" = "$(sha1sum Dockerfile | cut -d' ' -f1)"
 
 
-FROM registry.access.redhat.com/ubi8/go-toolset:1.25.10-1783614278 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:1.26.10-1794341427 as builder
 # dummy copy to trigger the drift detection
 COPY --from=drift /app/Dockerfile.cached .
 WORKDIR /workspace
@@ -22,10 +22,14 @@ WORKDIR /workspace
 RUN ls .
 COPY . /workspace
 RUN git config --global --add safe.directory /workspace
-# Build
-RUN make build-operator
+# Build. GOEXPERIMENT=strictfipsruntime is set here (container build only, on the
+# Red Hat go-toolset) so the shipped binary aborts if it cannot operate in FIPS
+# mode on a FIPS-enabled host. It is intentionally not in the Makefile: it is a
+# go-toolset-only experiment that upstream Go rejects, so `make build` stays
+# portable for contributors.
+RUN GOEXPERIMENT=strictfipsruntime make build-operator
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:95689582e591ea3490d7d4da6f240e1b5138dacc5883cc87057750b7eaabafc2
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:6f053bcd6116b39785de592bad0e0a49ddc84301e450546ccec5bcb78fff2b24
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="edo/external-dns-rhel8-operator"
