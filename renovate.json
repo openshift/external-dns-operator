@@ -78,6 +78,10 @@
       "description": "Disable dependency updates for the EOL release-1.1 branch",
       "matchBaseBranches": ["release-1.1"],
       "enabled": false
+    },
+    {
+      "matchBaseBranches": ["main", "release-1.2"],
+      "addLabels": ["pipeline-auto"]
     }
   ],
   "tekton": {
