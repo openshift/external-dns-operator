@@ -119,8 +119,13 @@ test: manifests generate fmt vet ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use "$(K8S_ENVTEST_VERSION)" --print path --bin-dir "$(ENVTEST_ASSETS_DIR)")" CGO_ENABLED=1 go test ./... -race -covermode=atomic -coverprofile coverage.out
 
 .PHONY: test-e2e
+# The e2e harness is a test client, not the shipped artifact, so it is NOT built
+# with FIPS_BUILD_ENV: a FIPS-mode Go binary requires TLS Extended Master Secret
+# (RFC 7627), which some provider endpoints (e.g. the Infoblox Grid Master) do not
+# support, breaking the harness's own TLS connections. The operator's FIPS
+# compliance is covered by e2e-aws-fips-operator instead.
 test-e2e:
-	$(FIPS_BUILD_ENV) go test \
+	go test \
 	$(GOBUILD_VERSION_ARGS) \
 	-timeout $(E2E_TIMEOUT) \
 	-count 1 \
