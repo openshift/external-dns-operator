@@ -62,6 +62,21 @@ func ExternalDNSGlobalResourceName() string {
 	return ExternalDNSBaseName
 }
 
+// ExternalDNSMetricsServiceName returns the name for the metrics service of the given ExternalDNS instance.
+func ExternalDNSMetricsServiceName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return truncatedName(ExternalDNSBaseName, externalDNS.Name, "-metrics")
+}
+
+// ExternalDNSServiceMonitorName returns the name for the service monitor of the given ExternalDNS instance.
+func ExternalDNSServiceMonitorName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return truncatedName(ExternalDNSBaseName, externalDNS.Name, "-metrics-monitor")
+}
+
+// ExternalDNSMetricsSecretName returns the name for the metrics serving cert secret of the given ExternalDNS instance.
+func ExternalDNSMetricsSecretName(externalDNS *operatorv1beta1.ExternalDNS) string {
+	return truncatedName(ExternalDNSBaseName, externalDNS.Name, "-metrics-cert")
+}
+
 // ExternalDNSContainerName returns the container name unique for the given DNS zone.
 func ExternalDNSContainerName(zone string) string {
 	return ExternalDNSBaseName + "-" + hashString(zone)
@@ -113,6 +128,21 @@ func ExternalDNSCredentialsSecretNameFromProvider(externalDNS *operatorv1beta1.E
 		}
 	}
 	return ""
+}
+
+const maxDNSLabelLength = 63
+
+func truncatedName(base, name, suffix string) string {
+	result := base + "-" + name + suffix
+	if len(result) <= maxDNSLabelLength {
+		return result
+	}
+	h := hashString(name)
+	available := maxDNSLabelLength - len(base) - len(suffix) - len(h) - 2
+	if available < 0 {
+		available = 0
+	}
+	return base + "-" + name[:available] + "-" + h + suffix
 }
 
 func hashString(str string) string {
