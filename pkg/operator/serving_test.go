@@ -2,35 +2,26 @@ package operator
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/json"
-	"encoding/pem"
+	"errors"
 	"fmt"
-	"math/big"
-	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
-	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
-	metrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorconfig "github.com/openshift/external-dns-operator/pkg/operator/config"
 )
 
 func TestServingOptionsPreserveEndpointConfiguration(test *testing.T) {
-	test.Parallel()
 	policy, err := tlsConfigFromProfile(customTLSProfile(configv1.TLSGroupSecP256r1))
 	if err != nil {
 		test.Fatal(err)
@@ -38,227 +29,164 @@ func TestServingOptionsPreserveEndpointConfiguration(test *testing.T) {
 	for _, disableHTTP2 := range []bool{false, true} {
 		config := &operatorconfig.Config{CertDir: "webhook-certs", MetricsTLSCertDir: "metrics-certs", MetricsBindAddress: "0", WebhookDisableHTTP2: disableHTTP2}
 		webhookOpts, metricsOpts := servingOptions(config, policy)
-		if webhookOpts.CertDir != config.CertDir || metricsOpts.CertDir != config.MetricsTLSCertDir || metricsOpts.BindAddress != "0" || !metricsOpts.SecureServing {
-			test.Fatal("endpoint configuration changed")
+		if webhookOpts.CertDir != config.CertDir {
+			test.Fatalf("webhook certificate directory=%q", webhookOpts.CertDir)
+		}
+		if metricsOpts.CertDir != config.MetricsTLSCertDir {
+			test.Fatalf("metrics certificate directory=%q", metricsOpts.CertDir)
+		}
+		if metricsOpts.BindAddress != config.MetricsBindAddress {
+			test.Fatalf("metrics bind address=%q", metricsOpts.BindAddress)
+		}
+		if !metricsOpts.SecureServing {
+			test.Fatal("metrics secure serving disabled")
 		}
 		if metricsOpts.FilterProvider == nil || reflect.ValueOf(metricsOpts.FilterProvider).Pointer() != reflect.ValueOf(filters.WithAuthenticationAndAuthorization).Pointer() {
 			test.Fatal("metrics authentication/authorization filter changed")
 		}
 		for endpoint, options := range map[string][]func(*tls.Config){"metrics": metricsOpts.TLSOpts, "webhook": webhookOpts.TLSOpts} {
-			certificates := []tls.Certificate{{Certificate: [][]byte{{1, 2, 3}}}}
-			roots := x509.NewCertPool()
-			config := &tls.Config{NextProtos: []string{"h2", "http/1.1"}, Certificates: certificates, ClientAuth: tls.RequireAnyClientCert, RootCAs: roots, ClientCAs: roots}
-			for _, option := range options {
-				option(config)
-			}
-			if config.MinVersion != policy.MinVersion || !reflect.DeepEqual(config.CipherSuites, policy.CipherSuites) || !reflect.DeepEqual(config.CurvePreferences, policy.CurvePreferences) || !reflect.DeepEqual(config.Certificates, certificates) || config.ClientAuth != tls.RequireAnyClientCert || config.RootCAs != roots || config.ClientCAs != roots {
-				test.Fatalf("%s lost policy or certificate settings", endpoint)
-			}
-			wantProtos := []string{"h2", "http/1.1"}
-			if endpoint == "metrics" || disableHTTP2 {
-				wantProtos = []string{"http/1.1"}
-			}
-			if !reflect.DeepEqual(config.NextProtos, wantProtos) {
-				test.Fatalf("%s protocols=%v", endpoint, config.NextProtos)
-			}
-		}
-	}
-}
-
-func TestProductionServingEndpoints(test *testing.T) {
-	for _, endpoint := range []string{"metrics", "webhook"} {
-		for _, testCase := range []struct {
-			name    string
-			version uint16
-			profile *configv1.TLSSecurityProfile
-		}{
-			{name: "custom TLS12", version: tls.VersionTLS12, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
-			{name: "custom TLS13", version: tls.VersionTLS13, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
-			{name: "Modern default", version: tls.VersionTLS13},
-		} {
-			test.Run(endpoint+"/"+testCase.name, func(test *testing.T) {
-				version := testCase.version
-				key, err := rsa.GenerateKey(rand.Reader, 2048)
-				if err != nil {
-					test.Fatal(err)
-				}
-				firstDER := servingCertificate(test, key, 1)
-				nextDER := servingCertificate(test, key, 2)
-				certDir := test.TempDir()
-				writeServingCertificate(test, certDir, firstDER)
-				if err := os.WriteFile(filepath.Join(certDir, "tls.key"), pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}), 0600); err != nil {
-					test.Fatal(err)
-				}
-				profile := testCase.profile
-				if profile != nil && version == tls.VersionTLS13 {
-					profile.Custom.MinTLSVersion = configv1.VersionTLS13
-				}
-				policy, err := tlsConfigFromProfile(profile)
-				if err != nil {
-					test.Fatal(err)
-				}
-				config := &operatorconfig.Config{CertDir: certDir, MetricsTLSCertDir: certDir, MetricsBindAddress: "127.0.0.1:0", WebhookDisableHTTP2: true}
-				webhookOpts, metricsOpts := servingOptions(config, policy)
-				ctx, cancel := context.WithCancel(context.Background())
-				finished := make(chan error, 1)
-				var address func() string
-				if endpoint == "metrics" {
-					authAPI := httptest.NewServer(http.HandlerFunc(serveMetricsAuthorization))
-					test.Cleanup(authAPI.Close)
-					server, err := metrics.NewServer(metricsOpts, &rest.Config{Host: authAPI.URL}, authAPI.Client())
-					if err != nil {
-						cancel()
-						test.Fatal(err)
-					}
-					address = server.(interface{ GetBindAddr() string }).GetBindAddr
-					go func() { finished <- server.Start(ctx) }()
-				} else {
-					listener, err := net.Listen("tcp", "127.0.0.1:0")
-					if err != nil {
-						cancel()
-						test.Fatal(err)
-					}
-					webhookOpts.Host = "127.0.0.1"
-					webhookOpts.Port = listener.Addr().(*net.TCPAddr).Port
-					if err := listener.Close(); err != nil {
-						cancel()
-						test.Fatal(err)
-					}
-					server := webhook.NewServer(webhookOpts)
-					server.Register("/", http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) { response.WriteHeader(http.StatusOK) }))
-					address = func() string { return fmt.Sprintf("127.0.0.1:%d", webhookOpts.Port) }
-					go func() { finished <- server.Start(ctx) }()
-				}
-				test.Cleanup(func() {
-					cancel()
-					select {
-					case err := <-finished:
-						if err != nil {
-							test.Errorf("server shutdown: %v", err)
-						}
-					case <-time.After(5 * time.Second):
-						test.Error("server did not shut down")
-					}
-				})
+			test.Run(fmt.Sprintf("%s/http2-disabled=%v", endpoint, disableHTTP2), func(test *testing.T) {
+				certificates := []tls.Certificate{{Certificate: [][]byte{{1, 2, 3}}}}
 				roots := x509.NewCertPool()
-				for _, der := range [][]byte{firstDER, nextDER} {
-					certificate, err := x509.ParseCertificate(der)
-					if err != nil {
-						test.Fatal(err)
-					}
-					roots.AddCert(certificate)
+				callbackConfig := &tls.Config{}
+				tlsConfig := &tls.Config{NextProtos: []string{"h2", "http/1.1"}, Certificates: certificates, ClientAuth: tls.RequireAnyClientCert, RootCAs: roots, ClientCAs: roots,
+					GetCertificate:     func(*tls.ClientHelloInfo) (*tls.Certificate, error) { return &certificates[0], nil },
+					GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) { return callbackConfig, nil }}
+				for _, option := range options {
+					option(tlsConfig)
 				}
-				clientConfig := &tls.Config{RootCAs: roots, ServerName: "localhost", MinVersion: version, MaxVersion: version, CurvePreferences: []tls.CurveID{tls.CurveP256}, CipherSuites: []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}, NextProtos: []string{"h2", "http/1.1"}}
-				waitForServingCertificate(test, address, clientConfig, 1)
-				if endpoint == "metrics" {
-					for token, wantStatus := range map[string]int{"": http.StatusUnauthorized, "allowed-fixture": http.StatusOK, "denied-fixture": http.StatusForbidden} {
-						transport := &http.Transport{TLSClientConfig: clientConfig.Clone()}
-						client := &http.Client{Transport: transport, Timeout: 2 * time.Second}
-						request, err := http.NewRequest(http.MethodGet, "https://"+address()+"/metrics", nil)
-						if err != nil {
-							test.Fatal(err)
-						}
-						if token != "" {
-							request.Header.Set("Authorization", "Bearer "+token)
-						}
-						response, err := client.Do(request)
-						if err != nil {
-							test.Fatal(err)
-						}
-						response.Body.Close()
-						transport.CloseIdleConnections()
-						if response.StatusCode != wantStatus {
-							test.Fatalf("metrics status=%d want=%d", response.StatusCode, wantStatus)
-						}
-					}
+				if tlsConfig.MinVersion != policy.MinVersion {
+					test.Fatalf("minimum TLS version=%d", tlsConfig.MinVersion)
 				}
-				for _, denied := range []string{"version", "group", "cipher"} {
-					if denied == "group" && profile == nil {
-						continue
-					}
-					if denied == "cipher" && version == tls.VersionTLS13 {
-						continue
-					}
-					config := clientConfig.Clone()
-					switch denied {
-					case "version":
-						config.MinVersion, config.MaxVersion = version-1, version-1
-					case "group":
-						config.CurvePreferences = []tls.CurveID{tls.CurveP384}
-					case "cipher":
-						config.CipherSuites = []uint16{tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384}
-					}
-					connection, err := tls.DialWithDialer(&net.Dialer{Timeout: 2 * time.Second}, "tcp", address(), config)
-					if err == nil {
-						connection.Close()
-						test.Fatalf("%s accepted prohibited %s", endpoint, denied)
-					}
+				if !reflect.DeepEqual(tlsConfig.CipherSuites, policy.CipherSuites) {
+					test.Fatalf("ciphers=%v", tlsConfig.CipherSuites)
 				}
-				writeServingCertificate(test, certDir, nextDER)
-				waitForServingCertificate(test, address, clientConfig, 2)
+				if !reflect.DeepEqual(tlsConfig.CurvePreferences, policy.CurvePreferences) {
+					test.Fatalf("groups=%v", tlsConfig.CurvePreferences)
+				}
+				if !reflect.DeepEqual(tlsConfig.Certificates, certificates) {
+					test.Fatal("certificates changed")
+				}
+				if tlsConfig.ClientAuth != tls.RequireAnyClientCert {
+					test.Fatal("client authentication changed")
+				}
+				if tlsConfig.RootCAs != roots {
+					test.Fatal("root CAs changed")
+				}
+				if tlsConfig.ClientCAs != roots {
+					test.Fatal("client CAs changed")
+				}
+				if tlsConfig.GetCertificate == nil || tlsConfig.GetConfigForClient == nil {
+					test.Fatal("certificate callbacks removed")
+				}
+				if certificate, err := tlsConfig.GetCertificate(nil); err != nil || certificate != &certificates[0] {
+					test.Fatalf("certificate callback changed: %v", err)
+				}
+				if selected, err := tlsConfig.GetConfigForClient(nil); err != nil || selected != callbackConfig {
+					test.Fatalf("config callback changed: %v", err)
+				}
+				wantProtos := []string{"h2", "http/1.1"}
+				if endpoint == "metrics" || disableHTTP2 {
+					wantProtos = []string{"http/1.1"}
+				}
+				if !reflect.DeepEqual(tlsConfig.NextProtos, wantProtos) {
+					test.Fatalf("protocols=%v want=%v", tlsConfig.NextProtos, wantProtos)
+				}
 			})
 		}
+		config.WebhookDisableHTTP2 = !disableHTTP2
+		changed := &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
+		for _, option := range webhookOpts.TLSOpts {
+			option(changed)
+		}
+		if (len(changed.NextProtos) == 1) != config.WebhookDisableHTTP2 {
+			test.Fatal("webhook HTTP2 callback lost live config pointer")
+		}
 	}
 }
 
-func servingCertificate(test *testing.T, key *rsa.PrivateKey, serial int64) []byte {
+func tlsStartupFixture(test *testing.T, apiServer *configv1.APIServer, status int) *rest.Config {
 	test.Helper()
-	template := &x509.Certificate{SerialNumber: big.NewInt(serial), Subject: pkix.Name{CommonName: "localhost"}, DNSNames: []string{"localhost"}, NotBefore: time.Now().Add(-time.Minute), NotAfter: time.Now().Add(time.Hour), KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
-	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		test.Fatal(err)
-	}
-	return der
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		response.Header().Set("Content-Type", "application/json")
+		var object any = apiServer
+		switch request.URL.Path {
+		case "/apis/config.openshift.io/v1":
+			object = &metav1.APIResourceList{GroupVersion: configv1.GroupVersion.String(), APIResources: []metav1.APIResource{{Name: "apiservers", Kind: "APIServer", Verbs: metav1.Verbs{"get", "list", "watch"}}}}
+		case "/apis/config.openshift.io/v1/apiservers/cluster":
+			response.WriteHeader(status)
+			if status != http.StatusOK {
+				object = &metav1.Status{Status: metav1.StatusFailure, Code: int32(status)}
+			}
+		default:
+			test.Errorf("unexpected startup request: %s", request.URL.Path)
+		}
+		if err := json.NewEncoder(response).Encode(object); err != nil {
+			test.Errorf("encode startup fixture: %v", err)
+		}
+	}))
+	test.Cleanup(server.Close)
+	return &rest.Config{Host: server.URL}
 }
 
-func writeServingCertificate(test *testing.T, directory string, der []byte) {
-	test.Helper()
-	temporary := filepath.Join(directory, "next.crt")
-	if err := os.WriteFile(temporary, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0600); err != nil {
-		test.Fatal(err)
-	}
-	if err := os.Rename(temporary, filepath.Join(directory, "tls.crt")); err != nil {
-		test.Fatal(err)
+func TestNewRejectsTLSProfileErrors(test *testing.T) {
+	invalid := &configv1.APIServer{TypeMeta: metav1.TypeMeta{APIVersion: configv1.GroupVersion.String(), Kind: "APIServer"}, ObjectMeta: metav1.ObjectMeta{Name: "cluster"}}
+	invalid.Spec.TLSAdherence = configv1.TLSAdherencePolicyStrictAllComponents
+	invalid.Spec.TLSSecurityProfile = customTLSProfile()
+	invalid.Spec.TLSSecurityProfile.Custom.MinTLSVersion = "invalid"
+	for _, testCase := range []struct {
+		name    string
+		config  *rest.Config
+		message string
+	}{
+		{name: "fatal client construction", config: &rest.Config{Host: "https://unused.invalid", TLSClientConfig: rest.TLSClientConfig{CAData: []byte("not a certificate")}}, message: "resolve TLS profile: create TLS config client:"},
+		{name: "invalid honored minimum", config: tlsStartupFixture(test, invalid, http.StatusOK), message: "convert TLS profile: invalid TLS version"},
+	} {
+		test.Run(testCase.name, func(test *testing.T) {
+			operator, err := New(context.Background(), testCase.config, &operatorconfig.Config{IsOpenShift: true}, func() { test.Error("startup failure cancelled an unstarted manager") })
+			if operator != nil || err == nil || !strings.HasPrefix(err.Error(), testCase.message) {
+				test.Fatalf("operator=%v error=%v want=%q", operator, err, testCase.message)
+			}
+			if errors.Unwrap(err) == nil {
+				test.Fatal("startup lost underlying error")
+			}
+		})
 	}
 }
 
-func waitForServingCertificate(test *testing.T, address func() string, config *tls.Config, serial int64) {
-	test.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for time.Now().Before(deadline) {
-		if address() != "" {
-			connection, err := tls.DialWithDialer(&net.Dialer{Timeout: time.Second}, "tcp", address(), config)
-			if err == nil {
-				state := connection.ConnectionState()
-				connection.Close()
-				if state.NegotiatedProtocol != "http/1.1" || state.Version != config.MinVersion {
-					test.Fatal("endpoint lost ALPN/version policy")
+func TestLoadServingOptionsDefaults(test *testing.T) {
+	for _, testCase := range []struct {
+		name      string
+		openShift bool
+		adherence configv1.TLSAdherencePolicy
+		status    int
+	}{
+		{name: "non OpenShift"},
+		{name: "unset adherence", openShift: true, status: http.StatusOK},
+		{name: "legacy", openShift: true, adherence: configv1.TLSAdherencePolicyLegacyAdheringComponentsOnly, status: http.StatusOK},
+		{name: "GET fallback", openShift: true, status: http.StatusForbidden},
+	} {
+		test.Run(testCase.name, func(test *testing.T) {
+			var cliCfg *rest.Config
+			if testCase.openShift {
+				apiServer := &configv1.APIServer{TypeMeta: metav1.TypeMeta{APIVersion: configv1.GroupVersion.String(), Kind: "APIServer"}, ObjectMeta: metav1.ObjectMeta{Name: "cluster"}}
+				apiServer.Spec.TLSAdherence = testCase.adherence
+				apiServer.Spec.TLSSecurityProfile = customTLSProfile(configv1.TLSGroupSecP256r1)
+				cliCfg = tlsStartupFixture(test, apiServer, testCase.status)
+			}
+			profile, webhookOpts, metricsOpts, err := loadServingOptions(context.Background(), cliCfg, &operatorconfig.Config{IsOpenShift: testCase.openShift})
+			if err != nil || profile == nil || profile.watch != testCase.openShift || profile.spec != nil {
+				test.Fatalf("startup profile=%+v error=%v", profile, err)
+			}
+			for _, options := range [][]func(*tls.Config){webhookOpts.TLSOpts, metricsOpts.TLSOpts} {
+				config := &tls.Config{}
+				for _, option := range options {
+					option(config)
 				}
-				if state.PeerCertificates[0].SerialNumber.Int64() == serial {
-					return
+				if config.MinVersion != tls.VersionTLS13 {
+					test.Fatalf("fallback minimum=%d, want Modern", config.MinVersion)
 				}
 			}
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	test.Fatal("endpoint certificate/readiness did not converge")
-}
-
-func serveMetricsAuthorization(response http.ResponseWriter, request *http.Request) {
-	response.Header().Set("Content-Type", "application/json")
-	var object map[string]any
-	if err := json.NewDecoder(request.Body).Decode(&object); err != nil {
-		response.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	spec, _ := object["spec"].(map[string]any)
-	if object["kind"] == "TokenReview" {
-		token, _ := spec["token"].(string)
-		object["status"] = map[string]any{"authenticated": true, "user": map[string]string{"username": token}}
-	} else {
-		object["status"] = map[string]any{"allowed": spec["user"] == "allowed-fixture"}
-	}
-	if err := json.NewEncoder(response).Encode(object); err != nil {
-		return
+		})
 	}
 }

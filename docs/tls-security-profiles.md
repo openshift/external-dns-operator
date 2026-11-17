@@ -18,8 +18,7 @@ X25519, secp256r1, secp384r1, secp521r1, and X25519MLKEM768. Runtime and FIPS
 constraints still apply; mapping a group does not guarantee it can negotiate.
 TLS 1.3 cipher suites are selected by Go, not the TLS 1.2 cipher list.
 
-Conversion follows the AWS Load Balancer Operator's fallback behavior:
-unsupported entries are skipped; if no groups map, Go's default group selection
+Unsupported entries are skipped; if no groups map, Go's default group selection
 applies, and if no ciphers map, library-go supplies default ciphers. There is no
 additional rejection of an all-unmapped list. Nil/unknown profiles and a Custom
 profile without a Custom body use the shared Modern default. An invalid minimum
@@ -62,11 +61,13 @@ mapping discovery as part of reading the singleton; mapping errors follow the
 same default/log/watch path, not a separate availability gate.
 
 The failed-GET comparison baseline is nil profile plus Strict adherence. A later
-successful observer read can detect a difference and restart the container to
+successful cache observation can detect a difference and restart the container to
 recover the desired policy. Strict plus a nil desired profile needs no restart;
-Legacy or Strict plus a nonnil desired profile does. Reconcile NotFound waits
-for later events; other read errors retry without cancelling merely for the
-error. Initial list events close the startup-read/watch gap. Watch bookmarks are
+Legacy or Strict plus a nonnil desired profile does. A shared-cache informer
+handles Add and Update events against the startup baseline on every replica,
+without a redundant GET or leader-election dependency. Cache list/watch errors
+follow informer retry/reconnect behavior, not a separate reconcile read path.
+Initial list events close the startup-read/watch gap. Watch bookmarks are
 enabled so WatchList initial-events-end can complete cache synchronization.
 
 Default serving during initial-read recovery may temporarily differ from desired

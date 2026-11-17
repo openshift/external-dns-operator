@@ -26,7 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/config"
 	metrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -101,6 +100,49 @@ func TestHybridOnlyTLSHandshake(test *testing.T) {
 	handshakePolicyServer(test, server, config, false)
 	config.CurvePreferences = []tls.CurveID{tls.X25519MLKEM768}
 	handshakePolicyServer(test, server, config, true)
+}
+
+func TestTLSPolicyHandshakeConstraints(test *testing.T) {
+	for _, testCase := range []struct {
+		name    string
+		version uint16
+		profile *configv1.TLSSecurityProfile
+	}{
+		{name: "custom TLS12", version: tls.VersionTLS12, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
+		{name: "custom TLS13", version: tls.VersionTLS13, profile: customTLSProfile(configv1.TLSGroupSecP256r1)},
+		{name: "Modern default", version: tls.VersionTLS13},
+	} {
+		test.Run(testCase.name, func(test *testing.T) {
+			if testCase.profile != nil && testCase.version == tls.VersionTLS13 {
+				testCase.profile.Custom.MinTLSVersion = configv1.VersionTLS13
+			}
+			server := startPolicyServer(test, testCase.profile)
+			config := trustedClientConfig(server)
+			config.MinVersion, config.MaxVersion = testCase.version, testCase.version
+			config.CurvePreferences = []tls.CurveID{tls.CurveP256}
+			config.CipherSuites = []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}
+			if state := handshakePolicyServer(test, server, config, true); state.Version != testCase.version || state.NegotiatedProtocol != "http/1.1" {
+				test.Fatalf("positive handshake lost version/ALPN: %+v", state)
+			}
+			for _, denied := range []string{"version", "group", "cipher"} {
+				if denied == "group" && testCase.profile == nil || denied == "cipher" && testCase.version == tls.VersionTLS13 {
+					continue
+				}
+				test.Run(denied, func(test *testing.T) {
+					client := config.Clone()
+					switch denied {
+					case "version":
+						client.MinVersion, client.MaxVersion = testCase.version-1, testCase.version-1
+					case "group":
+						client.CurvePreferences = []tls.CurveID{tls.CurveP384}
+					case "cipher":
+						client.CipherSuites = []uint16{tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384}
+					}
+					handshakePolicyServer(test, server, client, false)
+				})
+			}
+		})
+	}
 }
 
 func startPolicyServer(test *testing.T, profile *configv1.TLSSecurityProfile) *httptest.Server {
@@ -277,7 +319,6 @@ func testTLSObserverManagers(test *testing.T, initialReadFailed, rejectWatchList
 		test.Cleanup(cancel)
 		manager, err := ctrl.NewManager(&rest.Config{Host: server.URL}, ctrl.Options{
 			Scheme: GetOperatorScheme(), Metrics: metrics.Options{BindAddress: "0"}, HealthProbeBindAddress: "0",
-			Controller:     config.Controller{SkipNameValidation: ptr.To(true)},
 			LeaderElection: true, LeaderElectionResourceLockInterface: leaderLock,
 			MapperProvider: func(*rest.Config, *http.Client) (meta.RESTMapper, error) { return mapper, nil },
 			Cache:          cache.Options{DefaultEnableWatchBookmarks: ptr.To(true)},
@@ -294,7 +335,7 @@ func testTLSObserverManagers(test *testing.T, initialReadFailed, rejectWatchList
 		if initialReadFailed {
 			initial.spec = nil
 		}
-		if err := setupTLSProfileWatch(manager, cancel, initial); err != nil {
+		if err := setupTLSProfileWatch(ctx, manager.GetCache(), cancel, initial); err != nil {
 			test.Fatal(err)
 		}
 		go func() { finished <- (&Operator{manager: manager}).Start(ctx) }()

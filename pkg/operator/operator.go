@@ -60,15 +60,10 @@ type Operator struct {
 
 // New creates a new operator from cliCfg and opCfg.
 func New(ctx context.Context, cliCfg *rest.Config, opCfg *operatorconfig.Config, cancel context.CancelFunc) (*Operator, error) {
-	profile, err := loadTLSProfile(ctx, cliCfg, opCfg.IsOpenShift)
+	profile, webhookOpts, metricsOpts, err := loadServingOptions(ctx, cliCfg, opCfg)
 	if err != nil {
-		return nil, fmt.Errorf("resolve TLS profile: %w", err)
+		return nil, err
 	}
-	policy, err := tlsConfigFromProfile(profile.spec)
-	if err != nil {
-		return nil, fmt.Errorf("convert TLS profile: %w", err)
-	}
-	webhookOpts, metricsOpts := servingOptions(opCfg, policy)
 	webhookSrv := webhook.NewServer(webhookOpts)
 
 	mgrOpts := manager.Options{
@@ -103,7 +98,7 @@ func New(ctx context.Context, cliCfg *rest.Config, opCfg *operatorconfig.Config,
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
 	}
-	if err := setupTLSProfileWatch(mgr, cancel, profile); err != nil {
+	if err := setupTLSProfileWatch(ctx, mgr.GetCache(), cancel, profile); err != nil {
 		return nil, fmt.Errorf("setup TLS profile watch: %w", err)
 	}
 

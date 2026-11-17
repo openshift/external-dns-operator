@@ -18,9 +18,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -189,7 +187,7 @@ func TestResolveTLSProfile(test *testing.T) {
 	}
 }
 
-func TestTLSProfileWatcher(test *testing.T) {
+func TestShouldRestart(test *testing.T) {
 	test.Parallel()
 	strict := configv1.TLSAdherencePolicyStrictAllComponents
 	legacy := configv1.TLSAdherencePolicyLegacyAdheringComponentsOnly
@@ -228,17 +226,10 @@ func TestTLSProfileWatcher(test *testing.T) {
 			apiServer := &configv1.APIServer{ObjectMeta: metav1.ObjectMeta{Name: "cluster", ResourceVersion: "2"}}
 			apiServer.Spec.TLSAdherence = testCase.currentAdherence
 			apiServer.Spec.TLSSecurityProfile = testCase.currentProfile
-			reader := fake.NewClientBuilder().WithScheme(GetOperatorScheme()).WithObjects(apiServer).Build()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			watcher := &tlsProfileWatcher{reader: reader, initial: testCase.initial, cancel: cancel}
 			for range 2 {
-				if _, err := watcher.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "cluster"}}); err != nil {
-					test.Fatal(err)
+				if got := shouldRestart(apiServer, testCase.initial); got != testCase.cancel {
+					test.Fatalf("restart=%v, want=%v", got, testCase.cancel)
 				}
-			}
-			if (ctx.Err() != nil) != testCase.cancel {
-				test.Fatalf("cancelled=%v, want=%v", ctx.Err(), testCase.cancel)
 			}
 		})
 	}
@@ -276,7 +267,7 @@ func TestNonOpenShiftSkipsTLSProfile(test *testing.T) {
 			if err != nil || profile == nil || profile.watch || profile.spec != nil {
 				test.Fatalf("non-OpenShift loaded centralized profile: %+v %v", profile, err)
 			}
-			if err := setupTLSProfileWatch(nil, nil, profile); err != nil {
+			if err := setupTLSProfileWatch(context.Background(), nil, nil, profile); err != nil {
 				test.Fatal(err)
 			}
 			policy, err := tlsConfigFromProfile(profile.spec)
@@ -284,35 +275,6 @@ func TestNonOpenShiftSkipsTLSProfile(test *testing.T) {
 				test.Fatalf("non-OpenShift default differs: %+v %v", policy, err)
 			}
 		})
-	}
-}
-
-func TestTLSWatcherReadErrors(test *testing.T) {
-	test.Parallel()
-	for _, readError := range []error{apierrors.NewNotFound(schema.GroupResource{Resource: "apiservers"}, "cluster"), context.DeadlineExceeded} {
-		ctx, cancel := context.WithCancel(context.Background())
-		watcher := &tlsProfileWatcher{reader: errorReader{err: readError}, initial: &tlsProfile{}, cancel: cancel}
-		result, err := watcher.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "cluster"}})
-		if apierrors.IsNotFound(readError) && (err != nil || result.RequeueAfter != 0) {
-			test.Fatalf("NotFound unexpectedly requeued: %v %v", result, err)
-		}
-		if !apierrors.IsNotFound(readError) && !errors.Is(err, readError) {
-			test.Fatalf("read error lost: %v", err)
-		}
-		if ctx.Err() != nil {
-			test.Fatal("read failure cancelled manager")
-		}
-		apiServer := &configv1.APIServer{ObjectMeta: metav1.ObjectMeta{Name: "cluster"}}
-		apiServer.Spec.TLSAdherence = configv1.TLSAdherencePolicyStrictAllComponents
-		apiServer.Spec.TLSSecurityProfile = customTLSProfile(configv1.TLSGroupSecP256r1)
-		watcher.reader = fake.NewClientBuilder().WithScheme(GetOperatorScheme()).WithObjects(apiServer).Build()
-		if _, err := watcher.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "other"}}); err != nil || ctx.Err() != nil {
-			test.Fatal("unrelated singleton event triggered cancellation")
-		}
-		if _, err := watcher.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: "cluster"}}); err != nil || ctx.Err() == nil {
-			test.Fatalf("successful retry did not cancel: %v", err)
-		}
-		cancel()
 	}
 }
 
