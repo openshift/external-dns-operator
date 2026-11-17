@@ -14,10 +14,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
+	toolscache "k8s.io/client-go/tools/cache"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 const apiServerGetTimeout = 10 * time.Second
@@ -45,7 +45,6 @@ func honorClusterTLSProfile(adherence configv1.TLSAdherencePolicy) bool {
 	case configv1.TLSAdherencePolicyStrictAllComponents:
 		return true
 	default:
-		ctrl.Log.WithName("tls").Info("unknown TLS adherence policy, honoring cluster profile", "adherence", adherence)
 		return true
 	}
 }
@@ -60,6 +59,9 @@ func resolveTLSProfile(ctx context.Context, reader client.Reader) *tlsProfile {
 		return profile
 	}
 	profile.adherence = apiServer.Spec.TLSAdherence
+	if profile.adherence != configv1.TLSAdherencePolicyNoOpinion && profile.adherence != configv1.TLSAdherencePolicyLegacyAdheringComponentsOnly && profile.adherence != configv1.TLSAdherencePolicyStrictAllComponents {
+		ctrl.Log.WithName("tls").Info("unknown TLS adherence policy, honoring cluster profile", "adherence", profile.adherence)
+	}
 	if honorClusterTLSProfile(profile.adherence) {
 		profile.spec = apiServer.Spec.TLSSecurityProfile.DeepCopy()
 	}
@@ -142,37 +144,38 @@ func applyTLSPolicy(policy *tls.Config) func(*tls.Config) {
 	}
 }
 
-type tlsProfileWatcher struct {
-	reader  client.Reader
-	cancel  context.CancelFunc
-	initial *tlsProfile
+func shouldRestart(observed *configv1.APIServer, baseline *tlsProfile) bool {
+	honor := honorClusterTLSProfile(observed.Spec.TLSAdherence)
+	return honor != honorClusterTLSProfile(baseline.adherence) ||
+		(honor && !reflect.DeepEqual(observed.Spec.TLSSecurityProfile, baseline.spec))
 }
 
-func (watcher *tlsProfileWatcher) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	if request.Name != "cluster" {
-		return ctrl.Result{}, nil
-	}
-	var apiServer configv1.APIServer
-	if err := watcher.reader.Get(ctx, types.NamespacedName{Name: "cluster"}, &apiServer); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-	honor := honorClusterTLSProfile(apiServer.Spec.TLSAdherence)
-	if honor != honorClusterTLSProfile(watcher.initial.adherence) ||
-		(honor && !reflect.DeepEqual(apiServer.Spec.TLSSecurityProfile, watcher.initial.spec)) {
-		ctrl.Log.WithName("tls").Info("cluster TLS configuration changed, shutting down to re-apply it",
-			"oldAdherence", watcher.initial.adherence, "newAdherence", apiServer.Spec.TLSAdherence)
-		watcher.cancel()
-	}
-	return ctrl.Result{}, nil
-}
-
-func setupTLSProfileWatch(manager ctrl.Manager, cancel context.CancelFunc, initial *tlsProfile) error {
+func setupTLSProfileWatch(ctx context.Context, sharedCache cache.Cache, cancel context.CancelFunc, initial *tlsProfile) error {
 	if !initial.watch {
 		return nil
 	}
-	return ctrl.NewControllerManagedBy(manager).
-		Named("tlsprofilewatcher").
-		WithOptions(controller.Options{NeedLeaderElection: ptr.To(false)}).
-		For(&configv1.APIServer{}).
-		Complete(&tlsProfileWatcher{reader: manager.GetClient(), cancel: cancel, initial: initial})
+	informer, err := sharedCache.GetInformer(ctx, &configv1.APIServer{})
+	if err != nil {
+		return fmt.Errorf("get APIServer informer: %w", err)
+	}
+	handle := func(object interface{}) {
+		apiServer, ok := object.(*configv1.APIServer)
+		if !ok || apiServer == nil || apiServer.Name != "cluster" {
+			return
+		}
+		if shouldRestart(apiServer, initial) {
+			ctrl.Log.WithName("tls").Info("cluster TLS configuration changed, shutting down to re-apply it",
+				"oldAdherence", initial.adherence, "newAdherence", apiServer.Spec.TLSAdherence)
+			cancel()
+		}
+	}
+	if _, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
+		AddFunc: handle,
+		UpdateFunc: func(_, newObject interface{}) {
+			handle(newObject)
+		},
+	}); err != nil {
+		return fmt.Errorf("register APIServer handler: %w", err)
+	}
+	return nil
 }

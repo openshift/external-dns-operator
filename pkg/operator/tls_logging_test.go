@@ -16,6 +16,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -53,7 +54,9 @@ func TestTLSFallbackDiagnostics(test *testing.T) {
 		if _, err := tlsConfigFromProfile(customTLSProfile("unsupported-fixture")); err != nil {
 			test.Fatal(err)
 		}
-		honorClusterTLSProfile("future-fixture")
+		apiServer := &configv1.APIServer{ObjectMeta: metav1.ObjectMeta{Name: "cluster"}}
+		apiServer.Spec.TLSAdherence = "future-fixture"
+		resolveTLSProfile(context.Background(), fake.NewClientBuilder().WithScheme(GetOperatorScheme()).WithObjects(apiServer).Build())
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
