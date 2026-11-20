@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -26,7 +27,6 @@ import (
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -37,24 +37,38 @@ var isOpenShift bool
 
 func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) error {
 	isOpenShift = openshift
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	return ctrl.NewWebhookManagedBy(mgr, r).WithValidator(externalDNSValidator{}).Complete()
 }
 
-var _ webhook.Validator = &ExternalDNS{}
+type externalDNSValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+var _ admission.Validator[*ExternalDNS] = externalDNSValidator{}
+
+func (externalDNSValidator) ValidateCreate(_ context.Context, object *ExternalDNS) (admission.Warnings, error) {
+	return object.ValidateCreate()
+}
+
+func (externalDNSValidator) ValidateUpdate(_ context.Context, oldObject, newObject *ExternalDNS) (admission.Warnings, error) {
+	return newObject.ValidateUpdate(oldObject)
+}
+
+func (externalDNSValidator) ValidateDelete(_ context.Context, object *ExternalDNS) (admission.Warnings, error) {
+	return object.ValidateDelete()
+}
+
+// ValidateCreate validates a new ExternalDNS.
 func (r *ExternalDNS) ValidateCreate() (admission.Warnings, error) {
 	webhookLog.Info("validate create", "name", r.Name)
 	return nil, r.validate()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate validates an updated ExternalDNS.
 func (r *ExternalDNS) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
 	webhookLog.Info("validate update", "name", r.Name)
 	return nil, r.validate()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete validates deletion of an ExternalDNS.
 func (r *ExternalDNS) ValidateDelete() (admission.Warnings, error) {
 	webhookLog.Info("validate delete", "name", r.Name)
 	return nil, nil
