@@ -12,6 +12,8 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	toolscache "k8s.io/client-go/tools/cache"
@@ -42,8 +44,6 @@ func honorClusterTLSProfile(adherence configv1.TLSAdherencePolicy) bool {
 	switch adherence {
 	case configv1.TLSAdherencePolicyNoOpinion, configv1.TLSAdherencePolicyLegacyAdheringComponentsOnly:
 		return false
-	case configv1.TLSAdherencePolicyStrictAllComponents:
-		return true
 	default:
 		return true
 	}
@@ -94,7 +94,9 @@ func loadTLSProfile(ctx context.Context, config *rest.Config, isOpenShift bool) 
 	}
 	boundedConfig := rest.CopyConfig(config)
 	boundedConfig.Timeout = apiServerGetTimeout
-	reader, err := client.New(boundedConfig, client.Options{Scheme: GetOperatorScheme()})
+	mapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{configv1.GroupVersion})
+	mapper.Add(configv1.GroupVersion.WithKind("APIServer"), meta.RESTScopeRoot)
+	reader, err := client.New(boundedConfig, client.Options{Scheme: GetOperatorScheme(), Mapper: mapper})
 	if err != nil {
 		return nil, fmt.Errorf("create TLS config client: %w", err)
 	}
@@ -110,7 +112,7 @@ func tlsConfigFromProfile(profile *configv1.TLSSecurityProfile) (*tls.Config, er
 			profileSpec = named
 		}
 	}
-	config := &tls.Config{MinVersion: tls.VersionTLS12}
+	config := &tls.Config{}
 	for _, name := range libgocrypto.OpenSSLToIANACipherSuites(profileSpec.Ciphers) {
 		suite, err := libgocrypto.CipherSuite(name)
 		if err != nil {
@@ -125,6 +127,8 @@ func tlsConfigFromProfile(profile *configv1.TLSSecurityProfile) (*tls.Config, er
 			return nil, fmt.Errorf("invalid TLS version %q: %w", profileSpec.MinTLSVersion, err)
 		}
 		config.MinVersion = version
+	} else {
+		config.MinVersion = tls.VersionTLS12
 	}
 	for _, group := range profileSpec.Groups {
 		if curve, exists := tlsGroupToCurveID[group]; exists {

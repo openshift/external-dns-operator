@@ -11,12 +11,24 @@ The same default applies on non-OpenShift clusters and when platform detection
 is disabled; these cases skip the centralized TLS singleton read and observer.
 Explicitly honored Intermediate, Old, Modern and Custom profiles retain their
 configured settings; there is no additional weak-profile filtering.
+Modern is the intentional fallback security posture (TLS 1.3 only), so TLS
+1.2-only clients cannot connect when a fallback applies.
 
 Named profiles and Custom minimum TLS version, TLS 1.2 ciphers, and groups are
 converted using library-go crypto helpers and a bounded Go group mapping:
 X25519, secp256r1, secp384r1, secp521r1, and X25519MLKEM768. Runtime and FIPS
 constraints still apply; mapping a group does not guarantee it can negotiate.
 TLS 1.3 cipher suites are selected by Go, not the TLS 1.2 cipher list.
+
+The webhook advertises HTTP/2 by default. An explicitly honored Custom profile
+can allow a TLS 1.2 cipher that HTTP/2 forbids: for example, CBC-only TLS 1.2
+can complete the TLS handshake with `h2` selected, but Go then rejects the
+HTTP/2 connection with `INADEQUATE_SECURITY`. TLS 1.3 is unaffected by that
+TLS 1.2 cipher list. Clients using HTTP/2 over TLS 1.2 need compatible ciphers;
+the operator does not add ciphers or automatically disable HTTP/2 to override
+the honored profile. `--webhook-disable-http2` explicitly selects HTTP/1.1;
+metrics already uses HTTP/1.1. Runtime/FIPS restrictions may reject a cipher
+earlier during TLS negotiation, even for HTTP/1.1.
 
 Unsupported entries are skipped; if no groups map, Go's default group selection
 applies, and if no ciphers map, library-go supplies default ciphers. There is no
@@ -56,9 +68,9 @@ singleton GET failure (including NotFound, Forbidden or timeout) selects Modern
 and still registers the observer. The diagnostic contains only a fixed message
 and a bounded reason classification, not the raw error. TLS client construction
 errors still abort startup. The TLS config client's requests and initial GET
-are bounded by ten seconds. Controller-runtime may perform its normal REST
-mapping discovery as part of reading the singleton; mapping errors follow the
-same default/log/watch path, not a separate availability gate.
+are bounded by ten seconds. The singleton client uses an explicit APIServer REST
+mapping and makes no discovery requests. The manager and shared cache still use
+their normal API discovery independently of this startup read.
 
 The failed-GET comparison baseline is nil profile plus Strict adherence. A later
 successful cache observation can detect a difference and restart the container to
