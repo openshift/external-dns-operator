@@ -42,8 +42,6 @@ func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) 
 
 type externalDNSValidator struct{}
 
-var _ admission.Validator[*ExternalDNS] = externalDNSValidator{}
-
 func (externalDNSValidator) ValidateCreate(_ context.Context, object *ExternalDNS) (admission.Warnings, error) {
 	return object.ValidateCreate()
 }
