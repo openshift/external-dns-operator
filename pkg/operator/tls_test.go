@@ -311,29 +311,28 @@ func TestInitialReadIsBounded(test *testing.T) {
 func TestLoadTLSProfileHTTP(test *testing.T) {
 	test.Parallel()
 	for _, testCase := range []struct {
-		name          string
-		getStatus     int
-		mappingStatus int
+		name      string
+		getStatus int
 	}{
 		{name: "served", getStatus: http.StatusOK},
 		{name: "initial GET forbidden", getStatus: http.StatusForbidden},
 		{name: "initial GET not found", getStatus: http.StatusNotFound},
-		{name: "REST mapping forbidden", mappingStatus: http.StatusForbidden},
 	} {
 		test.Run(testCase.name, func(test *testing.T) {
 			test.Parallel()
 			var singletonReads atomic.Int32
+			var discoveryReads atomic.Int32
 			server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+				if request.Header.Get("Authorization") != "Bearer fixture-token" {
+					test.Error("startup request lost configured authentication")
+				}
 				response.Header().Set("Content-Type", "application/json")
 				status := testCase.getStatus
 				var body any = &configv1.APIServer{TypeMeta: metav1.TypeMeta{APIVersion: configv1.GroupVersion.String(), Kind: "APIServer"}, ObjectMeta: metav1.ObjectMeta{Name: "cluster"}}
 				switch request.URL.Path {
 				case "/apis/config.openshift.io/v1":
-					status = http.StatusOK
-					if testCase.mappingStatus != 0 {
-						status = testCase.mappingStatus
-					}
-					body = &metav1.APIResourceList{GroupVersion: configv1.GroupVersion.String(), APIResources: []metav1.APIResource{{Name: "apiservers", Kind: "APIServer", Verbs: metav1.Verbs{"get", "list", "watch"}}}}
+					discoveryReads.Add(1)
+					status = http.StatusForbidden
 				case "/apis/config.openshift.io/v1/apiservers/cluster":
 					singletonReads.Add(1)
 				default:
@@ -348,19 +347,15 @@ func TestLoadTLSProfileHTTP(test *testing.T) {
 				}
 			}))
 			defer server.Close()
-			profile, err := loadTLSProfile(context.Background(), &rest.Config{Host: server.URL}, true)
+			profile, err := loadTLSProfile(context.Background(), &rest.Config{Host: server.URL, BearerToken: "fixture-token"}, true)
 			if err != nil {
 				test.Fatalf("profile=%+v err=%v", profile, err)
 			}
 			if !profile.watch {
 				test.Fatalf("watch=%v", profile.watch)
 			}
-			wantReads := int32(1)
-			if testCase.mappingStatus != 0 {
-				wantReads = 0
-			}
-			if singletonReads.Load() != wantReads {
-				test.Fatalf("singleton reads=%d want=%d", singletonReads.Load(), wantReads)
+			if singletonReads.Load() != 1 || discoveryReads.Load() != 0 {
+				test.Fatalf("singleton reads=%d discovery reads=%d", singletonReads.Load(), discoveryReads.Load())
 			}
 			policy, err := tlsConfigFromProfile(profile.spec)
 			if err != nil || policy.MinVersion != tls.VersionTLS13 {
