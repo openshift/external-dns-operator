@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -27,7 +28,6 @@ import (
 	utilErrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -39,28 +39,40 @@ var isOpenShift bool
 func (r *ExternalDNS) SetupWebhookWithManager(mgr ctrl.Manager, openshift bool) error {
 	isOpenShift = openshift
 	webhookLog.Info("Setting up the webhook", "IsOpenShift", isOpenShift)
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	return ctrl.NewWebhookManagedBy(mgr, r).WithValidator(externalDNSValidator{}).Complete()
 }
 
 // The single validating webhook is kept for all the versions, its version matches the storage version.
 // This should not be a problem since the conversion happens before the validation.
 //+kubebuilder:webhook:path=/validate-externaldns-olm-openshift-io-v1beta1-externaldns,mutating=false,failurePolicy=fail,sideEffects=None,groups=externaldns.olm.openshift.io,resources=externaldnses,verbs=create;update,versions=v1beta1,name=vexternaldns.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.Validator = &ExternalDNS{}
+type externalDNSValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+func (externalDNSValidator) ValidateCreate(_ context.Context, object *ExternalDNS) (admission.Warnings, error) {
+	return object.ValidateCreate()
+}
+
+func (externalDNSValidator) ValidateUpdate(_ context.Context, oldObject, newObject *ExternalDNS) (admission.Warnings, error) {
+	return newObject.ValidateUpdate(oldObject)
+}
+
+func (externalDNSValidator) ValidateDelete(_ context.Context, object *ExternalDNS) (admission.Warnings, error) {
+	return object.ValidateDelete()
+}
+
+// ValidateCreate validates a new ExternalDNS.
 func (r *ExternalDNS) ValidateCreate() (admission.Warnings, error) {
 	webhookLog.Info("validate create", "name", r.Name)
 	return nil, r.validate(nil)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate validates an updated ExternalDNS.
 func (r *ExternalDNS) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	webhookLog.Info("validate update", "name", r.Name)
 	return nil, r.validate(old)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete validates deletion of an ExternalDNS.
 func (r *ExternalDNS) ValidateDelete() (admission.Warnings, error) {
 	webhookLog.Info("validate delete", "name", r.Name)
 	return nil, nil

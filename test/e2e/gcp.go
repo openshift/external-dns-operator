@@ -36,7 +36,7 @@ func newGCPHelper(isOpenShiftCI bool) (providerTestHelper, error) {
 		return nil, err
 	}
 
-	provider.dnsService, err = dns.NewService(context.Background(), option.WithCredentialsJSON([]byte(provider.gcpCredentials)))
+	provider.dnsService, err = dns.NewService(context.Background(), option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(provider.gcpCredentials)))
 	if err != nil {
 		return nil, fmt.Errorf("could not authenticate with the given credentials: %w", err)
 	}
