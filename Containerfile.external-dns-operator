@@ -35,7 +35,7 @@ RUN GOEXPERIMENT=strictfipsruntime make build-operator
 # Package the manager binary on a distroless static base.
 # The binary uses Go's native FIPS 140-3 module (no OpenSSL), so it needs no
 # RPMs and can run on a minimal Red Hat Hardened Image static base.
-FROM registry.access.redhat.com/hi/static:latest@sha256:c51e17de4a96e3bd68361830ec54f3c43ffcf398b82765a1ce250bd4a0d99d1f
+FROM registry.access.redhat.com/hi/static:latest@sha256:cac22d5a26d90c14801f8e48cc99dcb8a08f270cdc9ebaa205ac5b29f8a3d2fa
 LABEL maintainer="Red Hat, Inc."
 LABEL com.redhat.component="external-dns-operator-container"
 LABEL name="edo/external-dns-rhel9-operator"
