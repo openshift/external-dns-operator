@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": ["dockerfile", "tekton"],
+  "addLabels": ["allow-automatic-merge"],
   "packageRules": [
     {
       "description": "Disable all Dockerfile updates by default. Only specific files will get targeted.",
