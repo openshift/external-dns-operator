@@ -49,7 +49,9 @@ func TestTLSObserverEnvtest(test *testing.T) {
 			name = "initial Add"
 		}
 		test.Run(name, func(test *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			operationCtx, stopOperations := context.WithTimeout(context.Background(), 15*time.Second)
+			defer stopOperations()
+			ctx, cancel := context.WithCancel(operationCtx)
 			defer cancel()
 			initial, err := loadTLSProfile(ctx, config, true)
 			if err != nil {
@@ -75,7 +77,7 @@ func TestTLSObserverEnvtest(test *testing.T) {
 					test.Fatal("unchanged initial Add did not sync")
 				}
 				apiServer.Spec.TLSSecurityProfile = customTLSProfile(configv1.TLSGroupSecP384r1)
-				if err := apiClient.Update(ctx, apiServer); err != nil {
+				if err := apiClient.Update(operationCtx, apiServer); err != nil {
 					test.Fatal(err)
 				}
 			}
