@@ -124,7 +124,9 @@ func TestEnsureCredentialsRequest(t *testing.T) {
 
 			ignoreCROpts := cmpopts.IgnoreFields(cco.CredentialsRequest{}, "ResourceVersion")
 			ignoreSpecOpts := cmpopts.IgnoreFields(cco.CredentialsRequestSpec{}, "ProviderSpec")
-			if diff := cmp.Diff(*tc.expectedCredentialRequest, *got, ignoreCROpts, ignoreSpecOpts); diff != "" {
+			expectedReadback := *tc.expectedCredentialRequest
+			expectedReadback.TypeMeta = metav1.TypeMeta{}
+			if diff := cmp.Diff(expectedReadback, *got, ignoreCROpts, ignoreSpecOpts); diff != "" {
 				t.Errorf("Got unexpected credentials request (-want +got):\n%s", diff)
 			}
 
