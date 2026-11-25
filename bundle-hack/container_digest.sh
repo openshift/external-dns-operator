@@ -1,6 +1,6 @@
 # Do not remove comment lines, they are there to reduce conflicts
 # Operator
-export OPERATOR_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8-operator@sha256:d7842d6473348d5d781180f8a28a3f38ada2c107d16b4154da4620120717150d'
+export OPERATOR_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8-operator@sha256:5eb92e791e593804adf3956233cc896c49f01418f322a6ff87cd18af12b0f59a'
 # Controller
 export OPERAND_IMAGE_PULLSPEC='registry.redhat.io/edo/external-dns-rhel8@sha256:9030e01c34094fc1dd1615580ec8baf10e1e6bc6e96f9938cea31f07249e84be'
 # kube-rbac-proxy
