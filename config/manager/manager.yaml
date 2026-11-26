@@ -54,6 +54,7 @@ spec:
             # Ref: https://issues.redhat.com/browse/OCPBUGS-57339.
           value: quay.io/external-dns-operator/external-dns:latest
         - name: TRUSTED_CA_CONFIGMAP_NAME
+          value: external-dns-operator-trusted-ca
         securityContext:
           capabilities:
             drop:
